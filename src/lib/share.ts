@@ -141,12 +141,16 @@ export function printFile(file: File) {
   }
   win.document.open();
   win.document.write(
-    `<html><head><title>${file.name}</title></head><body style="margin:0;background:#F4EAD6">` +
-      `<img src="${url}" style="display:block;width:100%;height:auto" />` +
-      `</body></html>`,
+    `<html><head><title></title></head><body style="margin:0;background:#F4EAD6"></body></html>`,
   );
   win.document.close();
-  const img = win.document.querySelector("img");
+  win.document.title = file.name.replace(/[<>&"'`]/g, "");
+  const img = win.document.createElement("img");
+  img.src = url;
+  img.style.display = "block";
+  img.style.width = "100%";
+  img.style.height = "auto";
+  win.document.body.appendChild(img);
   const done = () => {
     try {
       win.focus();
@@ -158,6 +162,6 @@ export function printFile(file: File) {
       }, 1000);
     }
   };
-  if (img && !img.complete) img.addEventListener("load", done, { once: true });
+  if (!img.complete) img.addEventListener("load", done, { once: true });
   else done();
 }

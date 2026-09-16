@@ -66,7 +66,7 @@ const es = {
   signInError: "No se pudo entrar. Revisa el correo y la clave.",
   tabHoy: "Hoy",
   tabBiblia: "Biblia",
-  tabEvangelio: "Evangelio",
+  tabEvangelio: "Doctrina",
   tabTemas: "Temas",
   tabGuardados: "Guardados",
   sections: "Secciones",
@@ -91,10 +91,11 @@ const es = {
   notifyDenied: "No se activaron los avisos",
   notifyOn: "Aviso del verso activado",
   notifyBodyTitle: "The Preacher · verso de hoy",
-  installTitle: "En el teléfono",
+  installTitle: "Usar como app",
   installDesc:
-    "En App Store de Apple hace falta una cuenta de desarrollador y la revisión de Apple. Mientras tanto, ponla en la pantalla de inicio: se abre como una app, sin navegador.",
+    "Añádela a la pantalla de inicio: se abre a pantalla completa, como una app, sin la barra del navegador.",
   installIphone: "Cómo instalarla en el iPhone",
+  installAndroid: "En Android: menú de Chrome → «Añadir a la pantalla de inicio».",
   todayVerse: "Verso de hoy",
   wordForYou: "Una palabra para ti",
   sendHow: "Elige cómo enviarlo: WhatsApp, mensajes, correo, copiar, imagen o más apps.",
@@ -312,8 +313,11 @@ const es = {
   contactCardCta: "Dejar mis datos",
   peopleTitle: "Personas registradas",
   peopleLead:
-    "Primero entra en Perfil. Luego usa tu clave. La lista también está en tu Google Sheet.",
-  peoplePin: "Clave del predicador",
+    "Solo para ti: introduce la clave de administrador configurada en el servidor.",
+  peopleNeedSignIn: "Entra en tu cuenta para ver los registros.",
+  peopleUnavailable:
+    "La lista de contactos no está configurada en este entorno.",
+  peoplePin: "Clave de administrador",
   peopleOpen: "Ver lista",
   peopleBadPin: "Clave incorrecta.",
   peopleCount: "{n} personas",
@@ -321,7 +325,7 @@ const es = {
   peopleCsv: "Descargar lista",
   sheetsOpen: "Abrir Google Sheet",
   sheetsHint:
-    "Los registros nuevos se copian a tu hoja El Predicador — Registros y también llegan a tu correo.",
+    "Los registros nuevos se copian a tu hoja cuando el servidor tiene el correo de avisos configurado.",
 } as const;
 
 const en: Record<keyof typeof es, string> = {
@@ -356,7 +360,7 @@ const en: Record<keyof typeof es, string> = {
   signInError: "Could not sign in. Check the email and password.",
   tabHoy: "Today",
   tabBiblia: "Bible",
-  tabEvangelio: "Gospel",
+  tabEvangelio: "Doctrine",
   tabTemas: "Themes",
   tabGuardados: "Saved",
   sections: "Sections",
@@ -381,10 +385,11 @@ const en: Record<keyof typeof es, string> = {
   notifyDenied: "Notifications were not enabled",
   notifyOn: "Daily verse reminder on",
   notifyBodyTitle: "The Preacher · verse for today",
-  installTitle: "On the phone",
+  installTitle: "Use as an app",
   installDesc:
-    "The Apple App Store needs a developer account and Apple’s review. Until then, add it to the Home Screen: it opens like an app, without the browser chrome.",
+    "Add it to your Home Screen: it opens fullscreen like an app, without the browser chrome.",
   installIphone: "How to install it on iPhone",
+  installAndroid: "On Android: Chrome menu → “Add to Home screen”.",
   todayVerse: "Verse for today",
   wordForYou: "A word for you",
   sendHow: "Choose how to send it: WhatsApp, messages, mail, copy, image, or more apps.",
@@ -602,9 +607,10 @@ const en: Record<keyof typeof es, string> = {
   contactCardLine: "Leave your name, email, phone, and address.",
   contactCardCta: "Leave my details",
   peopleTitle: "Registered people",
-  peopleLead:
-    "Sign in under Profile first. Then use your key. The list is also in your Google Sheet.",
-  peoplePin: "Preacher’s key",
+  peopleLead: "For you only: enter the admin key configured on the server.",
+  peopleNeedSignIn: "Sign in to view registrations.",
+  peopleUnavailable: "The contact list is not configured in this environment.",
+  peoplePin: "Admin key",
   peopleOpen: "View list",
   peopleBadPin: "Wrong key.",
   peopleCount: "{n} people",
@@ -612,7 +618,7 @@ const en: Record<keyof typeof es, string> = {
   peopleCsv: "Download list",
   sheetsOpen: "Open Google Sheet",
   sheetsHint:
-    "New sign-ups are copied to your El Predicador — Registros sheet and also emailed to you.",
+    "New sign-ups are copied to your sheet when the server has notification email configured.",
 };
 
 export const STRINGS = { es, en };
