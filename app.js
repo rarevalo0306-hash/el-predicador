@@ -100,11 +100,12 @@
 
   const $ = (id) => document.getElementById(id);
   const t = (k) => T[state.locale][k];
-  const esc = (s) => String(s || "")
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/"/g, """);
+  const esc = (s) => String(s || "").replace(/[&<>"]/g, (ch) => ({
+      "&": "&" + "amp;",
+      "<": "&" + "lt;",
+      ">": "&" + "gt;",
+      '"': "&" + "quot;",
+    }[ch]));
 
   function localize(v) {
     if (state.locale === "en" && state.data.en[v.id]) {
