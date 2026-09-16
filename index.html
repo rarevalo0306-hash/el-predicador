@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#6B2C38" />
+  <title>El Predicador · The Preacher</title>
+  <link rel="icon" href="logo.svg" />
+  <link rel="apple-touch-icon" href="logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f4ead6;
+      --fg: #221711;
+      --card: #faf3e4;
+      --primary: #6b2c38;
+      --primary-fg: #f7efdc;
+      --muted: #6e5b45;
+      --border: #d4c19a;
+      --ring: #a67c2d;
+      --paper: #efe2c8;
+      --shadow: 0 1px 0 rgb(34 23 17 / 0.06), 0 22px 44px -20px rgb(34 23 17 / 0.18);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100dvh; background: var(--bg); color: var(--fg);
+      font-family: Figtree, "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    body {
+      background-image:
+        radial-gradient(ellipse 90% 46% at 50% -8%, color-mix(in oklab, var(--primary) 9%, transparent), transparent 62%),
+        radial-gradient(ellipse 50% 28% at 100% 0%, color-mix(in oklab, var(--ring) 8%, transparent), transparent 70%);
+    }
+    button, [role="button"] { cursor: pointer; font: inherit; }
+    h1,h2,.serif { font-family: Newsreader, Georgia, serif; }
+    .wrap { max-width: 28rem; margin: 0 auto; padding: 1rem 1.1rem 7.5rem; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .4rem 0 1rem; }
+    .brand { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+    .brand img { width: 48px; height: 48px; border-radius: 999px; object-fit: cover; background: var(--card); }
+    .brand h1 { margin: 0; font-size: 1.35rem; letter-spacing: -.02em; line-height: 1.1; }
+    .tag { margin: .2rem 0 0; font-size: .65rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+    .lang { display: inline-flex; border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 3px; }
+    .lang button { border: 0; background: transparent; height: 40px; min-width: 44px; padding: 0 12px; border-radius: 999px; color: var(--muted); font-weight: 600; }
+    .lang button.on { background: var(--primary); color: var(--primary-fg); }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 1.1rem; padding: 1.15rem 1.2rem; box-shadow: var(--shadow); }
+    .ref { font-size: .8rem; font-weight: 700; color: var(--primary); letter-spacing: .02em; }
+    .verse { font-family: Newsreader, Georgia, serif; font-size: 1.28rem; line-height: 1.45; margin: .55rem 0 .8rem; }
+    .src { font-size: .72rem; color: var(--muted); }
+    .row { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .btn { border: 0; border-radius: .9rem; min-height: 48px; padding: 0 1rem; font-weight: 600; font-size: 1rem;
+      background: var(--primary); color: var(--primary-fg); display: inline-flex; align-items: center; justify-content: center; gap: .4rem; }
+    .btn.ghost { background: var(--paper); color: var(--fg); border: 1px solid var(--border); }
+    .btn.full { width: 100%; }
+    .search { width: 100%; min-height: 48px; border-radius: .9rem; border: 1px solid var(--border); background: var(--card);
+      padding: 0 1rem; font-size: 1.05rem; color: var(--fg); }
+    .chips { display: flex; gap: .45rem; overflow-x: auto; padding: .15rem 0 .4rem; -webkit-overflow-scrolling: touch; }
+    .chip { flex: 0 0 auto; border: 1px solid var(--border); background: var(--card); color: var(--fg);
+      border-radius: 999px; padding: .55rem .9rem; font-weight: 600; font-size: .92rem; }
+    .chip.on { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); }
+    .list { display: grid; gap: .75rem; }
+    .item { text-align: left; width: 100%; }
+    .nav { position: fixed; left: 0; right: 0; bottom: 0; background: color-mix(in oklab, var(--card) 92%, white);
+      border-top: 1px solid var(--border); padding: .35rem .35rem calc(.45rem + env(safe-area-inset-bottom));
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: .15rem; backdrop-filter: blur(10px); }
+    .nav button { border: 0; background: transparent; color: var(--muted); min-height: 56px; border-radius: .8rem;
+      font-size: .62rem; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15rem; }
+    .nav button.on { color: var(--primary); background: color-mix(in oklab, var(--primary) 10%, transparent); }
+    .nav svg { width: 20px; height: 20px; }
+    h2 { font-size: 1.55rem; margin: 0 0 .75rem; }
+    h3 { font-family: Newsreader, Georgia, serif; font-size: 1.28rem; margin: .2rem 0 .35rem; }
+    .muted { color: var(--muted); font-size: .92rem; }
+    .sheet { position: fixed; inset: 0; background: rgb(34 23 17 / .45); display: none; align-items: flex-end; z-index: 20; }
+    .sheet.on { display: flex; }
+    .sheet .panel { background: var(--card); width: 100%; max-width: 28rem; margin: 0 auto; border-radius: 1.3rem 1.3rem 0 0;
+      padding: 1rem 1.1rem calc(1rem + env(safe-area-inset-bottom)); }
+    .grab { width: 42px; height: 4px; border-radius: 99px; background: var(--border); margin: .2rem auto .8rem; }
+    textarea, input.field { width: 100%; border: 1px solid var(--border); background: var(--bg); border-radius: .8rem;
+      padding: .8rem 1rem; font: inherit; color: var(--fg); }
+    textarea { min-height: 5.5rem; resize: vertical; }
+    .toast { position: fixed; left: 50%; bottom: 6.2rem; transform: translateX(-50%); background: var(--fg); color: var(--card);
+      padding: .7rem 1rem; border-radius: 999px; font-weight: 600; font-size: .9rem; display: none; z-index: 30; white-space: nowrap; }
+    .empty { padding: 2rem 1rem; text-align: center; color: var(--muted); }
+    .heart.on { color: var(--primary); }
+    .kicker { font-size: .68rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--primary); margin: 0 0 .35rem; }
+    .kicker.dim { color: var(--muted); }
+    .back { background: none; border: 0; color: var(--muted); font-weight: 600; min-height: 44px; padding: 0; }
+    .points { margin: .45rem 0 0; padding-left: 1.15rem; display: grid; gap: .35rem; font-size: .92rem; line-height: 1.45; }
+    .points.dim { color: var(--muted); }
+    .block { margin-top: 1rem; }
+    .lead { font-family: Newsreader, Georgia, serif; font-size: 1.18rem; line-height: 1.4; margin: .4rem 0 .2rem; }
+    .topic { text-align: left; width: 100%; }
+    .topic .who { margin: .15rem 0 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <img src="logo.svg" alt="" />
+        <div>
+          <h1>The Preacher</h1>
+          <p class="tag" id="tagline">Mensajes de la Biblia</p>
+        </div>
+      </div>
+      <div class="lang" role="group" aria-label="Idioma">
+        <button type="button" id="lang-es" class="on">ES</button>
+        <button type="button" id="lang-en">EN</button>
+      </div>
+    </header>
+    <main id="main"></main>
+  </div>
+  <nav class="nav" id="nav"></nav>
+  <div class="sheet" id="sheet"></div>
+  <div class="toast" id="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>
