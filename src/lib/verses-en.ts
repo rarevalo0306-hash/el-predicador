@@ -1,0 +1,1014 @@
+export type VerseEn = { ref: string; book: string; text: string };
+
+export const VERSE_EN: Record<string, VerseEn> = {
+  "jn-3-16": {
+    ref: "John 3:16",
+    book: "John",
+    text: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.",
+  },
+  "1co-13-4": {
+    ref: "1 Corinthians 13:4-7",
+    book: "1 Corinthians",
+    text: "Charity suffereth long, and is kind; charity envieth not; charity vaunteth not itself, is not puffed up, doth not behave itself unseemly, seeketh not her own, is not easily provoked, thinketh no evil; rejoiceth not in iniquity, but rejoiceth in the truth; beareth all things, believeth all things, hopeth all things, endureth all things.",
+  },
+  "1jn-4-7": {
+    ref: "1 John 4:7-8",
+    book: "1 John",
+    text: "Beloved, let us love one another: for love is of God; and every one that loveth is born of God, and knoweth God. He that loveth not knoweth not God; for God is love.",
+  },
+  "ro-5-8": {
+    ref: "Romans 5:8",
+    book: "Romans",
+    text: "But God commendeth his love toward us, in that, while we were yet sinners, Christ died for us.",
+  },
+  "jn-15-13": {
+    ref: "John 15:13",
+    book: "John",
+    text: "Greater love hath no man than this, that a man lay down his life for his friends.",
+  },
+  "1co-13-13": {
+    ref: "1 Corinthians 13:13",
+    book: "1 Corinthians",
+    text: "And now abideth faith, hope, charity, these three; but the greatest of these is charity.",
+  },
+  "ro-8-38": {
+    ref: "Romans 8:38-39",
+    book: "Romans",
+    text: "For I am persuaded, that neither death, nor life, nor angels, nor principalities, nor powers, nor things present, nor things to come, nor height, nor depth, nor any other creature, shall be able to separate us from the love of God, which is in Christ Jesus our Lord.",
+  },
+  "1jn-4-19": {
+    ref: "1 John 4:19",
+    book: "1 John",
+    text: "We love him, because he first loved us.",
+  },
+  "heb-11-1": {
+    ref: "Hebrews 11:1",
+    book: "Hebrews",
+    text: "Now faith is the substance of things hoped for, the evidence of things not seen.",
+  },
+  "2co-5-7": {
+    ref: "2 Corinthians 5:7",
+    book: "2 Corinthians",
+    text: "For we walk by faith, not by sight.",
+  },
+  "mc-11-24": {
+    ref: "Mark 11:24",
+    book: "Mark",
+    text: "Therefore I say unto you, What things soever ye desire, when ye pray, believe that ye receive them, and ye shall have them.",
+  },
+  "ro-10-17": {
+    ref: "Romans 10:17",
+    book: "Romans",
+    text: "So then faith cometh by hearing, and hearing by the word of God.",
+  },
+  "mt-17-20": {
+    ref: "Matthew 17:20",
+    book: "Matthew",
+    text: "If ye have faith as a grain of mustard seed, ye shall say unto this mountain, Remove hence to yonder place; and it shall remove; and nothing shall be impossible unto you.",
+  },
+  "heb-11-6": {
+    ref: "Hebrews 11:6",
+    book: "Hebrews",
+    text: "But without faith it is impossible to please him: for he that cometh to God must believe that he is, and that he is a rewarder of them that diligently seek him.",
+  },
+  "ef-2-8": {
+    ref: "Ephesians 2:8-9",
+    book: "Ephesians",
+    text: "For by grace are ye saved through faith; and that not of yourselves: it is the gift of God: not of works, lest any man should boast.",
+  },
+  "stgo-1-6": {
+    ref: "James 1:6",
+    book: "James",
+    text: "But let him ask in faith, nothing wavering. For he that wavereth is like a wave of the sea driven with the wind and tossed.",
+  },
+  "jer-29-11": {
+    ref: "Jeremiah 29:11",
+    book: "Jeremiah",
+    text: "For I know the thoughts that I think toward you, saith the LORD, thoughts of peace, and not of evil, to give you an expected end.",
+  },
+  "ro-15-13": {
+    ref: "Romans 15:13",
+    book: "Romans",
+    text: "Now the God of hope fill you with all joy and peace in believing, that ye may abound in hope, through the power of the Holy Ghost.",
+  },
+  "is-40-31": {
+    ref: "Isaiah 40:31",
+    book: "Isaiah",
+    text: "But they that wait upon the LORD shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary; and they shall walk, and not faint.",
+  },
+  "lm-3-22": {
+    ref: "Lamentations 3:22-23",
+    book: "Lamentations",
+    text: "It is of the LORD's mercies that we are not consumed, because his compassions fail not. They are new every morning: great is thy faithfulness.",
+  },
+  "ro-5-3": {
+    ref: "Romans 5:3-5",
+    book: "Romans",
+    text: "And not only so, but we glory in tribulations also: knowing that tribulation worketh patience; and patience, experience; and experience, hope: and hope maketh not ashamed; because the love of God is shed abroad in our hearts by the Holy Ghost which is given unto us.",
+  },
+  "sal-42-11": {
+    ref: "Psalm 42:11",
+    book: "Psalms",
+    text: "Why art thou cast down, O my soul? and why art thou disquieted within me? hope thou in God: for I shall yet praise him, who is the health of my countenance, and my God.",
+  },
+  "1pe-1-3": {
+    ref: "1 Peter 1:3",
+    book: "1 Peter",
+    text: "Blessed be the God and Father of our Lord Jesus Christ, which according to his abundant mercy hath begotten us again unto a lively hope by the resurrection of Jesus Christ from the dead.",
+  },
+  "jn-14-27": {
+    ref: "John 14:27",
+    book: "John",
+    text: "Peace I leave with you, my peace I give unto you: not as the world giveth, give I unto you. Let not your heart be troubled, neither let it be afraid.",
+  },
+  "fil-4-6": {
+    ref: "Philippians 4:6-7",
+    book: "Philippians",
+    text: "Be careful for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known unto God. And the peace of God, which passeth all understanding, shall keep your hearts and minds through Christ Jesus.",
+  },
+  "is-26-3": {
+    ref: "Isaiah 26:3",
+    book: "Isaiah",
+    text: "Thou wilt keep him in perfect peace, whose mind is stayed on thee: because he trusteth in thee.",
+  },
+  "mt-11-28": {
+    ref: "Matthew 11:28",
+    book: "Matthew",
+    text: "Come unto me, all ye that labour and are heavy laden, and I will give you rest.",
+  },
+  "sal-46-10": {
+    ref: "Psalm 46:10",
+    book: "Psalms",
+    text: "Be still, and know that I am God: I will be exalted among the heathen, I will be exalted in the earth.",
+  },
+  "col-3-15": {
+    ref: "Colossians 3:15",
+    book: "Colossians",
+    text: "And let the peace of God rule in your hearts, to the which also ye are called in one body; and be ye thankful.",
+  },
+  "nm-6-24": {
+    ref: "Numbers 6:24-26",
+    book: "Numbers",
+    text: "The LORD bless thee, and keep thee: the LORD make his face shine upon thee, and be gracious unto thee: the LORD lift up his countenance upon thee, and give thee peace.",
+  },
+  "jn-16-33": {
+    ref: "John 16:33",
+    book: "John",
+    text: "These things I have spoken unto you, that in me ye might have peace. In the world ye shall have tribulation: but be of good cheer; I have overcome the world.",
+  },
+  "fil-4-13": {
+    ref: "Philippians 4:13",
+    book: "Philippians",
+    text: "I can do all things through Christ which strengtheneth me.",
+  },
+  "is-41-10": {
+    ref: "Isaiah 41:10",
+    book: "Isaiah",
+    text: "Fear thou not; for I am with thee: be not dismayed; for I am thy God: I will strengthen thee; yea, I will help thee; yea, I will uphold thee with the right hand of my righteousness.",
+  },
+  "jos-1-9": {
+    ref: "Joshua 1:9",
+    book: "Joshua",
+    text: "Have not I commanded thee? Be strong and of a good courage; be not afraid, neither be thou dismayed: for the LORD thy God is with thee whithersoever thou goest.",
+  },
+  "2ti-1-7": {
+    ref: "2 Timothy 1:7",
+    book: "2 Timothy",
+    text: "For God hath not given us the spirit of fear; but of power, and of love, and of a sound mind.",
+  },
+  "sal-27-1": {
+    ref: "Psalm 27:1",
+    book: "Psalms",
+    text: "The LORD is my light and my salvation; whom shall I fear? the LORD is the strength of my life; of whom shall I be afraid?",
+  },
+  "is-40-29": {
+    ref: "Isaiah 40:29",
+    book: "Isaiah",
+    text: "He giveth power to the faint; and to them that have no might he increaseth strength.",
+  },
+  "ef-6-10": {
+    ref: "Ephesians 6:10",
+    book: "Ephesians",
+    text: "Finally, my brethren, be strong in the Lord, and in the power of his might.",
+  },
+  "dt-31-6": {
+    ref: "Deuteronomy 31:6",
+    book: "Deuteronomy",
+    text: "Be strong and of a good courage, fear not, nor be afraid of them: for the LORD thy God, he it is that doth go with thee; he will not fail thee, nor forsake thee.",
+  },
+  "sal-23-1": {
+    ref: "Psalm 23:1-3",
+    book: "Psalms",
+    text: "The LORD is my shepherd; I shall not want. He maketh me to lie down in green pastures: he leadeth me beside the still waters. He restoreth my soul: he leadeth me in the paths of righteousness for his name's sake.",
+  },
+  "sal-34-18": {
+    ref: "Psalm 34:18",
+    book: "Psalms",
+    text: "The LORD is nigh unto them that are of a broken heart; and saveth such as be of a contrite spirit.",
+  },
+  "mt-5-4": {
+    ref: "Matthew 5:4",
+    book: "Matthew",
+    text: "Blessed are they that mourn: for they shall be comforted.",
+  },
+  "2co-1-3": {
+    ref: "2 Corinthians 1:3-4",
+    book: "2 Corinthians",
+    text: "Blessed be God, even the Father of our Lord Jesus Christ, the Father of mercies, and the God of all comfort; who comforteth us in all our tribulation, that we may be able to comfort them which are in any trouble.",
+  },
+  "sal-147-3": {
+    ref: "Psalm 147:3",
+    book: "Psalms",
+    text: "He healeth the broken in heart, and bindeth up their wounds.",
+  },
+  "1pe-5-7": {
+    ref: "1 Peter 5:7",
+    book: "1 Peter",
+    text: "Casting all your care upon him; for he careth for you.",
+  },
+  "is-43-2": {
+    ref: "Isaiah 43:2",
+    book: "Isaiah",
+    text: "When thou passest through the waters, I will be with thee; and through the rivers, they shall not overflow thee: when thou walkest through the fire, thou shalt not be burned; neither shall the flame kindle upon thee.",
+  },
+  "ap-21-4": {
+    ref: "Revelation 21:4",
+    book: "Revelation",
+    text: "And God shall wipe away all tears from their eyes; and there shall be no more death, neither sorrow, nor crying, neither shall there be any more pain: for the former things are passed away.",
+  },
+  "1ts-5-18": {
+    ref: "1 Thessalonians 5:18",
+    book: "1 Thessalonians",
+    text: "In every thing give thanks: for this is the will of God in Christ Jesus concerning you.",
+  },
+  "sal-107-1": {
+    ref: "Psalm 107:1",
+    book: "Psalms",
+    text: "O give thanks unto the LORD, for he is good: for his mercy endureth for ever.",
+  },
+  "sal-100-4": {
+    ref: "Psalm 100:4",
+    book: "Psalms",
+    text: "Enter into his gates with thanksgiving, and into his courts with praise: be thankful unto him, and bless his name.",
+  },
+  "col-3-17": {
+    ref: "Colossians 3:17",
+    book: "Colossians",
+    text: "And whatsoever ye do in word or deed, do all in the name of the Lord Jesus, giving thanks to God and the Father by him.",
+  },
+  "sal-136-1": {
+    ref: "Psalm 136:1",
+    book: "Psalms",
+    text: "O give thanks unto the LORD; for he is good: for his mercy endureth for ever.",
+  },
+  "ef-5-20": {
+    ref: "Ephesians 5:20",
+    book: "Ephesians",
+    text: "Giving thanks always for all things unto God and the Father in the name of our Lord Jesus Christ.",
+  },
+  "stgo-1-17": {
+    ref: "James 1:17",
+    book: "James",
+    text: "Every good gift and every perfect gift is from above, and cometh down from the Father of lights, with whom is no variableness, neither shadow of turning.",
+  },
+  "prv-3-5": {
+    ref: "Proverbs 3:5-6",
+    book: "Proverbs",
+    text: "Trust in the LORD with all thine heart; and lean not unto thine own understanding. In all thy ways acknowledge him, and he shall direct thy paths.",
+  },
+  "stgo-1-5": {
+    ref: "James 1:5",
+    book: "James",
+    text: "If any of you lack wisdom, let him ask of God, that giveth to all men liberally, and upbraideth not; and it shall be given him.",
+  },
+  "prv-9-10": {
+    ref: "Proverbs 9:10",
+    book: "Proverbs",
+    text: "The fear of the LORD is the beginning of wisdom: and the knowledge of the holy is understanding.",
+  },
+  "prv-16-9": {
+    ref: "Proverbs 16:9",
+    book: "Proverbs",
+    text: "A man's heart deviseth his way: but the LORD directeth his steps.",
+  },
+  "sal-119-105": {
+    ref: "Psalm 119:105",
+    book: "Psalms",
+    text: "Thy word is a lamp unto my feet, and a light unto my path.",
+  },
+  "col-3-16": {
+    ref: "Colossians 3:16",
+    book: "Colossians",
+    text: "Let the word of Christ dwell in you richly in all wisdom; teaching and admonishing one another.",
+  },
+  "jos-24-15": {
+    ref: "Joshua 24:15",
+    book: "Joshua",
+    text: "But as for me and my house, we will serve the LORD.",
+  },
+  "prv-22-6": {
+    ref: "Proverbs 22:6",
+    book: "Proverbs",
+    text: "Train up a child in the way he should go: and when he is old, he will not depart from it.",
+  },
+  "ef-6-1": {
+    ref: "Ephesians 6:1-2",
+    book: "Ephesians",
+    text: "Children, obey your parents in the Lord: for this is right. Honour thy father and mother; which is the first commandment with promise.",
+  },
+  "sal-127-3": {
+    ref: "Psalm 127:3",
+    book: "Psalms",
+    text: "Lo, children are an heritage of the LORD: and the fruit of the womb is his reward.",
+  },
+  "col-3-20": {
+    ref: "Colossians 3:20",
+    book: "Colossians",
+    text: "Children, obey your parents in all things: for this is well pleasing unto the Lord.",
+  },
+  "gn-2-24": {
+    ref: "Genesis 2:24",
+    book: "Genesis",
+    text: "Therefore shall a man leave his father and his mother, and shall cleave unto his wife: and they shall be one flesh.",
+  },
+  "ef-4-32": {
+    ref: "Ephesians 4:32",
+    book: "Ephesians",
+    text: "And be ye kind one to another, tenderhearted, forgiving one another, even as God for Christ's sake hath forgiven you.",
+  },
+  "mt-6-14": {
+    ref: "Matthew 6:14",
+    book: "Matthew",
+    text: "For if ye forgive men their trespasses, your heavenly Father will also forgive you.",
+  },
+  "col-3-13": {
+    ref: "Colossians 3:13",
+    book: "Colossians",
+    text: "Forbearing one another, and forgiving one another, if any man have a quarrel against any: even as Christ forgave you, so also do ye.",
+  },
+  "1jn-1-9": {
+    ref: "1 John 1:9",
+    book: "1 John",
+    text: "If we confess our sins, he is faithful and just to forgive us our sins, and to cleanse us from all unrighteousness.",
+  },
+  "mt-18-21": {
+    ref: "Matthew 18:21-22",
+    book: "Matthew",
+    text: "Then came Peter to him, and said, Lord, how oft shall my brother sin against me, and I forgive him? till seven times? Jesus saith unto him, I say not unto thee, Until seven times: but, Until seventy times seven.",
+  },
+  "sal-103-12": {
+    ref: "Psalm 103:12",
+    book: "Psalms",
+    text: "As far as the east is from the west, so far hath he removed our transgressions from us.",
+  },
+  "lc-6-37": {
+    ref: "Luke 6:37",
+    book: "Luke",
+    text: "Judge not, and ye shall not be judged: condemn not, and ye shall not be condemned: forgive, and ye shall be forgiven.",
+  },
+  "mt-6-33": {
+    ref: "Matthew 6:33",
+    book: "Matthew",
+    text: "But seek ye first the kingdom of God, and his righteousness; and all these things shall be added unto you.",
+  },
+  "sal-46-1": {
+    ref: "Psalm 46:1",
+    book: "Psalms",
+    text: "God is our refuge and strength, a very present help in trouble.",
+  },
+  "ro-8-28": {
+    ref: "Romans 8:28",
+    book: "Romans",
+    text: "And we know that all things work together for good to them that love God, to them who are the called according to his purpose.",
+  },
+  "sal-91-1": {
+    ref: "Psalm 91:1-2",
+    book: "Psalms",
+    text: "He that dwelleth in the secret place of the most High shall abide under the shadow of the Almighty. I will say of the LORD, He is my refuge and my fortress: my God; in him will I trust.",
+  },
+  "miq-6-8": {
+    ref: "Micah 6:8",
+    book: "Micah",
+    text: "He hath shewed thee, O man, what is good; and what doth the LORD require of thee, but to do justly, and to love mercy, and to walk humbly with thy God?",
+  },
+  "sof-3-17": {
+    ref: "Zephaniah 3:17",
+    book: "Zephaniah",
+    text: "The LORD thy God in the midst of thee is mighty; he will save, he will rejoice over thee with joy; he will rest in his love, he will joy over thee with singing.",
+  },
+  "gal-5-22": {
+    ref: "Galatians 5:22-23",
+    book: "Galatians",
+    text: "But the fruit of the Spirit is love, joy, peace, longsuffering, gentleness, goodness, faith, meekness, temperance: against such there is no law.",
+  },
+  "ro-3-23": {
+    ref: "Romans 3:23",
+    book: "Romans",
+    text: "For all have sinned, and come short of the glory of God.",
+  },
+  "ro-6-23": {
+    ref: "Romans 6:23",
+    book: "Romans",
+    text: "For the wages of sin is death; but the gift of God is eternal life through Jesus Christ our Lord.",
+  },
+  "ro-10-9": {
+    ref: "Romans 10:9-10",
+    book: "Romans",
+    text: "That if thou shalt confess with thy mouth the Lord Jesus, and shalt believe in thine heart that God hath raised him from the dead, thou shalt be saved. For with the heart man believeth unto righteousness; and with the mouth confession is made unto salvation.",
+  },
+  "ro-10-13": {
+    ref: "Romans 10:13",
+    book: "Romans",
+    text: "For whosoever shall call upon the name of the Lord shall be saved.",
+  },
+  "jn-3-3": {
+    ref: "John 3:3",
+    book: "John",
+    text: "Verily, verily, I say unto thee, Except a man be born again, he cannot see the kingdom of God.",
+  },
+  "jn-1-12": {
+    ref: "John 1:12",
+    book: "John",
+    text: "But as many as received him, to them gave he power to become the sons of God, even to them that believe on his name.",
+  },
+  "jn-14-6": {
+    ref: "John 14:6",
+    book: "John",
+    text: "Jesus saith unto him, I am the way, the truth, and the life: no man cometh unto the Father, but by me.",
+  },
+  "2co-5-17": {
+    ref: "2 Corinthians 5:17",
+    book: "2 Corinthians",
+    text: "Therefore if any man be in Christ, he is a new creature: old things are passed away; behold, all things are become new.",
+  },
+  "hch-16-31": {
+    ref: "Acts 16:31",
+    book: "Acts",
+    text: "And they said, Believe on the Lord Jesus Christ, and thou shalt be saved, and thy house.",
+  },
+  "1co-15-3": {
+    ref: "1 Corinthians 15:3-4",
+    book: "1 Corinthians",
+    text: "For I delivered unto you first of all that which I also received, how that Christ died for our sins according to the scriptures; and that he was buried, and that he rose again the third day according to the scriptures.",
+  },
+  "mc-16-15": {
+    ref: "Mark 16:15",
+    book: "Mark",
+    text: "And he said unto them, Go ye into all the world, and preach the gospel to every creature.",
+  },
+  "mt-28-19": {
+    ref: "Matthew 28:19-20",
+    book: "Matthew",
+    text: "Go ye therefore, and teach all nations, baptizing them in the name of the Father, and of the Son, and of the Holy Ghost: teaching them to observe all things whatsoever I have commanded you: and, lo, I am with you alway, even unto the end of the world. Amen.",
+  },
+  "ap-3-20": {
+    ref: "Revelation 3:20",
+    book: "Revelation",
+    text: "Behold, I stand at the door, and knock: if any man hear my voice, and open the door, I will come in to him, and will sup with him, and he with me.",
+  },
+  "ex-20-3": {
+    ref: "Exodus 20:3-4",
+    book: "Exodus",
+    text: "Thou shalt have no other gods before me. Thou shalt not make unto thee any graven image, or any likeness of any thing that is in heaven above, or that is in the earth beneath, or that is in the water under the earth.",
+  },
+  "is-45-5": {
+    ref: "Isaiah 45:5",
+    book: "Isaiah",
+    text: "I am the LORD, and there is none else, there is no God beside me: I girded thee, though thou hast not known me.",
+  },
+  "dt-18-10": {
+    ref: "Deuteronomy 18:10-12",
+    book: "Deuteronomy",
+    text: "There shall not be found among you any one that maketh his son or his daughter to pass through the fire, or that useth divination, or an observer of times, or an enchanter, or a witch, or a charmer, or a consulter with familiar spirits, or a wizard, or a necromancer. For all that do these things are an abomination unto the LORD.",
+  },
+  "stgo-4-7": {
+    ref: "James 4:7",
+    book: "James",
+    text: "Submit yourselves therefore to God. Resist the devil, and he will flee from you.",
+  },
+  "sal-14-1": {
+    ref: "Psalm 14:1",
+    book: "Psalms",
+    text: "The fool hath said in his heart, There is no God. They are corrupt, they have done abominable works, there is none that doeth good.",
+  },
+  "ro-1-20": {
+    ref: "Romans 1:20",
+    book: "Romans",
+    text: "For the invisible things of him from the creation of the world are clearly seen, being understood by the things that are made, even his eternal power and Godhead; so that they are without excuse.",
+  },
+  "prv-20-1": {
+    ref: "Proverbs 20:1",
+    book: "Proverbs",
+    text: "Wine is a mocker, strong drink is raging: and whosoever is deceived thereby is not wise.",
+  },
+  "ef-5-18": {
+    ref: "Ephesians 5:18",
+    book: "Ephesians",
+    text: "And be not drunk with wine, wherein is excess; but be filled with the Spirit.",
+  },
+  "1co-6-11": {
+    ref: "1 Corinthians 6:9-11",
+    book: "1 Corinthians",
+    text: "Know ye not that the unrighteous shall not inherit the kingdom of God? Be not deceived: neither fornicators, nor idolaters, nor adulterers, nor effeminate, nor abusers of themselves with mankind, nor thieves, nor covetous, nor drunkards, nor revilers, nor extortioners, shall inherit the kingdom of God. And such were some of you: but ye are washed, but ye are sanctified, but ye are justified in the name of the Lord Jesus, and by the Spirit of our God.",
+  },
+  "jn-1-1": {
+    ref: "John 1:1",
+    book: "John",
+    text: "In the beginning was the Word, and the Word was with God, and the Word was God.",
+  },
+  "jn-1-3": {
+    ref: "John 1:3",
+    book: "John",
+    text: "All things were made by him; and without him was not any thing made that was made.",
+  },
+  "jn-8-58": {
+    ref: "John 8:58",
+    book: "John",
+    text: "Jesus said unto them, Verily, verily, I say unto you, Before Abraham was, I am.",
+  },
+  "col-2-9": {
+    ref: "Colossians 2:9",
+    book: "Colossians",
+    text: "For in him dwelleth all the fulness of the Godhead bodily.",
+  },
+  "is-43-10": {
+    ref: "Isaiah 43:10",
+    book: "Isaiah",
+    text: "Ye are my witnesses, saith the LORD, and my servant whom I have chosen: that ye may know and believe me, and understand that I am he: before me there was no God formed, neither shall there be after me.",
+  },
+  "gal-1-8": {
+    ref: "Galatians 1:8",
+    book: "Galatians",
+    text: "But though we, or an angel from heaven, preach any other gospel unto you than that which we have preached unto you, let him be accursed.",
+  },
+  "2ti-4-3": {
+    ref: "2 Timothy 4:3-4",
+    book: "2 Timothy",
+    text: "For the time will come when they will not endure sound doctrine; but after their own lusts shall they heap to themselves teachers, having itching ears; and they shall turn away their ears from the truth, and shall be turned unto fables.",
+  },
+  "2ti-3-16": {
+    ref: "2 Timothy 3:16-17",
+    book: "2 Timothy",
+    text: "All scripture is given by inspiration of God, and is profitable for doctrine, for reproof, for correction, for instruction in righteousness: that the man of God may be perfect, throughly furnished unto all good works.",
+  },
+  "hch-4-12": {
+    ref: "Acts 4:12",
+    book: "Acts",
+    text: "Neither is there salvation in any other: for there is none other name under heaven given among men, whereby we must be saved.",
+  },
+  "1ti-2-5": {
+    ref: "1 Timothy 2:5",
+    book: "1 Timothy",
+    text: "For there is one God, and one mediator between God and men, the man Christ Jesus.",
+  },
+  "mt-4-10": {
+    ref: "Matthew 4:10",
+    book: "Matthew",
+    text: "Then saith Jesus unto him, Get thee hence, Satan: for it is written, Thou shalt worship the Lord thy God, and him only shalt thou serve.",
+  },
+  "2co-11-4": {
+    ref: "2 Corinthians 11:4",
+    book: "2 Corinthians",
+    text: "For if he that cometh preacheth another Jesus, whom we have not preached, or if ye receive another spirit, which ye have not received, or another gospel, which ye have not accepted, ye might well bear with him.",
+  },
+  "1ts-4-16": {
+    ref: "1 Thessalonians 4:16-17",
+    book: "1 Thessalonians",
+    text: "For the Lord himself shall descend from heaven with a shout, with the voice of the archangel, and with the trump of God: and the dead in Christ shall rise first: then we which are alive and remain shall be caught up together with them in the clouds, to meet the Lord in the air: and so shall we ever be with the Lord.",
+  },
+  "1co-15-51": {
+    ref: "1 Corinthians 15:51-52",
+    book: "1 Corinthians",
+    text: "Behold, I shew you a mystery; We shall not all sleep, but we shall all be changed, in a moment, in the twinkling of an eye, at the last trump: for the trumpet shall sound, and the dead shall be raised incorruptible, and we shall be changed.",
+  },
+  "mt-24-40": {
+    ref: "Matthew 24:40-42",
+    book: "Matthew",
+    text: "Then shall two be in the field; the one shall be taken, and the other left. Two women shall be grinding at the mill; the one shall be taken, and the other left. Watch therefore: for ye know not what hour your Lord doth come.",
+  },
+  "ap-12-5": {
+    ref: "Revelation 12:5",
+    book: "Revelation",
+    text: "And she brought forth a man child, who was to rule all nations with a rod of iron: and her child was caught up unto God, and to his throne.",
+  },
+  "ap-14-4": {
+    ref: "Revelation 14:4",
+    book: "Revelation",
+    text: "These are they which were not defiled with women; for they are virgins. These are they which follow the Lamb whithersoever he goeth. These were redeemed from among men, being the firstfruits unto God and to the Lamb.",
+  },
+  "dt-6-4": {
+    ref: "Deuteronomy 6:4",
+    book: "Deuteronomy",
+    text: "Hear, O Israel: The LORD our God is one LORD.",
+  },
+  "is-9-6": {
+    ref: "Isaiah 9:6",
+    book: "Isaiah",
+    text: "For unto us a child is born, unto us a son is given: and the government shall be upon his shoulder: and his name shall be called Wonderful, Counsellor, The mighty God, The everlasting Father, The Prince of Peace.",
+  },
+  "jn-10-30": {
+    ref: "John 10:30",
+    book: "John",
+    text: "I and my Father are one.",
+  },
+  "2co-13-14": {
+    ref: "2 Corinthians 13:14",
+    book: "2 Corinthians",
+    text: "The grace of the Lord Jesus Christ, and the love of God, and the communion of the Holy Ghost, be with you all.",
+  },
+  "jn-14-16": {
+    ref: "John 14:16-17",
+    book: "John",
+    text: "And I will pray the Father, and he shall give you another Comforter, that he may abide with you for ever; even the Spirit of truth; whom the world cannot receive, because it seeth him not, neither knoweth him: but ye know him; for he dwelleth with you, and shall be in you.",
+  },
+  "mt-3-16": {
+    ref: "Matthew 3:16-17",
+    book: "Matthew",
+    text: "And Jesus, when he was baptized, went up straightway out of the water: and, lo, the heavens were opened unto him, and he saw the Spirit of God descending like a dove, and lighting upon him: and lo a voice from heaven, saying, This is my beloved Son, in whom I am well pleased.",
+  },
+  "hch-2-38": {
+    ref: "Acts 2:38",
+    book: "Acts",
+    text: "Then Peter said unto them, Repent, and be baptized every one of you in the name of Jesus Christ for the remission of sins, and ye shall receive the gift of the Holy Ghost.",
+  },
+  "hch-8-16": {
+    ref: "Acts 8:16",
+    book: "Acts",
+    text: "For as yet he was fallen upon none of them: only they were baptized in the name of the Lord Jesus.",
+  },
+  "hch-10-48": {
+    ref: "Acts 10:48",
+    book: "Acts",
+    text: "And he commanded them to be baptized in the name of the Lord. Then prayed they him to tarry certain days.",
+  },
+  "hch-19-5": {
+    ref: "Acts 19:5",
+    book: "Acts",
+    text: "When they heard this, they were baptized in the name of the Lord Jesus.",
+  },
+  "jn-10-28": {
+    ref: "John 10:28-29",
+    book: "John",
+    text: "And I give unto them eternal life; and they shall never perish, neither shall any man pluck them out of my hand. My Father, which gave them me, is greater than all; and no man is able to pluck them out of my Father's hand.",
+  },
+  "heb-10-26": {
+    ref: "Hebrews 10:26-27",
+    book: "Hebrews",
+    text: "For if we sin wilfully after that we have received the knowledge of the truth, there remaineth no more sacrifice for sins, but a certain fearful looking for of judgment and fiery indignation, which shall devour the adversaries.",
+  },
+  "mt-24-13": {
+    ref: "Matthew 24:13",
+    book: "Matthew",
+    text: "But he that shall endure unto the end, the same shall be saved.",
+  },
+  "stgo-2-17": {
+    ref: "James 2:17",
+    book: "James",
+    text: "Even so faith, if it hath not works, is dead, being alone.",
+  },
+  "gal-2-16": {
+    ref: "Galatians 2:16",
+    book: "Galatians",
+    text: "Knowing that a man is not justified by the works of the law, but by the faith of Jesus Christ, even we have believed in Jesus Christ, that we might be justified by the faith of Christ, and not by the works of the law: for by the works of the law shall no flesh be justified.",
+  },
+  "tit-3-5": {
+    ref: "Titus 3:5",
+    book: "Titus",
+    text: "Not by works of righteousness which we have done, but according to his mercy he saved us, by the washing of regeneration, and renewing of the Holy Ghost.",
+  },
+  "hch-2-4": {
+    ref: "Acts 2:4",
+    book: "Acts",
+    text: "And they were all filled with the Holy Ghost, and began to speak with other tongues, as the Spirit gave them utterance.",
+  },
+  "1co-12-30": {
+    ref: "1 Corinthians 12:29-30",
+    book: "1 Corinthians",
+    text: "Are all apostles? are all prophets? are all teachers? are all workers of miracles? Have all the gifts of healing? do all speak with tongues? do all interpret?",
+  },
+  "1co-14-4": {
+    ref: "1 Corinthians 14:4-5",
+    book: "1 Corinthians",
+    text: "He that speaketh in an unknown tongue edifieth himself; but he that prophesieth edifieth the church. I would that ye all spake with tongues, but rather that ye prophesied: for greater is he that prophesieth than he that speaketh with tongues, except he interpret, that the church may receive edifying.",
+  },
+  "1co-14-27": {
+    ref: "1 Corinthians 14:27-28",
+    book: "1 Corinthians",
+    text: "If any man speak in an unknown tongue, let it be by two, or at the most by three, and that by course; and let one interpret. But if there be no interpreter, let him keep silence in the church; and let him speak to himself, and to God.",
+  },
+  "mal-3-10": {
+    ref: "Malachi 3:10",
+    book: "Malachi",
+    text: "Bring ye all the tithes into the storehouse, that there may be meat in mine house, and prove me now herewith, saith the LORD of hosts, if I will not open you the windows of heaven, and pour you out a blessing, that there shall not be room enough to receive it.",
+  },
+  "2co-9-7": {
+    ref: "2 Corinthians 9:7",
+    book: "2 Corinthians",
+    text: "Every man according as he purposeth in his heart, so let him give; not grudgingly, or of necessity: for God loveth a cheerful giver.",
+  },
+  "mt-23-23": {
+    ref: "Matthew 23:23",
+    book: "Matthew",
+    text: "Woe unto you, scribes and Pharisees, hypocrites! for ye pay tithe of mint and anise and cummin, and have omitted the weightier matters of the law, judgment, mercy, and faith: these ought ye to have done, and not to leave the other undone.",
+  },
+  "mt-25-46": {
+    ref: "Matthew 25:46",
+    book: "Matthew",
+    text: "And these shall go away into everlasting punishment: but the righteous into life eternal.",
+  },
+  "lc-16-23": {
+    ref: "Luke 16:23-24",
+    book: "Luke",
+    text: "And in hell he lift up his eyes, being in torments, and seeth Abraham afar off, and Lazarus in his bosom. And he cried and said, Father Abraham, have mercy on me, and send Lazarus, that he may dip the tip of his finger in water, and cool my tongue; for I am tormented in this flame.",
+  },
+  "ap-20-15": {
+    ref: "Revelation 20:15",
+    book: "Revelation",
+    text: "And whosoever was not found written in the book of life was cast into the lake of fire.",
+  },
+  "2ts-1-9": {
+    ref: "2 Thessalonians 1:8-9",
+    book: "2 Thessalonians",
+    text: "In flaming fire taking vengeance on them that know not God, and that obey not the gospel of our Lord Jesus Christ: who shall be punished with everlasting destruction from the presence of the Lord, and from the glory of his power.",
+  },
+  "ef-2-20": {
+    ref: "Ephesians 2:20",
+    book: "Ephesians",
+    text: "And are built upon the foundation of the apostles and prophets, Jesus Christ himself being the chief corner stone.",
+  },
+  "ef-4-11": {
+    ref: "Ephesians 4:11-12",
+    book: "Ephesians",
+    text: "And he gave some, apostles; and some, prophets; and some, evangelists; and some, pastors and teachers; for the perfecting of the saints, for the work of the ministry, for the edifying of the body of Christ.",
+  },
+  "heb-1-1": {
+    ref: "Hebrews 1:1-2",
+    book: "Hebrews",
+    text: "God, who at sundry times and in divers manners spake in time past unto the fathers by the prophets, hath in these last days spoken unto us by his Son, whom he hath appointed heir of all things, by whom also he made the worlds.",
+  },
+  "heb-10-19": {
+    ref: "Hebrews 10:19-20",
+    book: "Hebrews",
+    text: "Having therefore, brethren, boldness to enter into the holiest by the blood of Jesus, by a new and living way, which he hath consecrated for us, through the veil, that is to say, his flesh.",
+  },
+  "mt-27-51": {
+    ref: "Matthew 27:51",
+    book: "Matthew",
+    text: "And, behold, the veil of the temple was rent in twain from the top to the bottom; and the earth did quake, and the rocks rent.",
+  },
+  "1pe-2-9": {
+    ref: "1 Peter 2:9",
+    book: "1 Peter",
+    text: "But ye are a chosen generation, a royal priesthood, an holy nation, a peculiar people; that ye should shew forth the praises of him who hath called you out of darkness into his marvellous light.",
+  },
+  "is-7-14": {
+    ref: "Isaiah 7:14",
+    book: "Isaiah",
+    text: "Therefore the Lord himself shall give you a sign; Behold, a virgin shall conceive, and bear a son, and shall call his name Immanuel.",
+  },
+  "mt-1-23": {
+    ref: "Matthew 1:23",
+    book: "Matthew",
+    text: "Behold, a virgin shall be with child, and shall bring forth a son, and they shall call his name Emmanuel, which being interpreted is, God with us.",
+  },
+  "jn-1-14": {
+    ref: "John 1:14",
+    book: "John",
+    text: "And the Word was made flesh, and dwelt among us, (and we beheld his glory, the glory as of the only begotten of the Father,) full of grace and truth.",
+  },
+  "col-1-15": {
+    ref: "Colossians 1:15",
+    book: "Colossians",
+    text: "Who is the image of the invisible God, the firstborn of every creature.",
+  },
+  "1co-3-16": {
+    ref: "1 Corinthians 3:16",
+    book: "1 Corinthians",
+    text: "Know ye not that ye are the temple of God, and that the Spirit of God dwelleth in you?",
+  },
+  "ro-8-9": {
+    ref: "Romans 8:9-10",
+    book: "Romans",
+    text: "But ye are not in the flesh, but in the Spirit, if so be that the Spirit of God dwell in you. Now if any man have not the Spirit of Christ, he is none of his. And if Christ be in you, the body is dead because of sin; but the Spirit is life because of righteousness.",
+  },
+  "gal-4-19": {
+    ref: "Galatians 4:19",
+    book: "Galatians",
+    text: "My little children, of whom I travail in birth again until Christ be formed in you.",
+  },
+  "mt-12-30": {
+    ref: "Matthew 12:30",
+    book: "Matthew",
+    text: "He that is not with me is against me; and he that gathereth not with me scattereth abroad.",
+  },
+  "ro-6-3": {
+    ref: "Romans 6:3-4",
+    book: "Romans",
+    text: "Know ye not, that so many of us as were baptized into Jesus Christ were baptized into his death? Therefore we are buried with him by baptism into death: that like as Christ was raised up from the dead by the glory of the Father, even so we also should walk in newness of life.",
+  },
+  "gal-3-27": {
+    ref: "Galatians 3:27",
+    book: "Galatians",
+    text: "For as many of you as have been baptized into Christ have put on Christ.",
+  },
+  "col-2-12": {
+    ref: "Colossians 2:12",
+    book: "Colossians",
+    text: "Buried with him in baptism, wherein also ye are risen with him through the faith of the operation of God, who hath raised him from the dead.",
+  },
+  "1ts-1-10": {
+    ref: "1 Thessalonians 1:10",
+    book: "1 Thessalonians",
+    text: "And to wait for his Son from heaven, whom he raised from the dead, even Jesus, which delivered us from the wrath to come.",
+  },
+  "1ts-5-9": {
+    ref: "1 Thessalonians 5:9",
+    book: "1 Thessalonians",
+    text: "For God hath not appointed us to wrath, but to obtain salvation by our Lord Jesus Christ.",
+  },
+  "ap-3-10": {
+    ref: "Revelation 3:10",
+    book: "Revelation",
+    text: "Because thou hast kept the word of my patience, I also will keep thee from the hour of temptation, which shall come upon all the world, to try them that dwell upon the earth.",
+  },
+  "mt-24-29": {
+    ref: "Matthew 24:29-31",
+    book: "Matthew",
+    text: "Immediately after the tribulation of those days shall the sun be darkened, and the moon shall not give her light, and the stars shall fall from heaven, and the powers of the heavens shall be shaken: and then shall appear the sign of the Son of man in heaven: and then shall all the tribes of the earth mourn, and they shall see the Son of man coming in the clouds of heaven with power and great glory. And he shall send his angels with a great sound of a trumpet, and they shall gather together his elect from the four winds, from one end of heaven to the other.",
+  },
+  "mt-24-44": {
+    ref: "Matthew 24:44",
+    book: "Matthew",
+    text: "Therefore be ye also ready: for in such an hour as ye think not the Son of man cometh.",
+  },
+  "2ts-2-1": {
+    ref: "2 Thessalonians 2:1-4",
+    book: "2 Thessalonians",
+    text: "Now we beseech you, brethren, by the coming of our Lord Jesus Christ, and by our gathering together unto him, that ye be not soon shaken in mind, or be troubled, neither by spirit, nor by word, nor by letter as from us, as that the day of Christ is at hand. Let no man deceive you by any means: for that day shall not come, except there come a falling away first, and that man of sin be revealed, the son of perdition; who opposeth and exalteth himself above all that is called God, or that is worshipped; so that he as God sitteth in the temple of God, shewing himself that he is God.",
+  },
+  "mt-26-26": {
+    ref: "Matthew 26:26-28",
+    book: "Matthew",
+    text: "And as they were eating, Jesus took bread, and blessed it, and brake it, and gave it to the disciples, and said, Take, eat; this is my body. And he took the cup, and gave thanks, and gave it to them, saying, Drink ye all of it; for this is my blood of the new testament, which is shed for many for the remission of sins.",
+  },
+  "lc-22-19": {
+    ref: "Luke 22:19",
+    book: "Luke",
+    text: "And he took bread, and gave thanks, and brake it, and gave unto them, saying, This is my body which is given for you: this do in remembrance of me.",
+  },
+  "1co-11-26": {
+    ref: "1 Corinthians 11:26",
+    book: "1 Corinthians",
+    text: "For as often as ye eat this bread, and drink this cup, ye do shew the Lord's death till he come.",
+  },
+  "1co-11-28": {
+    ref: "1 Corinthians 11:27-28",
+    book: "1 Corinthians",
+    text: "Wherefore whosoever shall eat this bread, and drink this cup of the Lord, unworthily, shall be guilty of the body and blood of the Lord. But let a man examine himself, and so let him eat of that bread, and drink of that cup.",
+  },
+  "1co-10-16": {
+    ref: "1 Corinthians 10:16-17",
+    book: "1 Corinthians",
+    text: "The cup of blessing which we bless, is it not the communion of the blood of Christ? The bread which we break, is it not the communion of the body of Christ? For we being many are one bread, and one body: for we are all partakers of that one bread.",
+  },
+  "gn-14-20": {
+    ref: "Genesis 14:20",
+    book: "Genesis",
+    text: "And blessed be the most high God, which hath delivered thine enemies into thy hand. And he gave him tithes of all.",
+  },
+  "gn-28-22": {
+    ref: "Genesis 28:22",
+    book: "Genesis",
+    text: "And this stone, which I have set for a pillar, shall be God's house: and of all that thou shalt give me I will surely give the tenth unto thee.",
+  },
+  "lv-27-30": {
+    ref: "Leviticus 27:30",
+    book: "Leviticus",
+    text: "And all the tithe of the land, whether of the seed of the land, or of the fruit of the tree, is the LORD's: it is holy unto the LORD.",
+  },
+  "nm-18-21": {
+    ref: "Numbers 18:21",
+    book: "Numbers",
+    text: "And, behold, I have given the children of Levi all the tenth in Israel for an inheritance, for their service which they serve, even the service of the tabernacle of the congregation.",
+  },
+  "1co-16-2": {
+    ref: "1 Corinthians 16:2",
+    book: "1 Corinthians",
+    text: "Upon the first day of the week let every one of you lay by him in store, as God hath prospered him, that there be no gatherings when I come.",
+  },
+  "1co-9-14": {
+    ref: "1 Corinthians 9:14",
+    book: "1 Corinthians",
+    text: "Even so hath the Lord ordained that they which preach the gospel should live of the gospel.",
+  },
+  "gal-6-6": {
+    ref: "Galatians 6:6",
+    book: "Galatians",
+    text: "Let him that is taught in the word communicate unto him that teacheth in all good things.",
+  },
+  "ap-21-14": {
+    ref: "Revelation 21:14",
+    book: "Revelation",
+    text: "And the wall of the city had twelve foundations, and in them the names of the twelve apostles of the Lamb.",
+  },
+  "1co-14-1": {
+    ref: "1 Corinthians 14:1",
+    book: "1 Corinthians",
+    text: "Follow after charity, and desire spiritual gifts, but rather that ye may prophesy.",
+  },
+  "1co-14-3": {
+    ref: "1 Corinthians 14:3",
+    book: "1 Corinthians",
+    text: "But he that prophesieth speaketh unto men to edification, and exhortation, and comfort.",
+  },
+  "1co-14-29": {
+    ref: "1 Corinthians 14:29",
+    book: "1 Corinthians",
+    text: "Let the prophets speak two or three, and let the other judge.",
+  },
+  "1co-14-31": {
+    ref: "1 Corinthians 14:31",
+    book: "1 Corinthians",
+    text: "For ye may all prophesy one by one, that all may learn, and all may be comforted.",
+  },
+  "1ts-5-20": {
+    ref: "1 Thessalonians 5:20-21",
+    book: "1 Thessalonians",
+    text: "Despise not prophesyings. Prove all things; hold fast that which is good.",
+  },
+  "1jn-4-1": {
+    ref: "1 John 4:1",
+    book: "1 John",
+    text: "Beloved, believe not every spirit, but try the spirits whether they are of God: because many false prophets are gone out into the world.",
+  },
+  "gal-3-28": {
+    ref: "Galatians 3:28",
+    book: "Galatians",
+    text: "There is neither Jew nor Greek, there is neither bond nor free, there is neither male nor female: for ye are all one in Christ Jesus.",
+  },
+  "hch-18-26": {
+    ref: "Acts 18:26",
+    book: "Acts",
+    text: "And he began to speak boldly in the synagogue: whom when Aquila and Priscilla had heard, they took him unto them, and expounded unto him the way of God more perfectly.",
+  },
+  "ro-16-1": {
+    ref: "Romans 16:1",
+    book: "Romans",
+    text: "I commend unto you Phebe our sister, which is a servant of the church which is at Cenchrea.",
+  },
+  "hch-21-9": {
+    ref: "Acts 21:9",
+    book: "Acts",
+    text: "And the same man had four daughters, virgins, which did prophesy.",
+  },
+  "1co-11-5": {
+    ref: "1 Corinthians 11:5",
+    book: "1 Corinthians",
+    text: "But every woman that prayeth or prophesieth with her head uncovered dishonoureth her head: for that is even all one as if she were shaven.",
+  },
+  "tit-2-3": {
+    ref: "Titus 2:3-5",
+    book: "Titus",
+    text: "The aged women likewise, that they be in behaviour as becometh holiness, not false accusers, not given to much wine, teachers of good things; that they may teach the young women to be sober, to love their husbands, to love their children, to be discreet, chaste, keepers at home, good, obedient to their own husbands, that the word of God be not blasphemed.",
+  },
+  "1ti-3-1": {
+    ref: "1 Timothy 3:1-2",
+    book: "1 Timothy",
+    text: "This is a true saying, If a man desire the office of a bishop, he desireth a good work. A bishop then must be blameless, the husband of one wife, vigilant, sober, of good behaviour, given to hospitality, apt to teach.",
+  },
+  "tit-1-5": {
+    ref: "Titus 1:5-6",
+    book: "Titus",
+    text: "For this cause left I thee in Crete, that thou shouldest set in order the things that are wanting, and ordain elders in every city, as I had appointed thee: if any be blameless, the husband of one wife, having faithful children not accused of riot or unruly.",
+  },
+  "1ti-2-11": {
+    ref: "1 Timothy 2:11-13",
+    book: "1 Timothy",
+    text: "Let the woman learn in silence with all subjection. But I suffer not a woman to teach, nor to usurp authority over the man, but to be in silence. For Adam was first formed, then Eve.",
+  },
+  "1pe-5-2": {
+    ref: "1 Peter 5:2-3",
+    book: "1 Peter",
+    text: "Feed the flock of God which is among you, taking the oversight thereof, not by constraint, but willingly; not for filthy lucre, but of a ready mind; neither as being lords over God's heritage, but being ensamples to the flock.",
+  },
+  "jn-15-4": {
+    ref: "John 15:4",
+    book: "John",
+    text: "Abide in me, and I in you. As the branch cannot bear fruit of itself, except it abide in the vine; no more can ye, except ye abide in me.",
+  },
+  "hch-4-31": {
+    ref: "Acts 4:31",
+    book: "Acts",
+    text: "And when they had prayed, the place was shaken where they were assembled together; and they were all filled with the Holy Ghost, and they spake the word of God with boldness.",
+  },
+  "1co-12-11": {
+    ref: "1 Corinthians 12:11",
+    book: "1 Corinthians",
+    text: "But all these worketh that one and the selfsame Spirit, dividing to every man severally as he will.",
+  },
+  "mt-7-22": {
+    ref: "Matthew 7:22-23",
+    book: "Matthew",
+    text: "Many will say to me in that day, Lord, Lord, have we not prophesied in thy name? and in thy name have cast out devils? and in thy name done many wonderful works? And then will I profess unto them, I never knew you: depart from me, ye that work iniquity.",
+  },
+};

@@ -1,0 +1,123 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  --color-background: #f4ead6;
+  --color-foreground: #221711;
+  --color-card: #faf3e4;
+  --color-card-foreground: #221711;
+  --color-popover: #faf3e4;
+  --color-popover-foreground: #221711;
+  --color-primary: #6b2c38;
+  --color-primary-foreground: #f7efdc;
+  --color-secondary: #ead9bc;
+  --color-secondary-foreground: #221711;
+  --color-muted: #ead9bc;
+  --color-muted-foreground: #6e5b45;
+  --color-accent: #ead9bc;
+  --color-accent-foreground: #221711;
+  --color-destructive: #8a2f2a;
+  --color-destructive-foreground: #faf3e4;
+  --color-border: #d4c19a;
+  --color-input: #d4c19a;
+  --color-ring: #a67c2d;
+  --color-paper: #efe2c8;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  --font-sans: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --font-serif: "Newsreader", "Iowan Old Style", Palatino, Georgia, serif;
+
+  --shadow-paper: 0 1px 0 rgb(34 23 17 / 0.06),
+    0 22px 44px -20px rgb(34 23 17 / 0.18);
+
+  --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --motion-micro: 80ms;
+  --motion-quick: 150ms;
+  --motion-fast: 250ms;
+  --motion-slow: 400ms;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: var(--color-background);
+    color: var(--color-foreground);
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--color-background);
+    background-image:
+      radial-gradient(
+        ellipse 90% 46% at 50% -8%,
+        color-mix(in oklab, var(--color-primary) 9%, transparent),
+        transparent 62%
+      ),
+      radial-gradient(
+        ellipse 50% 28% at 100% 0%,
+        color-mix(in oklab, var(--color-ring) 8%, transparent),
+        transparent 70%
+      );
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise-in {
+  animation: rise-in var(--motion-slow) var(--ease-smooth-out) both;
+}
+
+.rise-in-2 {
+  animation-delay: 60ms;
+}
+.rise-in-3 {
+  animation-delay: 120ms;
+}
+.rise-in-4 {
+  animation-delay: 180ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise-in,
+  .rise-in-2,
+  .rise-in-3,
+  .rise-in-4 {
+    animation: none;
+  }
+}
