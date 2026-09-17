@@ -30,6 +30,7 @@
 
   --font-sans: "Figtree", "Segoe UI", system-ui, sans-serif;
   --font-serif: "Newsreader", "Iowan Old Style", Palatino, Georgia, serif;
+  --reader-size: 1.2rem;
 
   --shadow-paper: 0 1px 0 rgb(34 23 17 / 0.06),
     0 22px 44px -20px rgb(34 23 17 / 0.18);
@@ -111,6 +112,19 @@
 }
 .rise-in-4 {
   animation-delay: 180ms;
+}
+
+.reader-verse-text {
+  font-family: var(--font-serif);
+  font-size: var(--reader-size);
+  line-height: 1.55;
+}
+
+.verse-highlight {
+  background: color-mix(in oklab, #e8c547 55%, transparent);
+  box-decoration-break: clone;
+  border-radius: 0.15em;
+  padding: 0.05em 0.12em;
 }
 
 @media (prefers-reduced-motion: reduce) {

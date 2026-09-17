@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { MessageCircle, Smartphone, Trash2, UserRound, UserPlus } from "lucide-react";
+import {
+  MessageCircle,
+  Share2,
+  Smartphone,
+  Trash2,
+  UserRound,
+  UserPlus,
+} from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -19,6 +26,13 @@ import { getDailyVerse } from "@/lib/verses";
 import { ContactForm } from "@/components/contact-form";
 import { PeoplePanel } from "@/components/people-panel";
 import { ensurePreacherServiceWorker, showDailyNotification } from "@/lib/notify";
+import {
+  applyFontScale,
+  FONT_SCALE_STEPS,
+  shareAppLink,
+  type FontScale,
+} from "@/lib/reader-prefs";
+import { cn } from "@/lib/utils";
 
 type SettingsDrawerProps = {
   open: boolean;
@@ -43,6 +57,8 @@ export function SettingsDrawer({
   const recipients = useAppStore((s) => s.recipients);
   const upsertRecipient = useAppStore((s) => s.upsertRecipient);
   const removeRecipient = useAppStore((s) => s.removeRecipient);
+  const fontScale = useAppStore((s) => s.fontScale);
+  const setFontScale = useAppStore((s) => s.setFontScale);
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
 
@@ -84,6 +100,22 @@ export function SettingsDrawer({
     setNewName("");
     setNewPhone("");
     toast(t("recipientSaved"));
+  }
+
+  function handleFontScale(next: FontScale) {
+    setFontScale(next);
+    applyFontScale(next);
+  }
+
+  async function handleShareApp() {
+    const result = await shareAppLink({
+      title: "The Preacher",
+      text: t("shareAppText"),
+      url: "https://www.thepreacher.app",
+    });
+    if (result === "shared") toast(t("shareAppShared"));
+    else if (result === "copied") toast(t("shareAppCopied"));
+    else toast(t("shareAppFail"));
   }
 
   return (
@@ -153,6 +185,49 @@ export function SettingsDrawer({
             <p className="text-sm font-medium">{t("language")}</p>
             <LanguageSwitch />
           </div>
+
+          <div className="rounded-lg border border-border bg-card px-4 py-4">
+            <p className="text-sm font-medium">{t("fontSizeTitle")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("fontSizeHint")}</p>
+            <div className="mt-3 flex items-end gap-2">
+              <span className="pb-2 text-xs text-muted-foreground">{t("fontSmall")}</span>
+              <div className="flex flex-1 gap-2">
+                {FONT_SCALE_STEPS.map((step) => (
+                  <button
+                    key={step}
+                    type="button"
+                    onClick={() => handleFontScale(step)}
+                    aria-pressed={fontScale === step}
+                    className={cn(
+                      "flex h-11 flex-1 items-center justify-center rounded-md border font-serif transition-colors",
+                      fontScale === step
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background text-foreground",
+                    )}
+                    style={{ fontSize: `${0.85 + step * 0.2}rem` }}
+                  >
+                    A
+                  </button>
+                ))}
+              </div>
+              <span className="pb-2 text-lg text-muted-foreground">{t("fontLarge")}</span>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border bg-card px-4 py-4">
+            <p className="text-sm font-medium">{t("shareAppTitle")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("shareAppDesc")}</p>
+            <Button
+              type="button"
+              variant="secondary"
+              className="mt-3 w-full"
+              onClick={() => void handleShareApp()}
+            >
+              <Share2 className="size-4" />
+              {t("shareAppCta")}
+            </Button>
+          </div>
+
           <div className="grid gap-2">
             <Label htmlFor="display-name">{t("displayName")}</Label>
             <Input

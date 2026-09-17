@@ -28,6 +28,11 @@ function parsePayload(raw: string | null | undefined): CloudPayload | null {
           .filter((row) => row.phone.length >= 7)
       : [];
     const hour = Number(value.notifyHour);
+    const scaleRaw = Number(value.fontScale);
+    const fontScale =
+      scaleRaw === 0 || scaleRaw === 1 || scaleRaw === 2 || scaleRaw === 3
+        ? scaleRaw
+        : 1;
     return {
       favorites: Array.isArray(value.favorites) ? value.favorites : [],
       favoriteKinds:
@@ -48,6 +53,10 @@ function parsePayload(raw: string | null | undefined): CloudPayload | null {
       dailyDate: typeof value.dailyDate === "string" ? value.dailyDate : "",
       readingPlace: value.readingPlace ?? null,
       bookmarks: Array.isArray(value.bookmarks) ? value.bookmarks : [],
+      highlights: Array.isArray(value.highlights)
+        ? value.highlights.filter((id): id is string => typeof id === "string")
+        : [],
+      fontScale,
       locale: isLocale(value.locale) ? value.locale : undefined,
     };
   } catch {

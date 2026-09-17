@@ -65,6 +65,13 @@ function PreacherApp({
   const ready = useCloudSync(userId, sessionReady);
   const notify = useAppStore((s) => s.notify);
   const notifyHour = useAppStore((s) => s.notifyHour);
+  const fontScale = useAppStore((s) => s.fontScale);
+
+  useEffect(() => {
+    void import("@/lib/reader-prefs").then(({ applyFontScale }) => {
+      applyFontScale(fontScale);
+    });
+  }, [fontScale, ready]);
 
   useEffect(() => {
     if (!ready || !notify) return;
