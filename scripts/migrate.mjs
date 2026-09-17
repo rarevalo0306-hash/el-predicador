@@ -11,6 +11,9 @@
  *
  * No DATABASE_URL (local / preview builds) -> skip; the PGLite fallback applies
  * the same files at startup instead (see src/lib/db.ts).
+ *
+ * Network failures during the Vercel build (common with IPv6-only DB hosts) do
+ * NOT fail the deploy — runtime `getSql()` re-applies migrations on first use.
  */
 import { readdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -28,6 +31,15 @@ if (!databaseUrl) {
 
 const migrationsDir = join(dirname(fileURLToPath(import.meta.url)), "..", "migrations");
 
+const SOFT_FAIL_CODES = new Set([
+  "ENETUNREACH",
+  "EHOSTUNREACH",
+  "ETIMEDOUT",
+  "ECONNREFUSED",
+  "ENOTFOUND",
+  "EAI_AGAIN",
+]);
+
 async function main() {
   let entries;
   try {
@@ -42,7 +54,16 @@ async function main() {
     return;
   }
 
-  const pool = new pg.Pool({ connectionString: databaseUrl, max: 1 });
+  // Prefer IPv4 — some free Supabase / Neon endpoints advertise IPv6 that the
+  // Vercel build network cannot reach (ENETUNREACH).
+  const pool = new pg.Pool({
+    connectionString: databaseUrl,
+    max: 1,
+    connectionTimeoutMillis: 15_000,
+    // Prefer IPv4 (forwarded to net.connect) — Vercel build often cannot reach
+    // IPv6-only Supabase/Neon hosts (ENETUNREACH).
+    family: 4,
+  });
   const client = await pool.connect();
   try {
     await client.query(
@@ -85,6 +106,13 @@ main().catch((err) => {
   // pg errors carry the context needed to debug a bad SQL file.
   for (const key of ["code", "detail", "hint", "position", "where"]) {
     if (err?.[key] != null) console.error(`[migrate]   ${key}: ${err[key]}`);
+  }
+  const code = err?.code;
+  if (SOFT_FAIL_CODES.has(code)) {
+    console.warn(
+      "[migrate] network unreachable during build — continuing deploy; runtime will migrate on first request.",
+    );
+    process.exit(0);
   }
   process.exit(1);
 });

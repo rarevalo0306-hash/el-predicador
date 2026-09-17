@@ -93,7 +93,45 @@ function createNeonSql(): Promise<Sql> {
     types.setTypeParser(OID_INT8, Number);
     types.setTypeParser(OID_DATE, identity);
     types.setTypeParser(OID_INTERVAL, identity);
-    const pool = new Pool({ connectionString: databaseUrl });
+    const pool = new Pool({
+      connectionString: databaseUrl,
+      // Prefer IPv4 — matches scripts/migrate.mjs (Vercel/Supabase ENETUNREACH).
+      // @ts-expect-error pg forwards unrecognized options to net.connect
+      family: 4,
+    });
+
+    // Apply migrations at runtime too — build-time migrate can soft-skip when
+    // the DB host is unreachable from the build network.
+    await pool.query(
+      "create table if not exists _migrations (name text primary key, applied_at timestamptz not null default now())",
+    );
+    const migrations = import.meta.glob("/migrations/*.sql", {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    }) as Record<string, string>;
+    const doneRows = await pool.query<{ name: string }>("select name from _migrations");
+    const done = doneRows.rows.map((r) => r.name);
+    for (const { name, path } of pendingMigrations(Object.keys(migrations), done)) {
+      const client = await pool.connect();
+      try {
+        await client.query("begin");
+        await client.query(migrations[path]);
+        await client.query("insert into _migrations (name) values ($1)", [name]);
+        await client.query("commit");
+      } catch (err) {
+        try {
+          await client.query("rollback");
+        } catch {
+          /* keep original */
+        }
+        throw err;
+      } finally {
+        client.release();
+      }
+      console.info(`[db] applied migration ${name}`);
+    }
+
     return toSql(async <T>(text: string, params: unknown[]) => {
       const res = await pool.query(text, params);
       return res.rows as T[];
