@@ -37,29 +37,43 @@ o/bKiIz+Fq8=
  * Other database providers and explicitly configured certificate files retain
  * their existing connection settings.
  * @param {string} connectionString
+ * @param {{ serverless?: boolean }} [runtime]
  * @returns {import("pg").PoolConfig}
  */
-export function postgresConnectionOptions(connectionString) {
+export function postgresConnectionOptions(connectionString, { serverless = process.env.VERCEL === "1" } = {}) {
   let url;
   try {
     url = new URL(connectionString);
   } catch {
     throw new Error("DATABASE_URL must be a valid PostgreSQL connection URL.");
   }
+  const isSharedPooler = /^aws-\d+-[a-z0-9-]+\.pooler\.supabase\.com$/i.test(url.hostname);
   const isSupabase =
     /^db\.[a-z0-9]+\.supabase\.co$/i.test(url.hostname) ||
-    /^aws-\d+-[a-z0-9-]+\.pooler\.supabase\.com$/i.test(url.hostname);
+    isSharedPooler;
+  // Vercel instances must not each reserve a session in Supavisor's small
+  // session pool. This app uses unnamed pg queries and transaction-scoped SQL,
+  // so transaction pooling releases the database connection after each query
+  // or BEGIN/COMMIT block. Keep the dashboard-provided host and credentials.
+  const poolOptions = serverless && isSupabase
+    ? { max: 1, idleTimeoutMillis: 5_000, connectionTimeoutMillis: 15_000 }
+    : {};
+  if (serverless && isSharedPooler && (!url.port || url.port === "5432")) {
+    url.port = "6543";
+    connectionString = url.toString();
+  }
   if (
     !isSupabase ||
     ["sslrootcert", "sslcert", "sslkey"].some((key) => url.searchParams.has(key))
   ) {
-    return { connectionString };
+    return { connectionString, ...poolOptions };
   }
   for (const key of ["sslmode", "ssl", "uselibpqcompat"]) {
     url.searchParams.delete(key);
   }
   return {
     connectionString: url.toString(),
+    ...poolOptions,
     ssl: { ca: SUPABASE_ROOT_CA, rejectUnauthorized: true },
   };
 }

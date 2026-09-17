@@ -46,3 +46,29 @@ test("invalid connection strings produce an error without disclosing credentials
     message: "DATABASE_URL must be a valid PostgreSQL connection URL.",
   });
 });
+
+test("Vercel uses transaction pooling without changing credentials or TLS verification", () => {
+  const raw = "postgresql://postgres.example:pass%40word%23@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require&application_name=auth";
+  const options = postgresConnectionOptions(raw, { serverless: true });
+  const client = new pg.Client(options);
+  assert.equal(client.connectionParameters.port, 6543);
+  assert.equal(client.connectionParameters.password, "pass@word#");
+  assert.equal(client.connectionParameters.user, "postgres.example");
+  assert.equal(client.connectionParameters.host, "aws-0-us-east-1.pooler.supabase.com");
+  assert.equal(client.connectionParameters.application_name, "auth");
+  assert.equal(client.connectionParameters.ssl.ca, SUPABASE_ROOT_CA);
+  assert.equal(client.connectionParameters.ssl.rejectUnauthorized, true);
+  assert.equal(options.max, 1);
+});
+
+test("Vercel preserves direct endpoints, other providers, and explicit certificates", () => {
+  const direct = new pg.Client(postgresConnectionOptions("postgresql://postgres:pass@db.example.supabase.co:5432/postgres", { serverless: true }));
+  assert.equal(direct.connectionParameters.port, 5432);
+  const other = "postgresql://user:pass@db.example.net:5432/app";
+  assert.deepEqual(postgresConnectionOptions(other, { serverless: true }), { connectionString: other });
+  const custom = postgresConnectionOptions("postgresql://postgres.example:pass@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=verify-full&sslrootcert=/custom/ca.crt", { serverless: true });
+  const url = new URL(custom.connectionString);
+  assert.equal(url.port, "6543");
+  assert.equal(url.searchParams.get("sslrootcert"), "/custom/ca.crt");
+  assert.equal(url.searchParams.get("sslmode"), "verify-full");
+});
