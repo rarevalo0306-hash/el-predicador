@@ -92,9 +92,9 @@ function PreacherApp({
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col">
-      <header className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
+      <header className="flex items-center justify-between gap-2 px-4 pt-5 pb-3 sm:gap-3 sm:px-5">
         <Logo />
-        <div className="flex items-center gap-1">
+        <div className="flex min-w-0 shrink-0 items-center gap-1">
           <LanguageSwitch compact />
           {isPending ? (
             <span className="inline-flex h-11 w-16 animate-pulse rounded-full bg-secondary" />
@@ -116,14 +116,14 @@ function PreacherApp({
               )}
             </button>
           ) : (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => {
                   setProfileMode("entrar");
                   setProfileOpen(true);
                 }}
-                className="inline-flex h-11 items-center rounded-full border border-border bg-card px-3.5 text-sm font-medium text-foreground"
+                className="inline-flex h-10 items-center rounded-full border border-border bg-card px-2.5 text-xs font-medium text-foreground sm:h-11 sm:px-3.5 sm:text-sm"
               >
                 {t("logIn")}
               </button>
@@ -133,9 +133,10 @@ function PreacherApp({
                   setProfileMode("crear");
                   setProfileOpen(true);
                 }}
-                className="inline-flex h-11 items-center rounded-full bg-primary px-3.5 text-sm font-medium text-primary-foreground"
+                className="inline-flex h-10 items-center rounded-full bg-primary px-2.5 text-xs font-medium text-primary-foreground sm:h-11 sm:px-3.5 sm:text-sm"
               >
-                {t("signupLink")}
+                <span className="sm:hidden">{t("signupShort")}</span>
+                <span className="hidden sm:inline">{t("signupLink")}</span>
               </button>
             </div>
           )}
