@@ -25,14 +25,15 @@ export function Logo({ className }: { className?: string }) {
   return (
     <div className={cn("flex min-w-0 items-center gap-2 sm:gap-3", className)}>
       <PreacherMark className="size-10 shrink-0 sm:size-12" />
-      <div className="min-w-0">
-        <p className="truncate font-serif text-lg leading-none tracking-tight sm:text-xl">
+      <div className="hidden min-w-0 sm:block">
+        <p className="font-serif text-xl leading-none tracking-tight">
           The Preacher
         </p>
-        <p className="mt-1 hidden text-[0.65rem] font-medium tracking-[0.18em] text-muted-foreground uppercase sm:block">
+        <p className="mt-1 text-[0.65rem] font-medium tracking-[0.18em] text-muted-foreground uppercase">
           {t(locale, "tagline")}
         </p>
       </div>
+      <span className="sr-only">The Preacher</span>
     </div>
   );
 }
