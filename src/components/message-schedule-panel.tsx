@@ -1,4 +1,10 @@
-import { useId, useState } from "react";
+import { MessageLanguageSelect } from "@/components/message-language-select";
+import { messageLanguageCopy, messageLanguageName } from "@/lib/message-language";
+import type { Locale } from "@/lib/i18n";
+import { THEMES, getVerseById, versesForTheme, localizedTheme, type ThemeId } from "@/lib/verses";
+import { hydrateVerse } from "@/lib/recobro";
+import { formatVerseMessage } from "@/lib/share";
+import { useId, useState, useRef } from "react";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { CalendarClock } from "lucide-react";
@@ -27,11 +33,18 @@ const selectClass =
 function localZone() {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York";
 }
-function newForm(message = "", person?: { name: string; phone: string }): ScheduleInput {
+function newForm(
+  message = "",
+  person?: { name: string; phone: string },
+  messageLocale: Locale = "es",
+  verseId?: string,
+): ScheduleInput {
   return {
     recipientName: person?.name ?? "",
     phone: person?.phone ?? "",
     message,
+    messageLocale,
+    verseId,
     channel: "whatsapp",
     days: [1, 2, 3, 4, 5],
     time: "09:00",
@@ -59,6 +72,8 @@ const COMMON_ZONES = [
 
 type MessageSchedulePanelProps = {
   initialMessage?: string;
+  initialLocale?: Locale;
+  initialVerseId?: string;
   initialPerson?: { name: string; phone: string };
 };
 export function MessageSchedulePanel(props: MessageSchedulePanelProps) {
@@ -69,13 +84,26 @@ export function MessageSchedulePanel(props: MessageSchedulePanelProps) {
     </QueryClientProvider>
   );
 }
-function MessageScheduleForm({ initialMessage = "", initialPerson }: MessageSchedulePanelProps) {
+function MessageScheduleForm({
+  initialMessage = "",
+  initialPerson,
+  initialLocale,
+  initialVerseId,
+}: MessageSchedulePanelProps) {
   const { locale, t } = useI18n();
   const copy = scheduleCopy(locale);
   const { user, isPending } = useCurrentUserState();
   const recipients = useAppStore((s) => s.recipients);
   const id = useId();
-  const [form, setForm] = useState(() => newForm(initialMessage, initialPerson));
+  const [form, setForm] = useState(() =>
+    newForm(initialMessage, initialPerson, initialLocale ?? locale, initialVerseId),
+  );
+  const languageCopy = messageLanguageCopy(locale);
+  const [pickerTheme, setPickerTheme] = useState<ThemeId | "">(
+    () => getVerseById(initialVerseId ?? "")?.themes[0] ?? "",
+  );
+  const [preparing, setPreparing] = useState(false);
+  const requestVersion = useRef(0);
   const [busy, setBusy] = useState(false);
   const [zones] = useState(() => [
     ...new Set([
@@ -91,21 +119,61 @@ function MessageScheduleForm({ initialMessage = "", initialPerson }: MessageSche
     retry: false,
     refetchInterval: user ? 60_000 : false,
   });
-  const connected = query.data?.channels[form.channel] ?? false;
+  const connected = query.data?.channelsByLocale[form.messageLocale ?? "es"][form.channel] ?? false;
   const update = (patch: Partial<ScheduleInput>) =>
     setForm((current) => ({ ...current, ...patch }));
+  async function chooseVerse(verseId: string, messageLocale = form.messageLocale ?? "es") {
+    const base = getVerseById(verseId);
+    if (!base) return;
+    const version = ++requestVersion.current;
+    setPreparing(true);
+    try {
+      const verse = await hydrateVerse(base, messageLocale);
+      if (version !== requestVersion.current) return;
+      update({
+        verseId,
+        messageLocale,
+        message: formatVerseMessage(verse, undefined, undefined, messageLocale),
+      });
+    } catch {
+      if (version === requestVersion.current) toast.error(languageCopy.error);
+    } finally {
+      if (version === requestVersion.current) setPreparing(false);
+    }
+  }
+  function changeLanguage(messageLocale: Locale, patch: Partial<ScheduleInput> = {}) {
+    update(patch);
+    if (form.verseId) void chooseVerse(form.verseId, messageLocale);
+    else {
+      requestVersion.current++;
+      setPreparing(false);
+      update({ messageLocale });
+    }
+  }
+  function editSchedule(row: MessageSchedule) {
+    requestVersion.current++;
+    setPreparing(false);
+    setPickerTheme(getVerseById(row.verseId ?? "")?.themes[0] ?? "");
+    setForm({ ...row });
+  }
+  function resetForm() {
+    requestVersion.current++;
+    setPreparing(false);
+    setPickerTheme("");
+    setForm(newForm("", undefined, locale));
+  }
   function showError(error: unknown) {
     const key = error instanceof Error ? error.message : "";
     toast.error(key in copy ? copy[key as keyof typeof copy] : copy.error);
   }
   async function save(event: React.FormEvent) {
     event.preventDefault();
-    if (!user) return;
+    if (!user || preparing) return;
     setBusy(true);
     try {
       await saveMessageSchedule({ data: validateSchedule(form) });
       toast.success(copy.saved);
-      setForm(newForm());
+      resetForm();
       await query.refetch();
     } catch (error) {
       showError(error);
@@ -187,7 +255,11 @@ function MessageScheduleForm({ initialMessage = "", initialPerson }: MessageSche
               onChange={(e) => {
                 const person = recipients.find((r) => r.id === e.target.value);
                 if (person)
-                  update({ recipientName: person.name, phone: person.phone, consent: false });
+                  changeLanguage(person.messageLocale ?? form.messageLocale ?? locale, {
+                    recipientName: person.name,
+                    phone: person.phone,
+                    consent: false,
+                  });
               }}
             >
               <option value="">{copy.manual}</option>
@@ -233,12 +305,67 @@ function MessageScheduleForm({ initialMessage = "", initialPerson }: MessageSche
             <option value="sms">SMS</option>
           </select>
         </div>
+        <MessageLanguageSelect
+          value={form.messageLocale ?? "es"}
+          onChange={changeLanguage}
+          disabled={busy || preparing}
+          hint={languageCopy.customScheduleHint}
+        />
+        <div className="space-y-1.5">
+          <Label htmlFor={`${id}-theme`}>{languageCopy.theme}</Label>
+          <select
+            id={`${id}-theme`}
+            className={selectClass}
+            value={pickerTheme}
+            disabled={preparing}
+            onChange={(e) => {
+              setPickerTheme(e.target.value as ThemeId | "");
+              update({ verseId: undefined });
+            }}
+          >
+            <option value="">{languageCopy.custom}</option>
+            {THEMES.map((theme) => (
+              <option key={theme.id} value={theme.id}>
+                {localizedTheme(theme.id, locale).name}
+              </option>
+            ))}
+          </select>
+        </div>
+        {pickerTheme ? (
+          <div className="space-y-1.5">
+            <Label htmlFor={`${id}-verse`}>{languageCopy.verse}</Label>
+            <select
+              id={`${id}-verse`}
+              className={selectClass}
+              value={form.verseId ?? ""}
+              disabled={preparing}
+              onChange={(e) => void chooseVerse(e.target.value)}
+            >
+              <option value="">{languageCopy.choose}</option>
+              {versesForTheme(pickerTheme).map((verse) => (
+                <option key={verse.id} value={verse.id}>
+                  {verse.ref}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+        {preparing ? (
+          <p role="status" className="text-sm">
+            {languageCopy.loading}
+          </p>
+        ) : null}
         <div className="space-y-1.5">
           <Label htmlFor={`${id}-message`}>{copy.message}</Label>
           <Textarea
             id={`${id}-message`}
             value={form.message}
-            onChange={(e) => update({ message: e.target.value })}
+            onChange={(e) => {
+              requestVersion.current++;
+              setPreparing(false);
+              update({ message: e.target.value, verseId: undefined });
+            }}
+            lang={form.messageLocale ?? "es"}
             required
             maxLength={1000}
             className="min-h-28"
@@ -327,19 +454,14 @@ function MessageScheduleForm({ initialMessage = "", initialPerson }: MessageSche
         <p className="text-xs text-muted-foreground">{copy.saveFirst}</p>
         <div className="flex flex-wrap gap-2">
           {form.id ? (
-            <Button
-              type="button"
-              variant="outline"
-              disabled={busy}
-              onClick={() => setForm(newForm())}
-            >
+            <Button type="button" variant="outline" disabled={busy} onClick={resetForm}>
               {copy.cancel}
             </Button>
           ) : null}
           <Button
             type="submit"
             className="flex-1"
-            disabled={busy || !user || query.isError || query.isPending}
+            disabled={busy || preparing || !user || query.isError || query.isPending}
           >
             {busy ? t("wait") : copy.save}
           </Button>
@@ -358,7 +480,8 @@ function MessageScheduleForm({ initialMessage = "", initialPerson }: MessageSche
                 <div>
                   <h4 className="font-medium">{row.recipientName}</h4>
                   <p className="text-sm text-muted-foreground">
-                    {formatPhone(row.phone)} · {row.channel === "sms" ? "SMS" : "WhatsApp"}
+                    {formatPhone(row.phone)} · {row.channel === "sms" ? "SMS" : "WhatsApp"} ·{" "}
+                    {messageLanguageName(row.messageLocale ?? "es")}
                   </p>
                 </div>
                 <span className="rounded-full bg-secondary px-2 py-1 text-xs">
@@ -381,7 +504,8 @@ function MessageScheduleForm({ initialMessage = "", initialPerson }: MessageSche
                   {row.lastRunAt ? ` · ${dateLabel(row.lastRunAt, row.timeZone)}` : ""}
                 </p>
               ) : null}
-              {!query.data.channels[row.channel] && !row.enabled ? (
+              {!query.data.channelsByLocale[row.messageLocale ?? "es"][row.channel] &&
+              !row.enabled ? (
                 <p className="text-xs text-muted-foreground">{copy.scheduleNotConnected}</p>
               ) : null}
               <div className="flex flex-wrap gap-2">
@@ -389,13 +513,17 @@ function MessageScheduleForm({ initialMessage = "", initialPerson }: MessageSche
                   type="button"
                   variant="outline"
                   disabled={busy}
-                  onClick={() => setForm({ ...row })}
+                  onClick={() => editSchedule(row)}
                 >
                   {copy.edit}
                 </Button>
                 <Button
                   type="button"
-                  disabled={busy || (!row.enabled && !query.data.channels[row.channel])}
+                  disabled={
+                    busy ||
+                    (!row.enabled &&
+                      !query.data.channelsByLocale[row.messageLocale ?? "es"][row.channel])
+                  }
                   onClick={() => void toggle(row)}
                 >
                   {row.enabled ? copy.pause : copy.activate}

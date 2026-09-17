@@ -232,10 +232,18 @@ function builtFromChapter(
   };
 }
 
+export function canChangeMessageLanguage(verse: Verse): boolean {
+  return !isComposedVerse(verse.id) || verse.id.startsWith("doctrina-") ||
+    (verse.id.startsWith("caso-") && verse.id !== "caso-testigos-nwt") ||
+    verse.id === "evangelio-camino" || verse.id === "evangelio-oracion";
+}
+
 export function peekHydratedVerse(verse: Verse, locale: Locale): Verse | null {
-  if (isComposedVerse(verse.id) || verse.id.startsWith("rcv-")) {
-    return { ...verse, source: recobroSource(locale) };
+  if (isComposedVerse(verse.id)) {
+    if (!canChangeMessageLanguage(verse) || verse.source === recobroSource(locale)) return verse;
+    return null;
   }
+  if (verse.id.startsWith("rcv-") && verse.source === recobroSource(locale)) return verse;
   const span = catalogSpan(getVerseById(verse.id) ?? verse);
   if (!span) {
     if (getVerseById(verse.id)) return null;
@@ -249,6 +257,20 @@ export function peekHydratedVerse(verse: Verse, locale: Locale): Verse | null {
 export async function hydrateVerse(verse: Verse, locale: Locale): Promise<Verse> {
   const peeked = peekHydratedVerse(verse, locale);
   if (peeked) return peeked;
+  if (verse.id === "evangelio-camino" || verse.id === "evangelio-oracion") {
+    const { gospelPathVerse, gospelPrayerVerse } = await import("./evangelism");
+    return verse.id === "evangelio-camino" ? gospelPathVerse(locale) : gospelPrayerVerse(locale);
+  }
+  if (verse.id.startsWith("doctrina-")) {
+    const { DOCTRINE_TOPICS, doctrineMessageVerse } = await import("./doctrine");
+    const topic = DOCTRINE_TOPICS.find((item) => `doctrina-${item.id}` === verse.id);
+    if (topic) return doctrineMessageVerse(topic, locale);
+  }
+  if (verse.id.startsWith("caso-")) {
+    const { PREACH_CASES, caseMessageVerse } = await import("./preach-cases");
+    const topic = PREACH_CASES.find((item) => `caso-${item.id}` === verse.id);
+    if (topic) return caseMessageVerse(topic, locale);
+  }
   const span = catalogSpan(getVerseById(verse.id) ?? verse);
   if (!span) {
     if (getVerseById(verse.id)) {

@@ -5,6 +5,7 @@ import {
   THEMES,
   getVerseById,
   localizedTheme,
+  localizeVerse,
   searchVerses,
   versesForTheme,
   type ThemeId,
@@ -31,7 +32,10 @@ const HINTS: Hint[] = [
   { keys: ["depres", "triste", "llanto", "sad", "depression", "desanimo"], theme: "consuelo" },
   { keys: ["enfermedad", "enfermo", "dolor", "cancer", "sick", "illness", "pain"], theme: "fortaleza" },
   { keys: ["muerte", "duelo", "luto", "death", "grief", "mourning"], theme: "esperanza" },
-  { keys: ["matrimonio", "pareja", "esposo", "esposa", "marriage", "husband", "wife"], theme: "familia" },
+  { keys: ["matrimonio", "pareja", "esposo", "esposa", "marriage", "husband", "wife"], theme: "matrimonios" },
+  { keys: ["joven", "adolescente", "youth", "young", "teen"], theme: "jovenes" },
+  { keys: ["amistad", "amigo", "amiga", "friend"], theme: "amistad" },
+  { keys: ["oracion", "orar", "prayer", "pray"], theme: "oracion" },
   { keys: ["hijos", "familia", "hogar", "children", "family", "parent"], theme: "familia" },
   { keys: ["perdon", "culpa", "ofensa", "forgiveness", "guilt", "forgive"], theme: "perdon" },
   { keys: ["dinero", "trabajo", "pobre", "deuda", "money", "job", "work", "need"], theme: "fortaleza" },
@@ -95,13 +99,13 @@ function pickTheme(query: string): ThemeId | undefined {
 }
 
 function compose(query: string, verses: Verse[], locale: Locale, line?: string) {
-  const first = verses[0];
-  const second = verses[1];
+  const first = verses[0] ? localizeVerse(verses[0], locale) : undefined;
+  const second = verses[1] ? localizeVerse(verses[1], locale) : undefined;
   if (locale === "en") {
     const parts = [
       `About “${query.trim()}”, this is what the Word says.`,
       line,
-      first ? `${first.ref}: ${first.text}` : "",
+      first ? first.ref : "",
       second ? `Also ${second.ref}.` : "",
     ];
     return parts.filter(Boolean).join("\n\n");
@@ -109,7 +113,7 @@ function compose(query: string, verses: Verse[], locale: Locale, line?: string) 
   const parts = [
     `Sobre “${query.trim()}”, esto dice la Palabra.`,
     line,
-    first ? `${first.ref}: ${first.text}` : "",
+    first ? first.ref : "",
     second ? `También ${second.ref}.` : "",
   ];
   return parts.filter(Boolean).join("\n\n");

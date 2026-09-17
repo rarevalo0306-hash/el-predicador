@@ -120,5 +120,6 @@ export function gospelPrayerVerse(locale: Locale): Verse {
         ? "Lord Jesus, I confess that I am a sinner. I believe You died for me and rose again. I receive You now as my Savior and my life. Come into me. Thank You for forgiving me. Amen."
         : "Señor Jesús, reconozco que soy pecador. Creo que moriste por mí y resucitaste. Te recibo ahora como mi Salvador y mi vida. Entra en mí. Gracias por perdonarme. Amén.",
     themes: ["evangelio"],
+    source: recobroSource(locale),
   };
 }

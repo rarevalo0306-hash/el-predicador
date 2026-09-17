@@ -55,6 +55,10 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
       ? format(now, "EEEE, MMMM d", { locale: enUS })
       : format(now, "EEEE d 'de' MMMM", { locale: es });
   const moodLabel: Record<ThemeId, string> = {
+    jovenes: t("themeJovenes"),
+    matrimonios: t("themeMatrimonios"),
+    amistad: t("themeAmistad"),
+    oracion: t("themeOracion"),
     amor: t("moodAmor"),
     fe: t("themeFe"),
     esperanza: t("moodEsperanza"),

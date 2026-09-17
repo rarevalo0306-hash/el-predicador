@@ -1,3 +1,5 @@
+import { MessageLanguageSelect } from "@/components/message-language-select";
+import { messageLanguageName } from "@/lib/message-language";
 import { MessageSchedulePanel } from "@/components/message-schedule-panel";
 import { scheduleCopy } from "@/lib/schedule-copy";
 import { useMemo, useState } from "react";
@@ -11,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/components/language-switch";
 import { cn } from "@/lib/utils";
-import { useAppStore, type Recipient, type RecipientInput } from "@/lib/store";
+import { useAppStore, type Recipient, type RecipientInput, type SendDraft } from "@/lib/store";
 import { WEEKDAY_KEYS, cultoInviteText, type Weekday } from "@/lib/church";
 import { allDueItems } from "@/lib/preach-schedule";
 import {
@@ -27,7 +29,7 @@ import { formatVerseMessage, openWhatsApp } from "@/lib/share";
 import { showDailyNotification } from "@/lib/notify";
 
 type PeoplePreachViewProps = {
-  onSend: (verse: Verse, draft?: { note?: string }) => void;
+  onSend: (verse: Verse, draft?: SendDraft) => void;
 };
 
 const emptyForm: RecipientInput = {
@@ -51,7 +53,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   const setChurch = useAppStore((s) => s.setChurch);
   const displayName = useAppStore((s) => s.displayName);
   const notifyHour = useAppStore((s) => s.notifyHour);
-  const [form, setForm] = useState<RecipientInput>(emptyForm);
+  const [form, setForm] = useState<RecipientInput>(() => ({ ...emptyForm, messageLocale: locale }));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [section, setSection] = useState<"people" | "church" | "schedules">("people");
 
@@ -67,6 +69,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       name: row.name,
       phone: normalizePhone(row.phone) ?? row.phone,
       themeId: row.themeId ?? "amor",
+      messageLocale: row.messageLocale ?? locale,
       notes: row.notes ?? "",
       dailyEnabled: row.dailyEnabled ?? false,
       dailyHour: row.dailyHour ?? 9,
@@ -77,7 +80,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
 
   function resetForm() {
     setEditingId(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm, messageLocale: locale });
   }
 
   function handleSave() {
@@ -95,26 +98,25 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       toast.error(t("recipientNeedPhone"));
       return;
     }
+    const messageLocale = row.messageLocale ?? locale;
     const themeId = (row.themeId ?? "amor") as ThemeId;
     const pool = versesForTheme(themeId);
     const base = pool[Math.floor(Math.random() * Math.max(pool.length, 1))] ?? getDailyVerse();
     try {
-      const verse = await hydrateVerse(base, locale);
-      const theme = localizedTheme(themeId, locale);
+      const verse = await hydrateVerse(base, messageLocale);
+      const theme = localizedTheme(themeId, messageLocale);
       const note =
-        locale === "en"
+        messageLocale === "en"
           ? `Thinking of you with a word about ${theme.name}.`
           : `Pensando en ti con una palabra sobre ${theme.name}.`;
-      const text = formatVerseMessage(verse, note, displayName, locale);
+      const text = formatVerseMessage(verse, note, displayName, messageLocale);
       openWhatsApp(text, row.phone);
       markRecipientDailySent(row.id);
       toast(t("openingWhatsApp"));
     } catch {
       onSend(base, {
-        note:
-          locale === "en"
-            ? `For ${row.name}`
-            : `Para ${row.name}`,
+        messageLocale,
+        note: messageLocale === "en" ? `For ${row.name}` : `Para ${row.name}`,
       });
     }
   }
@@ -124,7 +126,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       toast.error(t("recipientNeedPhone"));
       return;
     }
-    const text = cultoInviteText(church, locale, row.name);
+    const text = cultoInviteText(church, row.messageLocale ?? locale, row.name);
     openWhatsApp(text, row.phone);
     const stamp = new Date().toISOString().slice(0, 10);
     markRecipientCultoSent(row.id, stamp);
@@ -165,7 +167,12 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
         <p className="mt-1 text-sm text-muted-foreground">{t("preachSub")}</p>
       </header>
 
-      <Button type="button" className="h-12 w-full" onClick={() => setSection("schedules")} aria-pressed={section === "schedules"}>
+      <Button
+        type="button"
+        className="h-12 w-full"
+        onClick={() => setSection("schedules")}
+        aria-pressed={section === "schedules"}
+      >
         {scheduleCopy(locale).title}
       </Button>
       <div className="grid grid-cols-2 gap-2">
@@ -237,12 +244,21 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
         </div>
       ) : null}
 
-      {section !== "schedules" ? <Button type="button" variant="outline" className="w-full" onClick={() => void enableReminders()}>
-        <Bell className="size-4" />
-        {t("preachEnableAlerts")}
-      </Button> : null}
+      {section !== "schedules" ? (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={() => void enableReminders()}
+        >
+          <Bell className="size-4" />
+          {t("preachEnableAlerts")}
+        </Button>
+      ) : null}
 
-      {section === "schedules" ? <MessageSchedulePanel /> : section === "church" ? (
+      {section === "schedules" ? (
+        <MessageSchedulePanel />
+      ) : section === "church" ? (
         <div className="flex flex-col gap-4 rounded-xl bg-card px-4 py-5 shadow-paper">
           <p className="text-sm text-muted-foreground">{t("churchHint")}</p>
           <div className="grid gap-2">
@@ -315,9 +331,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                 min={1}
                 max={48}
                 value={church.reminderHoursBefore}
-                onChange={(e) =>
-                  setChurch({ reminderHoursBefore: Number(e.target.value) })
-                }
+                onChange={(e) => setChurch({ reminderHoursBefore: Number(e.target.value) })}
               />
             </div>
           </div>
@@ -355,6 +369,10 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                 />
               </div>
             </div>
+            <MessageLanguageSelect
+              value={form.messageLocale ?? locale}
+              onChange={(messageLocale) => setForm((f) => ({ ...f, messageLocale }))}
+            />
             <div className="grid gap-1.5">
               <Label>{t("personTheme")}</Label>
               <div className="flex flex-wrap gap-2">
@@ -397,9 +415,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
               <input
                 type="checkbox"
                 checked={Boolean(form.dailyEnabled)}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, dailyEnabled: e.target.checked }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, dailyEnabled: e.target.checked }))}
                 className="size-5 accent-[var(--color-primary)]"
               />
             </label>
@@ -412,9 +428,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                   min={0}
                   max={23}
                   value={form.dailyHour ?? 9}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, dailyHour: Number(e.target.value) }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, dailyHour: Number(e.target.value) }))}
                 />
               </div>
             ) : null}
@@ -426,9 +440,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
               <input
                 type="checkbox"
                 checked={Boolean(form.cultoEnabled)}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, cultoEnabled: e.target.checked }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, cultoEnabled: e.target.checked }))}
                 className="size-5 accent-[var(--color-primary)]"
               />
             </label>
@@ -459,7 +471,8 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                       <p className="font-medium">{row.name}</p>
                       <p className="text-xs text-muted-foreground">{formatPhone(row.phone)}</p>
                       <p className="mt-1 text-xs text-primary">
-                        {localizedTheme(row.themeId ?? "amor", locale).name}
+                        {localizedTheme(row.themeId ?? "amor", locale).name} ·{" "}
+                        {messageLanguageName(row.messageLocale ?? locale)}
                         {row.dailyEnabled ? ` · ${t("personDailyOn")}` : ""}
                         {row.cultoEnabled ? ` · ${t("personCultoOn")}` : ""}
                       </p>
@@ -478,7 +491,12 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                     </Button>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <Button type="button" size="sm" variant="secondary" onClick={() => startEdit(row)}>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => startEdit(row)}
+                    >
                       {t("personEdit")}
                     </Button>
                     <Button type="button" size="sm" onClick={() => void sendDaily(row)}>

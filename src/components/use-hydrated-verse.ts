@@ -45,7 +45,9 @@ export function useHydratedVerse(verse: Verse | null, locale: Locale) {
 
   const shown =
     peeked ??
-    (hydrated && hydrated.source === recobroSource(locale) ? hydrated : null);
+    (hydrated && hydrated.id === verseId && hydrated.source === recobroSource(locale)
+      ? hydrated
+      : null);
 
   return {
     verse: shown,

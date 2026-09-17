@@ -18,6 +18,20 @@ const data = {
   recipientName: "Prueba",
   message: "Primera línea\nSegunda línea",
 };
+test("English WhatsApp uses its own approved template and never falls back to Spanish", async () => {
+  assert.equal(messagingStatus("owner", config, "en").whatsapp, false);
+  const result = await deliverMessage(
+    { ...data, messageLocale: "en", message: "Thinking of you today." },
+    { ...config, TWILIO_WHATSAPP_CONTENT_SID_EN: "HXenglish" },
+    async (_url, init) => {
+      const body = new URLSearchParams(String(init?.body));
+      assert.equal(body.get("ContentSid"), "HXenglish");
+      assert.equal(JSON.parse(body.get("ContentVariables")!)["2"], "Thinking of you today.");
+      return Response.json({ sid: "SMenglish", status: "queued" });
+    },
+  );
+  assert.equal(result.status, "accepted");
+});
 test("sending is closed until channel, scheduler and owner access are configured", async () => {
   assert.deepEqual(messagingStatus("owner", {}), { whatsapp: false, sms: false });
   assert.deepEqual(messagingStatus("other", config), { whatsapp: false, sms: false });

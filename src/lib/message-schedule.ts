@@ -7,6 +7,8 @@ export type ScheduleInput = {
   recipientName: string;
   phone: string;
   message: string;
+  messageLocale?: "es" | "en";
+  verseId?: string;
   channel: MessageChannel;
   days: number[];
   time: string;
@@ -39,6 +41,10 @@ export function validateSchedule(raw: ScheduleInput): ScheduleInput {
   if (!recipientName || recipientName.length > 80 || !message || message.length > 1000) {
     throw new Error("scheduleBadMessage");
   }
+  if (raw.messageLocale !== undefined && raw.messageLocale !== "es" && raw.messageLocale !== "en")
+    throw new Error("scheduleInvalid");
+  if (raw.verseId !== undefined && !/^[a-zA-Z0-9-]{1,64}$/.test(raw.verseId))
+    throw new Error("scheduleInvalid");
   if (raw.channel !== "whatsapp" && raw.channel !== "sms") throw new Error("scheduleInvalid");
   if (
     !Array.isArray(raw.days) ||
@@ -56,6 +62,7 @@ export function validateSchedule(raw: ScheduleInput): ScheduleInput {
     phone,
     recipientName,
     message,
+    messageLocale: raw.messageLocale ?? "es",
     days: [...new Set(raw.days)].sort(),
     consent: raw.consent === true,
   };

@@ -154,7 +154,7 @@ function SavedMessageCard({
   onRemove: (id: string) => void;
 }) {
   const { locale, t } = useI18n();
-  const { verse: shown, loading, error } = useHydratedVerse(verse, locale);
+  const { verse: shown, loading, error } = useHydratedVerse(verse, item.messageLocale ?? locale);
   return (
     <article className="rounded-lg bg-card px-4 py-4 shadow-paper">
       <div className="flex items-center justify-between gap-2">
@@ -193,7 +193,7 @@ function SavedMessageCard({
         className="mt-4 w-full"
         disabled={!shown}
         onClick={() =>
-          shown && onSend(shown, { note: item.note, kind: item.kind })
+          shown && onSend(shown, { note: item.note, kind: item.kind, messageLocale: item.messageLocale })
         }
       >
         <Send />

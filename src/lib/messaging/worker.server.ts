@@ -38,7 +38,8 @@ export async function runScheduledMessages(
       await sql`update message_deliveries set status = 'unknown', error_code = 'interrupted_request'
         where schedule_id = ${row.id} and scheduled_for = ${scheduledFor} and status = 'sending'`;
     }
-    const configured = ready(row.user_id)[row.channel] && row.consent;
+    const configured =
+      ready(row.user_id, undefined, row.message_locale)[row.channel] && row.consent;
     const next = configured
       ? nextMessageOccurrence({ days: row.days, time: row.send_time, timeZone: row.time_zone }, now)
       : null;
@@ -59,6 +60,7 @@ export async function runScheduledMessages(
             phone: row.phone,
             recipientName: row.recipient_name,
             message: row.message,
+            messageLocale: row.message_locale,
           });
         } catch {
           result = { status: "unknown", errorCode: "unconfirmed_request" };

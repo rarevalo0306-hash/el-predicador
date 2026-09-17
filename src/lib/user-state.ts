@@ -19,6 +19,7 @@ function parseRecipient(row: unknown): Recipient | null {
     phone,
     at: Number(value.at) || Date.now(),
     themeId: isThemeId(value.themeId) ? value.themeId : undefined,
+    messageLocale: isLocale(value.messageLocale) ? value.messageLocale : undefined,
     notes: typeof value.notes === "string" ? value.notes : undefined,
     dailyEnabled: Boolean(value.dailyEnabled),
     dailyHour: Number.isFinite(dailyHour)

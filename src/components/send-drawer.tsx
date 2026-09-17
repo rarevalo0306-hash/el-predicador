@@ -1,3 +1,7 @@
+import { MessageLanguageSelect } from "@/components/message-language-select";
+import { messageLanguageCopy } from "@/lib/message-language";
+import type { Locale } from "@/lib/i18n";
+import { canChangeMessageLanguage } from "@/lib/recobro";
 import { MessageSchedulePanel } from "@/components/message-schedule-panel";
 import { scheduleCopy } from "@/lib/schedule-copy";
 import { useEffect, useMemo, useState } from "react";
@@ -43,7 +47,7 @@ import {
   tryNativeShareFile,
 } from "@/lib/share";
 import { verseCardFile } from "@/lib/verse-card";
-import { type Verse } from "@/lib/verses";
+import { getVerseById, type Verse } from "@/lib/verses";
 import { useHydratedVerse } from "@/components/use-hydrated-verse";
 
 type SendDrawerProps = {
@@ -69,6 +73,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
   const addSent = useAppStore((s) => s.addSent);
   const rememberVerse = useAppStore((s) => s.rememberVerse);
   const saveMessage = useAppStore((s) => s.saveMessage);
+  const [messageLocale, setMessageLocale] = useState<Locale>(draft?.messageLocale ?? locale);
   const [scheduling, setScheduling] = useState(false);
   const [note, setNote] = useState("");
   const [phone, setPhone] = useState("");
@@ -76,11 +81,12 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
   const [queue, setQueue] = useState<SendQueue | null>(null);
-  const templates = messageTemplates(locale);
-  const { verse: shown, error, retry } = useHydratedVerse(verse, locale);
+  const templates = messageTemplates(messageLocale);
+  const { verse: shown, error, retry } = useHydratedVerse(verse, messageLocale);
 
   useEffect(() => {
     if (!open) return;
+    setMessageLocale(draft?.messageLocale ?? locale);
     setScheduling(false);
     setNote(draft?.note ?? "");
     setActiveTemplate(draft?.kind ?? null);
@@ -88,17 +94,25 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
     setPersonName("");
     setSelectedIds([]);
     setQueue(null);
-  }, [open, verse?.id, draft?.note, draft?.kind]);
+  }, [open, verse?.id, draft?.note, draft?.kind, draft?.messageLocale, locale]);
 
   const message = useMemo(() => {
     if (!shown) return "";
-    return formatVerseMessage(shown, note, displayName, locale);
-  }, [shown, note, displayName, locale]);
+    return formatVerseMessage(shown, note, displayName, messageLocale);
+  }, [shown, note, displayName, messageLocale]);
 
   const selectedPeople = useMemo(
     () => recipients.filter((row) => selectedIds.includes(row.id)),
     [recipients, selectedIds],
   );
+
+  function changeMessageLocale(next: Locale) {
+    const previousTemplate = templates.find((item) => item.id === activeTemplate);
+    if (previousTemplate && note === previousTemplate.text) {
+      setNote(messageTemplates(next).find((item) => item.id === activeTemplate)?.text ?? note);
+    }
+    setMessageLocale(next);
+  }
 
   function pickTemplate(id: string, text: string) {
     if (activeTemplate === id) {
@@ -122,6 +136,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
       at: Date.now(),
       note: note.trim() || undefined,
       kind: currentKind(),
+      messageLocale,
     });
   }
 
@@ -132,18 +147,23 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
       verseId: verse.id,
       note: note.trim() || undefined,
       kind: currentKind(),
+      messageLocale,
     });
     toast(saved ? t("messageSaved") : t("messageAlready"));
   }
 
   function toggleRecipient(id: string) {
+    const person = recipients.find((row) => row.id === id);
+    if (!selectedIds.length && person?.messageLocale && verse && canChangeMessageLanguage(verse)) {
+      changeMessageLocale(person.messageLocale);
+    }
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   }
 
   function handleSaveRecipient() {
-    const saved = upsertRecipient({ name: personName || phone, phone });
+    const saved = upsertRecipient({ name: personName || phone, phone, messageLocale });
     if (!saved) {
       toast(t("recipientNeedPhone"));
       return;
@@ -298,10 +318,39 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
           <DrawerTitle>{t("sendTitle")}</DrawerTitle>
           <DrawerDescription>{t("sendDesc")}</DrawerDescription>
         </DrawerHeader>
+        {!scheduling ? (
+          <div className="px-5 pb-3">
+            {verse && !canChangeMessageLanguage(verse) ? (
+              <p className="text-xs text-muted-foreground">
+                {messageLanguageCopy(locale).unavailable}
+              </p>
+            ) : (
+              <MessageLanguageSelect
+                value={messageLocale}
+                onChange={changeMessageLocale}
+                disabled={Boolean(queue)}
+                hint={messageLanguageCopy(locale).customHint}
+              />
+            )}
+          </div>
+        ) : null}
         {scheduling ? (
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 pb-8">
-            <Button type="button" variant="outline" onClick={() => setScheduling(false)}>{scheduleCopy(locale).back}</Button>
-            <MessageSchedulePanel initialMessage={message} initialPerson={selectedPeople.length === 1 ? selectedPeople[0] : { name: personName, phone }} />
+            <Button type="button" variant="outline" onClick={() => setScheduling(false)}>
+              {scheduleCopy(locale).back}
+            </Button>
+            <MessageSchedulePanel
+              initialMessage={message}
+              initialLocale={messageLocale}
+              initialVerseId={
+                !note.trim() && !displayName.trim() && getVerseById(verse?.id ?? "")
+                  ? verse?.id
+                  : undefined
+              }
+              initialPerson={
+                selectedPeople.length === 1 ? selectedPeople[0] : { name: personName, phone }
+              }
+            />
           </div>
         ) : error ? (
           <div className="flex flex-col gap-3 px-5 pb-6">
@@ -314,7 +363,10 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
           <>
             <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5">
               <div className="rounded-lg bg-secondary px-4 py-3">
-                <p className="font-serif text-base leading-snug text-foreground">
+                <p
+                  lang={messageLocale}
+                  className="font-serif text-base leading-snug text-foreground"
+                >
                   {shown.text}
                 </p>
                 <p className="mt-2 text-xs font-medium tracking-[0.12em] text-primary uppercase">
@@ -354,7 +406,10 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                 )}
                 {selectedPeople.length > 1 ? (
                   <p className="text-xs font-medium text-primary">
-                    {t("recipientsSelected", { n: selectedPeople.length })}
+                    {t("recipientsSelected", { n: selectedPeople.length })} ·{" "}
+                    {locale === "es"
+                      ? "El idioma elegido se aplica a todos."
+                      : "The selected language applies to everyone."}
                   </p>
                 ) : null}
                 <div className="grid items-start gap-2 sm:grid-cols-2">
@@ -416,7 +471,9 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                 />
               </div>
 
-              <Button type="button" className="w-full" onClick={() => setScheduling(true)}>{scheduleCopy(locale).scheduleThis}</Button>
+              <Button type="button" className="w-full" onClick={() => setScheduling(true)}>
+                {scheduleCopy(locale).scheduleThis}
+              </Button>
               <Button
                 type="button"
                 variant="secondary"
@@ -443,9 +500,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                     {t("queueStop")}
                   </Button>
                   <Button type="button" onClick={queueNext}>
-                    {queue.index + 1 >= queue.people.length
-                      ? t("queueDone")
-                      : t("queueNext")}
+                    {queue.index + 1 >= queue.people.length ? t("queueDone") : t("queueNext")}
                   </Button>
                 </div>
               </div>

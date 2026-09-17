@@ -1,6 +1,12 @@
 export type VerseEn = { ref: string; book: string; text: string };
 
 export const VERSE_EN: Record<string, VerseEn> = {
+  "1ti-4-12": { ref: "1 Timothy 4:12", book: "1 Timothy", text: "" },
+  "ecl-12-1": { ref: "Ecclesiastes 12:1", book: "Ecclesiastes", text: "" },
+  "ef-5-25": { ref: "Ephesians 5:25", book: "Ephesians", text: "" },
+  "ecl-4-9": { ref: "Ecclesiastes 4:9-10", book: "Ecclesiastes", text: "" },
+  "prv-17-17": { ref: "Proverbs 17:17", book: "Proverbs", text: "" },
+  "1ts-5-17": { ref: "1 Thessalonians 5:17-18", book: "1 Thessalonians", text: "" },
   "jn-3-16": {
     ref: "John 3:16",
     book: "John",

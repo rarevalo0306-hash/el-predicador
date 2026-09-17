@@ -1,7 +1,16 @@
 import type { MessageChannel } from "../message-schedule.ts";
 
 type Config = Record<string, string | undefined>;
-export function messagingStatus(userId: string, config: Config = process.env) {
+function whatsappTemplate(config: Config, locale: "es" | "en" = "es") {
+  return locale === "en"
+    ? config.TWILIO_WHATSAPP_CONTENT_SID_EN
+    : (config.TWILIO_WHATSAPP_CONTENT_SID_ES ?? config.TWILIO_WHATSAPP_CONTENT_SID);
+}
+export function messagingStatus(
+  userId: string,
+  config: Config = process.env,
+  locale: "es" | "en" = "es",
+) {
   const allowed = (config.MESSAGING_ALLOWED_USER_IDS ?? "")
     .split(",")
     .map((v) => v.trim())
@@ -13,7 +22,7 @@ export function messagingStatus(userId: string, config: Config = process.env) {
       allowed &&
       credentials &&
       scheduler &&
-      Boolean(config.TWILIO_WHATSAPP_FROM && config.TWILIO_WHATSAPP_CONTENT_SID),
+      Boolean(config.TWILIO_WHATSAPP_FROM && whatsappTemplate(config, locale)),
     sms: allowed && credentials && scheduler && Boolean(config.TWILIO_SMS_FROM),
   };
 }
@@ -32,17 +41,18 @@ export async function deliverMessage(
     phone: string;
     recipientName: string;
     message: string;
+    messageLocale?: "es" | "en";
   },
   config: Config = process.env,
   request: typeof fetch = fetch,
 ): Promise<DeliveryOutcome> {
-  if (!messagingStatus(data.userId, config)[data.channel])
+  if (!messagingStatus(data.userId, config, data.messageLocale)[data.channel])
     return { status: "failed", errorCode: "not_configured" };
   const body = new URLSearchParams();
   if (data.channel === "whatsapp") {
     body.set("To", `whatsapp:${data.phone}`);
     body.set("From", `whatsapp:${config.TWILIO_WHATSAPP_FROM!.replace(/^whatsapp:/, "")}`);
-    body.set("ContentSid", config.TWILIO_WHATSAPP_CONTENT_SID!);
+    body.set("ContentSid", whatsappTemplate(config, data.messageLocale)!);
     body.set(
       "ContentVariables",
       JSON.stringify({ "1": data.recipientName, "2": data.message.replace(/\s+/g, " ") }),

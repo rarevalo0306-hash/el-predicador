@@ -131,6 +131,10 @@ export function isThemeId(value: unknown): value is ThemeId {
     value === "sabiduria" ||
     value === "familia" ||
     value === "perdon" ||
+    value === "jovenes" ||
+    value === "matrimonios" ||
+    value === "amistad" ||
+    value === "oracion" ||
     value === "evangelio"
   );
 }

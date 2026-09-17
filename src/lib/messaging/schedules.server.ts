@@ -15,6 +15,8 @@ export type ScheduleRow = {
   recipient_name: string;
   phone: string;
   message: string;
+  message_locale: "es" | "en";
+  verse_id: string | null;
   channel: MessageChannel;
   days: number[];
   send_time: string;
@@ -34,6 +36,8 @@ export function scheduleFromRow(row: ScheduleRow): MessageSchedule {
     recipientName: row.recipient_name,
     phone: row.phone,
     message: row.message,
+    messageLocale: row.message_locale ?? "es",
+    verseId: row.verse_id ?? undefined,
     channel: row.channel,
     days: row.days,
     time: row.send_time,
@@ -52,7 +56,11 @@ export async function listSchedules(userId: string, providedSql?: Sql) {
     from message_schedules s left join lateral (
       select status, created_at from message_deliveries where schedule_id = s.id order by scheduled_for desc limit 1
     ) d on true where s.user_id = ${userId} order by s.created_at desc limit 20`;
-  return { schedules: rows.map(scheduleFromRow), channels: messagingStatus(userId) };
+  return {
+    schedules: rows.map(scheduleFromRow),
+    channels: messagingStatus(userId),
+    channelsByLocale: { es: messagingStatus(userId), en: messagingStatus(userId, undefined, "en") },
+  };
 }
 export async function saveSchedule(userId: string, raw: ScheduleInput, providedSql?: Sql) {
   const sql = providedSql ?? (await (await import("../db")).getSql());
@@ -60,7 +68,7 @@ export async function saveSchedule(userId: string, raw: ScheduleInput, providedS
   if (data.id) {
     const rows =
       await sql`update message_schedules set recipient_name = ${data.recipientName}, phone = ${data.phone},
-      message = ${data.message}, channel = ${data.channel}, days = ${JSON.stringify(data.days)}::jsonb,
+      message = ${data.message}, message_locale = ${data.messageLocale}, verse_id = ${data.verseId ?? null}, channel = ${data.channel}, days = ${JSON.stringify(data.days)}::jsonb,
       send_time = ${data.time}, time_zone = ${data.timeZone}, consent = ${data.consent},
       enabled = false, next_run_at = null, updated_at = now()
       where id = ${data.id} and user_id = ${userId} and (lease_until is null or lease_until < now()) returning id`;
@@ -72,8 +80,8 @@ export async function saveSchedule(userId: string, raw: ScheduleInput, providedS
   }>`select count(*)::int as count from message_schedules where user_id = ${userId}`;
   if (count >= 20) throw new Error("scheduleLimit");
   const id = randomUUID();
-  await sql`insert into message_schedules (id, user_id, recipient_name, phone, message, channel, days, send_time, time_zone, consent)
-    values (${id}, ${userId}, ${data.recipientName}, ${data.phone}, ${data.message}, ${data.channel},
+  await sql`insert into message_schedules (id, user_id, recipient_name, phone, message, message_locale, verse_id, channel, days, send_time, time_zone, consent)
+    values (${id}, ${userId}, ${data.recipientName}, ${data.phone}, ${data.message}, ${data.messageLocale}, ${data.verseId ?? null}, ${data.channel},
     ${JSON.stringify(data.days)}::jsonb, ${data.time}, ${data.timeZone}, ${data.consent})`;
   return { id };
 }
@@ -89,7 +97,8 @@ export async function setScheduleEnabled(
     ScheduleRow & { revision: string }
   >`select *, updated_at::text as revision from message_schedules where id = ${id} and user_id = ${userId}`;
   if (!row) throw new Error("scheduleBusy");
-  if (enabled && !ready(userId)[row.channel]) throw new Error("scheduleNotConnected");
+  if (enabled && !ready(userId, undefined, row.message_locale)[row.channel])
+    throw new Error("scheduleNotConnected");
   if (enabled && !row.consent) throw new Error("scheduleConsentRequired");
   const next = enabled ? nextMessageOccurrence(scheduleFromRow(row)) : null;
   const changed =

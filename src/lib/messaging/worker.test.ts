@@ -39,6 +39,12 @@ before(async () => {
     ),
   );
   await db.exec(
+    await readFile(
+      new URL("../../../migrations/20260917160138_message_languages.sql", import.meta.url),
+      "utf8",
+    ),
+  );
+  await db.exec(
     `insert into "user" (id,name,email,"emailVerified","createdAt","updatedAt") values ('owner','Owner','owner@example.com',true,now(),now()),('other','Other','other@example.com',true,now(),now())`,
   );
 });
@@ -88,6 +94,35 @@ test("overlapping and repeated cron runs submit an occurrence only once", async 
   const { schedules } = await listSchedules("owner", sql);
   assert.equal(schedules[0].lastStatus, "accepted");
   assert.equal(schedules[0].nextRunAt, "2026-09-18T13:15:00.000Z");
+});
+test("persists the language and sends the exact English message through the matching channel", async () => {
+  const { id } = await saveSchedule(
+    "owner",
+    {
+      ...schedule,
+      messageLocale: "en",
+      verseId: "1ti-4-12",
+      message: "Let no one despise your youth.",
+    },
+    sql,
+  );
+  const saved = (await listSchedules("owner", sql)).schedules[0];
+  assert.equal(saved.messageLocale, "en");
+  assert.equal(saved.verseId, "1ti-4-12");
+  await sql`update message_schedules set enabled=true,next_run_at=${"2026-09-17T13:15:00Z"} where id=${id}`;
+  let calls = 0;
+  await runScheduledMessages(
+    sql,
+    now,
+    async (data) => {
+      calls++;
+      assert.equal(data.messageLocale, "en");
+      assert.equal(data.message, saved.message);
+      return { status: "accepted" };
+    },
+    (_user, _config, language) => ({ whatsapp: language === "en", sms: true }),
+  );
+  assert.equal(calls, 1);
 });
 test("activation requires consent, computes a future occurrence and can be paused", async () => {
   const { id } = await saveSchedule("owner", { ...schedule, consent: false }, sql);

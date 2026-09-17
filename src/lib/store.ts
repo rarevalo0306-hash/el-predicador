@@ -10,6 +10,7 @@ export type SentItem = {
   at: number;
   note?: string;
   kind?: MessageKind;
+  messageLocale?: Locale;
 };
 
 export type SavedMessage = {
@@ -17,6 +18,7 @@ export type SavedMessage = {
   verseId: string;
   note?: string;
   kind: MessageKind;
+  messageLocale?: Locale;
   at: number;
 };
 
@@ -30,6 +32,7 @@ export type ReadingPlace = {
 export type SendDraft = {
   note?: string;
   kind?: MessageKind | null;
+  messageLocale?: Locale;
 };
 
 /** People you preach to — phone book + theme + schedules. */
@@ -40,6 +43,7 @@ export type Recipient = {
   at: number;
   /** Theme that interests them most. */
   themeId?: ThemeId;
+  messageLocale?: Locale;
   notes?: string;
   /** Remind preacher to send a daily verse on their theme. */
   dailyEnabled?: boolean;
@@ -55,6 +59,7 @@ export type RecipientInput = {
   phone: string;
   id?: string;
   themeId?: ThemeId | null;
+  messageLocale?: Locale;
   notes?: string;
   dailyEnabled?: boolean;
   dailyHour?: number;
@@ -171,7 +176,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   saveMessage: (item) => {
     const note = item.note?.trim() || undefined;
     const existing = get().savedMessages.find(
-      (entry) => entry.verseId === item.verseId && (entry.note || "") === (note || ""),
+      (entry) => entry.verseId === item.verseId && (entry.note || "") === (note || "") && entry.messageLocale === item.messageLocale,
     );
     if (existing) return null;
     const saved: SavedMessage = {
@@ -179,6 +184,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       verseId: item.verseId,
       note,
       kind: item.kind,
+      messageLocale: item.messageLocale,
       at: Date.now(),
     };
     set((state) => ({
@@ -220,6 +226,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       phone,
       at: Date.now(),
       themeId,
+      messageLocale: item.messageLocale ?? existing?.messageLocale ?? get().locale,
       notes:
         item.notes !== undefined
           ? item.notes.trim() || undefined

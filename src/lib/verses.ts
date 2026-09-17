@@ -1,5 +1,5 @@
 import { findBook, recobroSource, SOURCE_RECOBRO, SOURCE_RECOBRO_EN, type BibleBook } from "@/lib/bible";
-import { t, type Locale } from "@/lib/i18n";
+import { t, type Locale, type StringKey } from "@/lib/i18n";
 import { VERSE_EN } from "@/lib/verses-en";
 
 export type ThemeId =
@@ -13,7 +13,11 @@ export type ThemeId =
   | "sabiduria"
   | "familia"
   | "perdon"
-  | "evangelio";
+  | "evangelio"
+  | "jovenes"
+  | "matrimonios"
+  | "amistad"
+  | "oracion";
 
 export type Verse = {
   id: string;
@@ -29,6 +33,10 @@ export const THEMES: {
   name: string;
   line: string;
 }[] = [
+  { id: "jovenes", name: "Jóvenes", line: "Fe y propósito en cada etapa" },
+  { id: "matrimonios", name: "Matrimonios", line: "Amor, respeto y unidad" },
+  { id: "amistad", name: "Amistad", line: "Caminar y crecer juntos" },
+  { id: "oracion", name: "Oración", line: "Hablar con Dios cada día" },
   { id: "amor", name: "Amor", line: "El amor que no se acaba" },
   { id: "fe", name: "Fe", line: "Creer cuando no se ve" },
   { id: "esperanza", name: "Esperanza", line: "Una promesa adelante" },
@@ -45,7 +53,11 @@ export const THEMES: {
 export const SOURCE = SOURCE_RECOBRO;
 export const SOURCE_EN = SOURCE_RECOBRO_EN;
 
-const THEME_KEYS: Record<ThemeId, { name: "themeAmor" | "themeFe" | "themeEsperanza" | "themePaz" | "themeFortaleza" | "themeConsuelo" | "themeGratitud" | "themeSabiduria" | "themeFamilia" | "themePerdon" | "themeEvangelio"; line: "themeAmorLine" | "themeFeLine" | "themeEsperanzaLine" | "themePazLine" | "themeFortalezaLine" | "themeConsueloLine" | "themeGratitudLine" | "themeSabiduriaLine" | "themeFamiliaLine" | "themePerdonLine" | "themeEvangelioLine" }> = {
+const THEME_KEYS: Record<ThemeId, { name: StringKey; line: StringKey }> = {
+  jovenes: { name: "themeJovenes", line: "themeJovenesLine" },
+  matrimonios: { name: "themeMatrimonios", line: "themeMatrimoniosLine" },
+  amistad: { name: "themeAmistad", line: "themeAmistadLine" },
+  oracion: { name: "themeOracion", line: "themeOracionLine" },
   amor: { name: "themeAmor", line: "themeAmorLine" },
   fe: { name: "themeFe", line: "themeFeLine" },
   esperanza: { name: "themeEsperanza", line: "themeEsperanzaLine" },
@@ -132,6 +144,12 @@ export function localizedTheme(id: ThemeId, locale: Locale) {
 
 
 export const VERSES: Verse[] = [
+  { id: "1ti-4-12", ref: "1 Timoteo 4:12", book: "1 Timoteo", text: "", themes: ["jovenes"] },
+  { id: "ecl-12-1", ref: "Eclesiastés 12:1", book: "Eclesiastés", text: "", themes: ["jovenes"] },
+  { id: "ef-5-25", ref: "Efesios 5:25", book: "Efesios", text: "", themes: ["matrimonios"] },
+  { id: "ecl-4-9", ref: "Eclesiastés 4:9-10", book: "Eclesiastés", text: "", themes: ["amistad"] },
+  { id: "prv-17-17", ref: "Proverbios 17:17", book: "Proverbios", text: "", themes: ["amistad"] },
+  { id: "1ts-5-17", ref: "1 Tesalonicenses 5:17-18", book: "1 Tesalonicenses", text: "", themes: ["oracion"] },
   {
     id: "jn-3-16",
     ref: "Juan 3:16",
@@ -144,14 +162,14 @@ export const VERSES: Verse[] = [
     ref: "1 Corintios 13:4-7",
     book: "1 Corintios",
     text: "El amor es sufrido, es benigno; el amor no tiene envidia, el amor no es jactancioso, no se envanece; no hace nada indebido, no busca lo suyo, no se irrita, no guarda rencor; no se goza de la injusticia, mas se goza de la verdad. Todo lo sufre, todo lo cree, todo lo espera, todo lo soporta.",
-    themes: ["amor", "familia"],
+    themes: ["amor", "familia", "matrimonios"],
   },
   {
     id: "1jn-4-7",
     ref: "1 Juan 4:7-8",
     book: "1 Juan",
     text: "Amados, amémonos unos a otros; porque el amor es de Dios. Todo aquel que ama es nacido de Dios, y conoce a Dios. El que no ama, no ha conocido a Dios; porque Dios es amor.",
-    themes: ["amor"],
+    themes: ["amor", "amistad"],
   },
   {
     id: "ro-5-8",
@@ -165,14 +183,14 @@ export const VERSES: Verse[] = [
     ref: "Juan 15:13",
     book: "Juan",
     text: "Nadie tiene mayor amor que este, que uno ponga su vida por sus amigos.",
-    themes: ["amor"],
+    themes: ["amor", "amistad"],
   },
   {
     id: "1co-13-13",
     ref: "1 Corintios 13:13",
     book: "1 Corintios",
     text: "Y ahora permanecen la fe, la esperanza y el amor, estos tres; pero el mayor de ellos es el amor.",
-    themes: ["amor", "fe", "esperanza"],
+    themes: ["amor", "fe", "esperanza", "matrimonios"],
   },
   {
     id: "ro-8-38",
@@ -207,7 +225,7 @@ export const VERSES: Verse[] = [
     ref: "Marcos 11:24",
     book: "Marcos",
     text: "Por tanto, os digo que todo lo que pidiereis orando, creed que lo recibiréis, y os vendrá.",
-    themes: ["fe"],
+    themes: ["fe", "oracion"],
   },
   {
     id: "ro-10-17",
@@ -242,7 +260,7 @@ export const VERSES: Verse[] = [
     ref: "Santiago 1:6",
     book: "Santiago",
     text: "Pero pida con fe, no dudando nada; porque el que duda es semejante a la onda del mar, que es arrastrada por el viento y echada de una parte a otra.",
-    themes: ["fe"],
+    themes: ["fe", "oracion"],
   },
   {
     id: "jer-29-11",
@@ -305,7 +323,7 @@ export const VERSES: Verse[] = [
     ref: "Filipenses 4:6-7",
     book: "Filipenses",
     text: "Por nada estéis afanosos, sino sean conocidas vuestras peticiones delante de Dios en toda oración y ruego, con acción de gracias. Y la paz de Dios, que sobrepasa todo entendimiento, guardará vuestros corazones y vuestros pensamientos en Cristo Jesús.",
-    themes: ["paz", "gratitud"],
+    themes: ["paz", "gratitud", "oracion"],
   },
   {
     id: "is-26-3",
@@ -354,7 +372,7 @@ export const VERSES: Verse[] = [
     ref: "Filipenses 4:13",
     book: "Filipenses",
     text: "Todo lo puedo en Cristo que me fortalece.",
-    themes: ["fortaleza", "fe"],
+    themes: ["fortaleza", "fe", "jovenes"],
   },
   {
     id: "is-41-10",
@@ -515,14 +533,14 @@ export const VERSES: Verse[] = [
     ref: "Proverbios 3:5-6",
     book: "Proverbios",
     text: "Fíate de Jehová de todo tu corazón, y no te apoyes en tu propia prudencia. Reconócelo en todos tus caminos, y él enderezará tus veredas.",
-    themes: ["sabiduria", "fe"],
+    themes: ["sabiduria", "fe", "jovenes"],
   },
   {
     id: "stgo-1-5",
     ref: "Santiago 1:5",
     book: "Santiago",
     text: "Y si alguno de vosotros tiene falta de sabiduría, pídala a Dios, el cual da a todos abundantemente y sin reproche, y le será dada.",
-    themes: ["sabiduria"],
+    themes: ["sabiduria", "jovenes"],
   },
   {
     id: "prv-9-10",
@@ -543,7 +561,7 @@ export const VERSES: Verse[] = [
     ref: "Salmo 119:105",
     book: "Salmos",
     text: "Lámpara es a mis pies tu palabra, y lumbrera a mi camino.",
-    themes: ["sabiduria", "fe"],
+    themes: ["sabiduria", "fe", "jovenes"],
   },
   {
     id: "col-3-16",
@@ -571,7 +589,7 @@ export const VERSES: Verse[] = [
     ref: "Efesios 6:1-2",
     book: "Efesios",
     text: "Hijos, obedeced en el Señor a vuestros padres, porque esto es justo. Honra a tu padre y a tu madre, que es el primer mandamiento con promesa.",
-    themes: ["familia"],
+    themes: ["familia", "jovenes"],
   },
   {
     id: "sal-127-3",
@@ -592,14 +610,14 @@ export const VERSES: Verse[] = [
     ref: "Génesis 2:24",
     book: "Génesis",
     text: "Por tanto, dejará el hombre a su padre y a su madre, y se unirá a su mujer, y serán una sola carne.",
-    themes: ["familia", "amor"],
+    themes: ["familia", "amor", "matrimonios"],
   },
   {
     id: "ef-4-32",
     ref: "Efesios 4:32",
     book: "Efesios",
     text: "Antes sed benignos unos con otros, misericordiosos, perdonándoos unos a otros, como Dios también os perdonó a vosotros en Cristo.",
-    themes: ["perdon", "amor", "familia"],
+    themes: ["perdon", "amor", "familia", "matrimonios", "amistad"],
   },
   {
     id: "mt-6-14",
@@ -613,7 +631,7 @@ export const VERSES: Verse[] = [
     ref: "Colosenses 3:13",
     book: "Colosenses",
     text: "Soportándoos unos a otros, y perdonándoos unos a otros si alguno tuviere queja contra otro. De la manera que Cristo os perdonó, así también hacedlo vosotros.",
-    themes: ["perdon", "familia"],
+    themes: ["perdon", "familia", "matrimonios", "amistad"],
   },
   {
     id: "1jn-1-9",

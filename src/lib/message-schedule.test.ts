@@ -61,7 +61,21 @@ test("validates country numbers, deduplicates days, and rejects invalid schedule
     { phone: "123" },
     { channel: "email" },
     { id: "../someone" },
+    { messageLocale: "fr" },
+    { verseId: "../outside" },
   ]) {
     assert.throws(() => validateSchedule({ ...valid, ...change } as ScheduleInput));
   }
+});
+test("keeps the chosen language and verse and defaults legacy schedules to Spanish", () => {
+  assert.equal(validateSchedule(valid).messageLocale, "es");
+  const saved = validateSchedule({
+    ...valid,
+    messageLocale: "en",
+    verseId: "1ti-4-12",
+    message: "Let no one despise your youth.",
+  });
+  assert.equal(saved.messageLocale, "en");
+  assert.equal(saved.verseId, "1ti-4-12");
+  assert.equal(saved.message, "Let no one despise your youth.");
 });

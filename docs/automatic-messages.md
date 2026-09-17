@@ -1,6 +1,6 @@
 # Envíos automáticos
 
-La sección **Gente → Programar envíos** permite guardar por cuenta un destinatario, mensaje fijo, canal (WhatsApp o SMS), días de la semana, hora con minutos y zona horaria. Desde **Enviar este verso → Programar este mensaje** se copia el texto del mensaje al formulario.
+La sección **Gente → Programar envíos** permite guardar por cuenta un destinatario, mensaje fijo, idioma (español o inglés), canal (WhatsApp o SMS), días de la semana, hora con minutos y zona horaria. Desde **Enviar este verso → Programar este mensaje** se copia el texto del mensaje al formulario.
 
 Guardar crea una programación **en pausa**. Activarla requiere conexión de mensajería, acceso autorizado y la confirmación de que el destinatario aceptó recibir los mensajes. Editar una programación la vuelve a pausar. Activar calcula la siguiente fecha futura, sin recuperar mensajes pasados.
 
@@ -12,7 +12,7 @@ Configurar los secretos directamente en Vercel, nunca en el chat ni en Git:
 - `TWILIO_ACCOUNT_SID` y `TWILIO_AUTH_TOKEN`: credenciales de la cuenta Twilio del propietario.
 - `TWILIO_SMS_FROM`: número SMS habilitado en Twilio, en formato `+…`, si se usará SMS.
 - `TWILIO_WHATSAPP_FROM`: remitente WhatsApp Business aprobado, en formato `+…`, si se usará WhatsApp.
-- `TWILIO_WHATSAPP_CONTENT_SID`: plantilla de Twilio aprobada por WhatsApp. El contrato de variables es `1 = nombre del destinatario`, `2 = texto del mensaje`. Usar una plantilla aprobada que permita ese contenido, idioma y finalidad. El texto variable elimina saltos y espacios repetidos. El mensaje fijo y la vista previa deben corresponder a esa plantilla.
+- `TWILIO_WHATSAPP_CONTENT_SID_ES` y `TWILIO_WHATSAPP_CONTENT_SID_EN`: una plantilla aprobada por idioma. `TWILIO_WHATSAPP_CONTENT_SID` se conserva como alternativa para español en configuraciones anteriores; inglés nunca usa esa alternativa. Cada una es una plantilla de Twilio aprobada por WhatsApp. El contrato de variables es `1 = nombre del destinatario`, `2 = texto del mensaje`. Usar una plantilla aprobada que permita ese contenido, idioma y finalidad. El texto variable elimina saltos y espacios repetidos. El mensaje fijo y la vista previa deben corresponder a esa plantilla.
 - `MESSAGING_ALLOWED_USER_IDS`: IDs de usuarios Better Auth autorizados, separados por comas. Obtenerlos en la tabla `user` tras iniciar sesión. Una cuenta cualquiera no obtiene acceso al remitente del propietario.
 - `MESSAGING_ENABLED=true`: habilita el procesamiento. Omitirlo mantiene desactivados todos los envíos.
 
@@ -37,3 +37,9 @@ Conectar el servicio no activa por sí solo las programaciones guardadas: su pro
 `npm run test:schedules` cubre zonas horarias, DST, validación, aislamiento por usuario, persistencia SQL, concurrencia, estados inciertos y rechazo de llamadas cron sin autorización. `npm run typecheck` y `npm run build` verifican la integración.
 
 Referencias: [Vercel Cron](https://vercel.com/docs/cron-jobs/manage-cron-jobs), [Twilio WhatsApp](https://www.twilio.com/docs/whatsapp/key-concepts), [Twilio Messages](https://www.twilio.com/docs/messaging/api/message-resource).
+
+## Idioma y temas
+
+El idioma de envío se guarda por contacto y por programación, independientemente del idioma de la app. En el formulario de programación se puede escoger un tema y versículo; cambiar el idioma vuelve a cargar ese versículo en el idioma elegido. El texto guardado es el texto exacto que procesará el servicio. Editarlo manualmente lo convierte en texto personalizado, que no se traduce automáticamente. Las notas personales también conservan su texto.
+
+Temas adicionales: Jóvenes, Matrimonios, Amistad y Oración. Los textos bíblicos se cargan con el lector existente; no se presentan traducciones generadas como citas bíblicas. Las programaciones anteriores conservan sus mensajes y usan español como idioma predeterminado.
