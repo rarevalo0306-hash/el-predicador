@@ -25,9 +25,9 @@ export function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps) {
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>{user ? t("profileTitle") : t("signupTitle")}</DrawerTitle>
+          <DrawerTitle>{user ? t("profileTitle") : t("logIn")}</DrawerTitle>
           <DrawerDescription>
-            {user ? t("profileHello", { name: greeting }) : t("profileDesc")}
+            {user ? t("profileHello", { name: greeting }) : t("loginSub")}
           </DrawerDescription>
         </DrawerHeader>
         <div className="flex flex-col gap-5 px-5 pb-8">
@@ -40,6 +40,7 @@ export function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps) {
             </p>
             <SignInPanel
               collectDetails
+              initialMode="entrar"
               onSuccess={() => onOpenChange(false)}
             />
           </SignedOut>

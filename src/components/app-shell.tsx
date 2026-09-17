@@ -120,7 +120,7 @@ function PreacherApp({
               onClick={() => setProfileOpen(true)}
               className="inline-flex h-11 items-center rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground"
             >
-              {t("signupLink")}
+              {t("logIn")}
             </button>
           )}
           <button
