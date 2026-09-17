@@ -1,13 +1,5 @@
-import { useState } from "react";
 import { toast } from "sonner";
-import {
-  MessageCircle,
-  Share2,
-  Smartphone,
-  Trash2,
-  UserRound,
-  UserPlus,
-} from "lucide-react";
+import { Share2, Smartphone, UserRound } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -55,12 +47,8 @@ export function SettingsDrawer({
   const notifyHour = useAppStore((s) => s.notifyHour);
   const setNotifyHour = useAppStore((s) => s.setNotifyHour);
   const recipients = useAppStore((s) => s.recipients);
-  const upsertRecipient = useAppStore((s) => s.upsertRecipient);
-  const removeRecipient = useAppStore((s) => s.removeRecipient);
   const fontScale = useAppStore((s) => s.fontScale);
   const setFontScale = useAppStore((s) => s.setFontScale);
-  const [newName, setNewName] = useState("");
-  const [newPhone, setNewPhone] = useState("");
 
   async function toggleNotify() {
     if (notify) {
@@ -89,17 +77,6 @@ export function SettingsDrawer({
       /* verse fetch can fail; reminder is still on */
     }
     toast(t("notifyOn"));
-  }
-
-  function handleAddRecipient() {
-    const saved = upsertRecipient({ name: newName || newPhone, phone: newPhone });
-    if (!saved) {
-      toast(t("recipientNeedPhone"));
-      return;
-    }
-    setNewName("");
-    setNewPhone("");
-    toast(t("recipientSaved"));
   }
 
   function handleFontScale(next: FontScale) {
@@ -285,76 +262,10 @@ export function SettingsDrawer({
             <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
               {t("recipientsManage")}
             </p>
-            <p className="mt-2 text-xs text-muted-foreground">{t("recipientsManageHint")}</p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <Input
-                value={newName}
-                onChange={(event) => setNewName(event.target.value)}
-                placeholder={t("recipientNamePh")}
-                aria-label={t("recipientName")}
-              />
-              <Input
-                value={newPhone}
-                onChange={(event) => setNewPhone(event.target.value)}
-                placeholder={t("phonePlaceholder")}
-                inputMode="tel"
-                aria-label={t("phoneOptional")}
-              />
-            </div>
-            <Button
-              type="button"
-              variant="secondary"
-              className="mt-2 w-full"
-              onClick={handleAddRecipient}
-            >
-              <UserPlus className="size-4" />
-              {t("recipientSave")}
-            </Button>
-            {recipients.length ? (
-              <ul className="mt-3 flex flex-col gap-2">
-                {recipients.map((row) => (
-                  <li
-                    key={row.id}
-                    className="flex items-center justify-between gap-2 rounded-md bg-secondary px-3 py-2 text-sm"
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate font-medium">{row.name}</span>
-                      <span className="block truncate text-xs text-muted-foreground">
-                        {row.phone}
-                      </span>
-                    </span>
-                    <div className="flex shrink-0 items-center gap-1">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        asChild
-                        aria-label={t("peopleWhatsApp")}
-                      >
-                        <a
-                          href={`https://wa.me/${row.phone}`}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          <MessageCircle className="size-4" />
-                        </a>
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => removeRecipient(row.id)}
-                        aria-label={t("recipientRemove")}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-3 text-xs text-muted-foreground">{t("recipientsEmpty")}</p>
-            )}
+            <p className="mt-2 text-xs text-muted-foreground">{t("preachSub")}</p>
+            <p className="mt-3 text-sm text-muted-foreground">
+              {t("recipientsSelected", { n: recipients.length })}
+            </p>
           </div>
 
           <div className="grid gap-2">

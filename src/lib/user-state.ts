@@ -2,7 +2,38 @@ import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { getSql } from "@/lib/db";
 import { isLocale } from "@/lib/i18n";
-import type { CloudPayload } from "@/lib/store";
+import { isThemeId, normalizeChurch } from "@/lib/church";
+import type { CloudPayload, Recipient } from "@/lib/store";
+
+function parseRecipient(row: unknown): Recipient | null {
+  if (!row || typeof row !== "object") return null;
+  const value = row as Record<string, unknown>;
+  if (typeof value.id !== "string" || typeof value.name !== "string") return null;
+  const phone = String(value.phone ?? "").replace(/\D/g, "");
+  if (phone.length < 7) return null;
+  const dailyHour = Number(value.dailyHour);
+  return {
+    id: value.id,
+    name: value.name,
+    phone,
+    at: Number(value.at) || Date.now(),
+    themeId: isThemeId(value.themeId) ? value.themeId : undefined,
+    notes: typeof value.notes === "string" ? value.notes : undefined,
+    dailyEnabled: Boolean(value.dailyEnabled),
+    dailyHour: Number.isFinite(dailyHour)
+      ? Math.min(23, Math.max(0, Math.round(dailyHour)))
+      : 9,
+    lastDailySentDate:
+      typeof value.lastDailySentDate === "string"
+        ? value.lastDailySentDate
+        : undefined,
+    cultoEnabled: Boolean(value.cultoEnabled),
+    lastCultoSentDate:
+      typeof value.lastCultoSentDate === "string"
+        ? value.lastCultoSentDate
+        : undefined,
+  };
+}
 
 function parsePayload(raw: string | null | undefined): CloudPayload | null {
   if (!raw) return null;
@@ -11,21 +42,8 @@ function parsePayload(raw: string | null | undefined): CloudPayload | null {
     if (!value || typeof value !== "object") return null;
     const recipients = Array.isArray(value.recipients)
       ? value.recipients
-          .filter(
-            (row) =>
-              row &&
-              typeof row === "object" &&
-              typeof row.id === "string" &&
-              typeof row.name === "string" &&
-              typeof row.phone === "string",
-          )
-          .map((row) => ({
-            id: row.id,
-            name: row.name,
-            phone: String(row.phone).replace(/\D/g, ""),
-            at: Number(row.at) || Date.now(),
-          }))
-          .filter((row) => row.phone.length >= 7)
+          .map(parseRecipient)
+          .filter((row): row is Recipient => Boolean(row))
       : [];
     const hour = Number(value.notifyHour);
     const scaleRaw = Number(value.fontScale);
@@ -48,6 +66,7 @@ function parsePayload(raw: string | null | undefined): CloudPayload | null {
       notify: Boolean(value.notify),
       notifyHour: Number.isFinite(hour) ? Math.min(23, Math.max(0, Math.round(hour))) : 8,
       recipients,
+      church: normalizeChurch(value.church),
       sent: Array.isArray(value.sent) ? value.sent : [],
       dailyOffset: Number(value.dailyOffset) || 0,
       dailyDate: typeof value.dailyDate === "string" ? value.dailyDate : "",

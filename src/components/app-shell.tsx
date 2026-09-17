@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { BookOpen, Flame, Heart, Layers, Settings, Sun, UserRound } from "lucide-react";
+import { BookOpen, Flame, Heart, Layers, Settings, Sun, UserRound, Users } from "lucide-react";
 import { Logo } from "@/components/mark";
 import { TodayView } from "@/components/today-view";
 import { ThemesView } from "@/components/themes-view";
 import { BibleView } from "@/components/bible-view";
 import { EvangelismoView } from "@/components/evangelismo-view";
 import { SavedView } from "@/components/saved-view";
+import { PeoplePreachView } from "@/components/people-preach-view";
 import { SendDrawer } from "@/components/send-drawer";
 import { SettingsDrawer } from "@/components/settings-drawer";
 import { ProfileDrawer } from "@/components/profile-drawer";
@@ -16,15 +17,18 @@ import { useAppStore, type SendDraft } from "@/lib/store";
 import { detectLocale, persistLocale } from "@/lib/i18n";
 import { hydrateVerse } from "@/lib/recobro";
 import { getDailyVerse, todayKey, type ThemeId, type Verse } from "@/lib/verses";
+import { allDueItems } from "@/lib/preach-schedule";
+import { showDailyNotification } from "@/lib/notify";
 import { cn } from "@/lib/utils";
 
-type Tab = "hoy" | "biblia" | "evangelio" | "temas" | "guardados";
+type Tab = "hoy" | "biblia" | "evangelio" | "temas" | "personas" | "guardados";
 
 const TAB_ICONS: { id: Tab; icon: typeof Sun }[] = [
   { id: "hoy", icon: Sun },
   { id: "biblia", icon: BookOpen },
   { id: "evangelio", icon: Flame },
   { id: "temas", icon: Layers },
+  { id: "personas", icon: Users },
   { id: "guardados", icon: Heart },
 ];
 
@@ -66,12 +70,35 @@ function PreacherApp({
   const notify = useAppStore((s) => s.notify);
   const notifyHour = useAppStore((s) => s.notifyHour);
   const fontScale = useAppStore((s) => s.fontScale);
+  const recipients = useAppStore((s) => s.recipients);
+  const church = useAppStore((s) => s.church);
 
   useEffect(() => {
     void import("@/lib/reader-prefs").then(({ applyFontScale }) => {
       applyFontScale(fontScale);
     });
   }, [fontScale, ready]);
+
+  useEffect(() => {
+    if (!ready || !notify) return;
+    if (typeof Notification === "undefined") return;
+    if (Notification.permission !== "granted") return;
+
+    const due = allDueItems(recipients, church, notifyHour);
+    if (!due.length) return;
+    const key = `pv-preach-due-${todayKey()}-${due.length}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      void showDailyNotification({
+        title: t("preachRemindTitle"),
+        body: t("preachRemindBody"),
+        tag: key,
+      });
+      sessionStorage.setItem(key, "1");
+    } catch {
+      /* ignore */
+    }
+  }, [ready, notify, notifyHour, recipients, church, t]);
 
   useEffect(() => {
     if (!ready || !notify) return;
@@ -202,6 +229,9 @@ function PreacherApp({
             onSend={openSend}
           />
         ) : null}
+        {ready && tab === "personas" ? (
+          <PeoplePreachView onSend={openSend} />
+        ) : null}
         {ready && tab === "guardados" ? (
           <SavedView
             onSend={openSend}
@@ -216,7 +246,7 @@ function PreacherApp({
         className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background pb-[env(safe-area-inset-bottom)]"
         aria-label={t("sections")}
       >
-        <div className="mx-auto grid max-w-lg grid-cols-5">
+        <div className="mx-auto grid max-w-lg grid-cols-6">
           {TAB_ICONS.map((item) => {
             const active = tab === item.id;
             const Icon = item.icon;
@@ -225,6 +255,7 @@ function PreacherApp({
               biblia: t("tabBiblia"),
               evangelio: t("tabEvangelio"),
               temas: t("tabTemas"),
+              personas: t("tabPersonas"),
               guardados: t("tabGuardados"),
             } as const;
             return (

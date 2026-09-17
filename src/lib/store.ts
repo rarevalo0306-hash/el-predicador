@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import type { MessageKind } from "@/lib/messages";
 import { persistLocale, type Locale } from "@/lib/i18n";
-import { todayKey, type Verse } from "@/lib/verses";
+import { todayKey, type ThemeId, type Verse } from "@/lib/verses";
+import { EMPTY_CHURCH, isThemeId, normalizeChurch, type ChurchInfo } from "@/lib/church";
 
 export type SentItem = {
   verseId: string;
@@ -30,12 +31,33 @@ export type SendDraft = {
   kind?: MessageKind | null;
 };
 
-/** People you preach to — local phone book for WhatsApp / SMS. */
+/** People you preach to — phone book + theme + schedules. */
 export type Recipient = {
   id: string;
   name: string;
   phone: string;
   at: number;
+  /** Theme that interests them most. */
+  themeId?: ThemeId;
+  notes?: string;
+  /** Remind preacher to send a daily verse on their theme. */
+  dailyEnabled?: boolean;
+  dailyHour?: number;
+  lastDailySentDate?: string;
+  /** Remind preacher to invite them to church service. */
+  cultoEnabled?: boolean;
+  lastCultoSentDate?: string;
+};
+
+export type RecipientInput = {
+  name: string;
+  phone: string;
+  id?: string;
+  themeId?: ThemeId | null;
+  notes?: string;
+  dailyEnabled?: boolean;
+  dailyHour?: number;
+  cultoEnabled?: boolean;
 };
 
 export type CloudPayload = {
@@ -48,6 +70,7 @@ export type CloudPayload = {
   /** Preferred local hour (0–23) for the daily verse reminder. */
   notifyHour: number;
   recipients: Recipient[];
+  church: ChurchInfo;
   sent: SentItem[];
   dailyOffset: number;
   dailyDate: string;
@@ -69,6 +92,7 @@ export const EMPTY_CLOUD: CloudPayload = {
   notify: false,
   notifyHour: 8,
   recipients: [],
+  church: { ...EMPTY_CHURCH },
   sent: [],
   dailyOffset: 0,
   dailyDate: "",
@@ -99,8 +123,11 @@ type AppState = CloudPayload & {
   setDisplayName: (displayName: string) => void;
   setNotify: (notify: boolean) => void;
   setNotifyHour: (hour: number) => void;
-  upsertRecipient: (item: { name: string; phone: string; id?: string }) => Recipient | null;
+  upsertRecipient: (item: RecipientInput) => Recipient | null;
   removeRecipient: (id: string) => void;
+  markRecipientDailySent: (id: string, date?: string) => void;
+  markRecipientCultoSent: (id: string, date?: string) => void;
+  setChurch: (church: Partial<ChurchInfo>) => void;
   addSent: (item: SentItem) => void;
   bumpOffset: () => void;
   ensureToday: () => void;
@@ -184,30 +211,68 @@ export const useAppStore = create<AppState>()((set, get) => ({
     const existing = get().recipients.find(
       (row) => row.id === item.id || normalizePhone(row.phone) === phone,
     );
-    if (existing) {
-      const next: Recipient = { ...existing, name, phone, at: Date.now() };
-      set((state) => ({
-        recipients: [
-          next,
-          ...state.recipients.filter((row) => row.id !== existing.id),
-        ],
-      }));
-      return next;
-    }
-    const created: Recipient = {
-      id: item.id ?? newId(),
+    const themeId =
+      item.themeId === null
+        ? undefined
+        : isThemeId(item.themeId)
+          ? item.themeId
+          : existing?.themeId;
+    const base: Recipient = {
+      id: existing?.id ?? item.id ?? newId(),
       name,
       phone,
       at: Date.now(),
+      themeId,
+      notes:
+        item.notes !== undefined
+          ? item.notes.trim() || undefined
+          : existing?.notes,
+      dailyEnabled:
+        item.dailyEnabled !== undefined
+          ? item.dailyEnabled
+          : (existing?.dailyEnabled ?? false),
+      dailyHour:
+        item.dailyHour !== undefined
+          ? Math.min(23, Math.max(0, Math.round(item.dailyHour)))
+          : (existing?.dailyHour ?? 9),
+      lastDailySentDate: existing?.lastDailySentDate,
+      cultoEnabled:
+        item.cultoEnabled !== undefined
+          ? item.cultoEnabled
+          : (existing?.cultoEnabled ?? false),
+      lastCultoSentDate: existing?.lastCultoSentDate,
     };
     set((state) => ({
-      recipients: [created, ...state.recipients].slice(0, 80),
+      recipients: [
+        base,
+        ...state.recipients.filter((row) => row.id !== base.id),
+      ].slice(0, 80),
     }));
-    return created;
+    return base;
   },
   removeRecipient: (id) =>
     set((state) => ({
       recipients: state.recipients.filter((row) => row.id !== id),
+    })),
+  markRecipientDailySent: (id, date) =>
+    set((state) => ({
+      recipients: state.recipients.map((row) =>
+        row.id === id
+          ? { ...row, lastDailySentDate: date ?? todayKey() }
+          : row,
+      ),
+    })),
+  markRecipientCultoSent: (id, date) =>
+    set((state) => ({
+      recipients: state.recipients.map((row) =>
+        row.id === id
+          ? { ...row, lastCultoSentDate: date ?? todayKey() }
+          : row,
+      ),
+    })),
+  setChurch: (partial) =>
+    set((state) => ({
+      church: normalizeChurch({ ...state.church, ...partial }),
     })),
   addSent: (item) =>
     set((state) => ({ sent: [item, ...state.sent].slice(0, 30) })),
@@ -273,6 +338,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
           ? Math.min(23, Math.max(0, Math.round(payload.notifyHour)))
           : 8,
       recipients: Array.isArray(payload.recipients) ? payload.recipients : [],
+      church: normalizeChurch(payload.church),
       highlights: Array.isArray(payload.highlights) ? payload.highlights : [],
       fontScale: scale,
       locale,
@@ -289,6 +355,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       notify: state.notify,
       notifyHour: state.notifyHour,
       recipients: state.recipients,
+      church: state.church,
       sent: state.sent,
       dailyOffset: state.dailyOffset,
       dailyDate: state.dailyDate,
