@@ -143,6 +143,29 @@ export async function signIn(
     return;
   }
 
+  // Deployed / local: prefer native Google social provider. The Grok preview
+  // broker client must not be used on production hosts (redirect_uri rejected).
+  if (providerId === "grok-google" || providerId === "google") {
+    const { data, error } = await authClient.signIn.social({
+      provider: "google",
+      callbackURL,
+      errorCallbackURL,
+    });
+    if (error) {
+      const code = (error as { code?: string }).code ?? "";
+      const message = error.message ?? "";
+      if (
+        code === "PROVIDER_NOT_FOUND" ||
+        /provider not found/i.test(message)
+      ) {
+        throw new Error("GOOGLE_NOT_CONFIGURED");
+      }
+      throw new Error(message || "Sign-in failed");
+    }
+    if (data?.url) window.location.href = data.url;
+    return;
+  }
+
   const { data, error } = await authClient.signIn.oauth2({
     providerId,
     callbackURL,

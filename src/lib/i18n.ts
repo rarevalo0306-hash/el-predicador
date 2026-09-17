@@ -53,6 +53,8 @@ const es = {
   next: "Siguiente",
   or: "o",
   signupGoogle: "Continuar con Google",
+  googleNotConfigured:
+    "Google aún no está activo en este sitio. Usa correo y clave, o configura Google en el hosting.",
   signupX: "Registrarse con X",
   haveAccountAsk: "¿Ya tienes cuenta?",
   noAccountAsk: "¿No tienes cuenta?",
@@ -348,6 +350,8 @@ const en: Record<keyof typeof es, string> = {
   next: "Next",
   or: "or",
   signupGoogle: "Continue with Google",
+  googleNotConfigured:
+    "Google sign-in is not active on this site yet. Use email and password, or configure Google in hosting.",
   signupX: "Sign up with X",
   haveAccountAsk: "Already have an account?",
   noAccountAsk: "Don't have an account?",

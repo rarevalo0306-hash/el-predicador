@@ -234,7 +234,26 @@ export function SignInPanel({
             type="button"
             variant="outline"
             className="h-12 w-full rounded-full text-base"
-            onClick={() => signIn(provider.providerId, { callbackURL: "/" })}
+            disabled={busy}
+            onClick={() => {
+              void (async () => {
+                setBusy(true);
+                setError(null);
+                try {
+                  await signIn(provider.providerId, { callbackURL: "/" });
+                } catch (err) {
+                  const message =
+                    err instanceof Error && err.message ? err.message : t("signInError");
+                  setError(
+                    message === "GOOGLE_NOT_CONFIGURED"
+                      ? t("googleNotConfigured")
+                      : message,
+                  );
+                } finally {
+                  setBusy(false);
+                }
+              })();
+            }}
           >
             {provider.idp === "google" ? <GoogleMark /> : null}
             {t("signupGoogle")}
