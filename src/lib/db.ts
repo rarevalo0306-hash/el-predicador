@@ -252,25 +252,28 @@ export async function getPglite(): Promise<import("@electric-sql/pglite").PGlite
  *
  * - **PGLite** (preview / no `DATABASE_URL`): open the in-memory DB and apply
  *   `migrations/*.sql`. Idempotent — concurrent callers share one promise.
- * - **Neon**: no-op (pool is created lazily on first query).
+ * - **Postgres / Neon / Supabase** (`DATABASE_URL` set): open the pool and apply
+ *   pending migrations. Build-time `scripts/migrate.mjs` can soft-skip when the
+ *   host is unreachable (ENETUNREACH); auth still needs tables before the first
+ *   `/api/auth/*` request — Better Auth uses its own `pg` Pool, so this must
+ *   run independently of app `getSql()` call sites.
  *
  * Vite `configureServer` awaits this at dev startup; production imports of this
  * module kick it off immediately (see bottom of file).
  */
 export function ensureDbReady(): Promise<void> {
-  if (dbSource !== "pglite") return Promise.resolve();
   return getSql().then(() => undefined);
 }
 
-// Server-only eager start: kick PGLite bootstrap as soon as this module loads in
-// Node. Client bundles never hit this path (`getSql` throws in the browser).
+// Server-only eager start: kick bootstrap as soon as this module loads in Node.
+// Client bundles never hit this path (`getSql` throws in the browser).
 const globalBoot = globalThis as typeof globalThis & {
   __pgBootstrapPromise__?: Promise<void>;
 };
-if (typeof window === "undefined" && dbSource === "pglite") {
+if (typeof window === "undefined") {
   globalBoot.__pgBootstrapPromise__ ??= ensureDbReady().catch((err) => {
     globalBoot.__pgBootstrapPromise__ = undefined;
-    console.error("[db] PGLite bootstrap failed:", err);
+    console.error(`[db] ${dbSource} bootstrap failed:`, err);
     throw err;
   });
 }
