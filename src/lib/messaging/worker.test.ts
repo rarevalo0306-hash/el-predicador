@@ -4,7 +4,12 @@ import { readFile } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "../db.ts";
 import { runScheduledMessages, validCronAuthorization } from "./worker.server.ts";
-import { saveSchedule, listSchedules, setScheduleEnabled } from "./schedules.server.ts";
+import {
+  saveSchedule,
+  listSchedules,
+  setScheduleEnabled,
+  deleteSchedule,
+} from "./schedules.server.ts";
 import type { ScheduleInput } from "../message-schedule.ts";
 const db = new PGlite();
 const sql = (async (parts: TemplateStringsArray, ...values: unknown[]) => {
@@ -64,6 +69,23 @@ test("cron rejects absent, invalid and prefix-confused authorization", () => {
   assert.equal(validCronAuthorization("Bearer undefined", undefined), false);
   assert.equal(validCronAuthorization("Bearer x", "secret"), false);
   assert.equal(validCronAuthorization("Bearer secret", "secret"), true);
+});
+test("deleting frees a slot, belongs to the owner, and waits out a lease", async () => {
+  const { id } = await saveSchedule("owner", schedule, sql);
+  await assert.rejects(() => deleteSchedule("other", id, sql), /scheduleBusy/);
+  assert.equal((await listSchedules("owner", sql)).schedules.length, 1);
+  // A row being delivered right now must not vanish from under the worker.
+  await sql`update message_schedules set lease_until = now() + interval '3 minutes' where id=${id}`;
+  await assert.rejects(() => deleteSchedule("owner", id, sql), /scheduleBusy/);
+  await sql`update message_schedules set lease_until = null where id=${id}`;
+  await sql`insert into message_deliveries (id, schedule_id, scheduled_for, status)
+    values ('d1', ${id}, ${"2026-09-17T13:15:00Z"}, 'accepted')`;
+  await deleteSchedule("owner", id, sql);
+  assert.equal((await listSchedules("owner", sql)).schedules.length, 0);
+  // The receipts of a deleted schedule go with it.
+  const [{ count }] = await sql<{ count: number }>`select count(*)::int as count
+    from message_deliveries where schedule_id = ${id}`;
+  assert.equal(count, 0);
 });
 test("schedules persist days, minutes and zone, and are isolated by account", async () => {
   const { id } = await saveSchedule("owner", schedule, sql);

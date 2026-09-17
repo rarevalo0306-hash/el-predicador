@@ -22,7 +22,7 @@ Conectar el servicio no activa por sí solo las programaciones guardadas: su pro
 
 ## Comportamiento y límites
 
-- Hasta 20 programaciones por cuenta, un destinatario y un mensaje fijo de hasta 1.000 caracteres por programación.
+- Hasta 20 programaciones por cuenta, un destinatario y un mensaje fijo de hasta 1.000 caracteres por programación. **Eliminar** una programación libera su espacio y borra también su historial de envíos; no se puede recuperar. Una programación que se está enviando en ese momento no se puede editar ni eliminar hasta que termine.
 - Se procesan hasta 10 vencidas por ejecución. No es una garantía de envío al segundo exacto.
 - Se respetan las zonas IANA y el horario de verano. En el salto de primavera, una hora inexistente se desplaza hacia adelante; en la repetición de otoño se usa una sola vez la primera ocurrencia.
 - Un retraso mayor de 15 minutos marca ese envío como omitido y calcula el siguiente. No se envían lotes acumulados tras una interrupción.

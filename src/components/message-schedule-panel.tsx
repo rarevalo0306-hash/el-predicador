@@ -21,6 +21,7 @@ import { WEEKDAY_KEYS } from "@/lib/church";
 import { formatPhone } from "@/lib/phone";
 import { validateSchedule, type ScheduleInput, type MessageSchedule } from "@/lib/message-schedule";
 import {
+  deleteMessageSchedule,
   getMessageSchedules,
   saveMessageSchedule,
   setMessageScheduleEnabled,
@@ -142,12 +143,13 @@ function MessageScheduleForm({
     }
   }
   function changeLanguage(messageLocale: Locale, patch: Partial<ScheduleInput> = {}) {
-    update(patch);
+    // Apply the language up front: a verse that fails to load must not leave the
+    // selector showing the previous language.
+    update({ ...patch, messageLocale });
     if (form.verseId) void chooseVerse(form.verseId, messageLocale);
     else {
       requestVersion.current++;
       setPreparing(false);
-      update({ messageLocale });
     }
   }
   function editSchedule(row: MessageSchedule) {
@@ -174,6 +176,20 @@ function MessageScheduleForm({
       await saveMessageSchedule({ data: validateSchedule(form) });
       toast.success(copy.saved);
       resetForm();
+      await query.refetch();
+    } catch (error) {
+      showError(error);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function remove(row: MessageSchedule) {
+    if (!window.confirm(copy.deleteConfirm)) return;
+    setBusy(true);
+    try {
+      await deleteMessageSchedule({ data: { id: row.id } });
+      toast.success(copy.deleted);
+      if (form.id === row.id) resetForm();
       await query.refetch();
     } catch (error) {
       showError(error);
@@ -527,6 +543,14 @@ function MessageScheduleForm({
                   onClick={() => void toggle(row)}
                 >
                   {row.enabled ? copy.pause : copy.activate}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => void remove(row)}
+                >
+                  {copy.delete}
                 </Button>
               </div>
             </article>
