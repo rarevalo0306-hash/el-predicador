@@ -21,7 +21,43 @@ import { dirname, join } from "node:path";
 import pg from "pg";
 import { pendingMigrations } from "./migration-plan.mjs";
 
-const databaseUrl = process.env.DATABASE_URL;
+/** Mirror of src/lib/database-url.ts — keep in sync (build script cannot import TS). */
+function normalizeDatabaseUrl(raw) {
+  if (!raw || !String(raw).trim()) return undefined;
+  const url = String(raw).trim();
+  if (process.env.SUPABASE_USE_DIRECT?.trim() === "1") return url;
+  if (/pooler\.supabase\.com/i.test(url)) return url;
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return url;
+  }
+  const hostMatch = /^db\.([a-z0-9]+)\.supabase\.co$/i.exec(parsed.hostname);
+  if (!hostMatch) return url;
+  const projectRef = hostMatch[1];
+  const region = (process.env.SUPABASE_REGION?.trim() || "us-east-1").replace(
+    /^aws-\d+-/,
+    "",
+  );
+  const poolerHost = `aws-0-${region}.pooler.supabase.com`;
+  const user = decodeURIComponent(parsed.username || "postgres");
+  parsed.hostname = poolerHost;
+  parsed.port = "6543";
+  parsed.username = user.includes(".") ? user : `postgres.${projectRef}`;
+  if (!parsed.searchParams.has("pgbouncer")) {
+    parsed.searchParams.set("pgbouncer", "true");
+  }
+  const normalized = parsed.toString();
+  if (normalized !== url) {
+    console.info(
+      `[migrate] rewrote Supabase direct host → pooler (${poolerHost}) for IPv4`,
+    );
+  }
+  return normalized;
+}
+
+const databaseUrl = normalizeDatabaseUrl(process.env.DATABASE_URL);
 if (!databaseUrl) {
   console.log(
     "[migrate] DATABASE_URL not set — skipping (the PGLite fallback migrates itself).",
