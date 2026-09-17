@@ -422,7 +422,7 @@ const en: Record<keyof typeof es, string> = {
   profileHello: "Hello, {name}",
   useWithoutAccount: "Continue without an account",
   settingsTitle: "Settings",
-  settingsDesc: "Language, your details, and the daily reminder.",
+  settingsDesc: "Language, text size, share the app, and the daily reminder.",
   yourAccount: "Your account",
   accountKeeps: "Favorites, messages, and bookmarks stay with your account.",
   language: "Language",
