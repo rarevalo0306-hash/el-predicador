@@ -1,4 +1,5 @@
 import { pendingMigrations } from "../../scripts/migration-plan.mjs";
+import { postgresConnectionOptions } from "../../scripts/postgres-options.mjs";
 import { normalizeDatabaseUrl } from "@/lib/database-url";
 
 /** Which database backend is active. */
@@ -96,7 +97,7 @@ function createNeonSql(): Promise<Sql> {
     types.setTypeParser(OID_DATE, identity);
     types.setTypeParser(OID_INTERVAL, identity);
     const pool = new Pool({
-      connectionString: databaseUrl,
+      ...postgresConnectionOptions(databaseUrl!),
       // Prefer IPv4 — matches scripts/migrate.mjs (Vercel/Supabase ENETUNREACH).
       // @ts-expect-error pg forwards unrecognized options to net.connect
       family: 4,

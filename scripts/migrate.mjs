@@ -20,6 +20,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import pg from "pg";
 import { pendingMigrations } from "./migration-plan.mjs";
+import { postgresConnectionOptions } from "./postgres-options.mjs";
 
 /** Mirror of src/lib/database-url.ts — keep in sync (build script cannot import TS). */
 function normalizeDatabaseUrl(raw) {
@@ -95,7 +96,7 @@ async function main() {
   // Prefer IPv4 — some free Supabase / Neon endpoints advertise IPv6 that the
   // Vercel build network cannot reach (ENETUNREACH).
   const pool = new pg.Pool({
-    connectionString: databaseUrl,
+    ...postgresConnectionOptions(databaseUrl),
     max: 1,
     connectionTimeoutMillis: 15_000,
     // Prefer IPv4 (forwarded to net.connect) — Vercel build often cannot reach

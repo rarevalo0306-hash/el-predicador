@@ -37,6 +37,7 @@ import { randomBytes } from "node:crypto";
 import { Pool } from "pg";
 import { ensureDbReady, getPglite } from "../db";
 import { normalizeDatabaseUrl } from "../database-url";
+import { postgresConnectionOptions } from "../../../scripts/postgres-options.mjs";
 import { emailAndPasswordEnabled } from "./email-password";
 import { GATE_PROVIDER_ID, gateIdentitySessions } from "./gate-session.server";
 import { GROK_PROVIDERS } from "./providers";
@@ -205,7 +206,7 @@ const grokUserInfoUrl = `${issuerBase}/api/auth/oauth2/userinfo`;
 // the app turns sign-in on.
 const database = databaseUrl
   ? new Pool({
-      connectionString: databaseUrl,
+      ...postgresConnectionOptions(databaseUrl),
       // Prefer IPv4 — same as src/lib/db.ts + scripts/migrate.mjs. Vercel
       // serverless often cannot reach IPv6-only Supabase/Neon hosts.
       // @ts-expect-error pg forwards unrecognized options to net.connect
