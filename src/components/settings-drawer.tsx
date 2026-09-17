@@ -22,12 +22,14 @@ type SettingsDrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onOpenProfile?: () => void;
+  onOpenSignUp?: () => void;
 };
 
 export function SettingsDrawer({
   open,
   onOpenChange,
   onOpenProfile,
+  onOpenSignUp,
 }: SettingsDrawerProps) {
   const { locale, t } = useI18n();
   const displayName = useAppStore((s) => s.displayName);
@@ -98,17 +100,30 @@ export function SettingsDrawer({
             </SignedIn>
             <SignedOut>
               <p className="mt-2 text-sm text-muted-foreground">{t("profileGuest")}</p>
-              <Button
-                type="button"
-                className="mt-3 h-11 w-full"
-                onClick={() => {
-                  onOpenChange(false);
-                  onOpenProfile?.();
-                }}
-              >
-                <UserRound className="size-4" />
-                {t("logIn")}
-              </Button>
+              <div className="mt-3 flex flex-col gap-2">
+                <Button
+                  type="button"
+                  className="h-11 w-full"
+                  onClick={() => {
+                    onOpenChange(false);
+                    onOpenProfile?.();
+                  }}
+                >
+                  <UserRound className="size-4" />
+                  {t("logIn")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 w-full"
+                  onClick={() => {
+                    onOpenChange(false);
+                    onOpenSignUp?.();
+                  }}
+                >
+                  {t("signupLink")}
+                </Button>
+              </div>
             </SignedOut>
           </div>
           <div className="grid gap-2">

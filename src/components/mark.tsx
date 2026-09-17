@@ -23,9 +23,9 @@ export function WordMark({ className }: { className?: string }) {
 export function Logo({ className }: { className?: string }) {
   const locale = useAppStore((s) => s.locale) ?? "es";
   return (
-    <div className={cn("flex items-center gap-3", className)}>
-      <PreacherMark className="size-12 shrink-0" />
-      <div className="min-w-0">
+    <div className={cn("flex min-w-0 items-center gap-2 sm:gap-3", className)}>
+      <PreacherMark className="size-10 shrink-0 sm:size-12" />
+      <div className="hidden min-w-0 sm:block">
         <p className="font-serif text-xl leading-none tracking-tight">
           The Preacher
         </p>
@@ -33,6 +33,7 @@ export function Logo({ className }: { className?: string }) {
           {t(locale, "tagline")}
         </p>
       </div>
+      <span className="sr-only">The Preacher</span>
     </div>
   );
 }
