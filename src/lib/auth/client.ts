@@ -146,24 +146,41 @@ export async function signIn(
   // Deployed / local: prefer native Google social provider. The Grok preview
   // broker client must not be used on production hosts (redirect_uri rejected).
   if (providerId === "grok-google" || providerId === "google") {
-    const { data, error } = await authClient.signIn.social({
-      provider: "google",
-      callbackURL,
-      errorCallbackURL,
-    });
-    if (error) {
-      const code = (error as { code?: string }).code ?? "";
-      const message = error.message ?? "";
-      if (
-        code === "PROVIDER_NOT_FOUND" ||
-        /provider not found/i.test(message)
-      ) {
+    try {
+      const result = await authClient.signIn.social({
+        provider: "google",
+        callbackURL,
+        errorCallbackURL,
+      });
+      const error = result?.error as
+        | { message?: string; code?: string; status?: number; statusText?: string }
+        | undefined;
+      if (error) {
+        const code = String(error.code ?? error.status ?? "");
+        const message = String(error.message ?? error.statusText ?? "");
+        if (
+          code === "PROVIDER_NOT_FOUND" ||
+          code === "404" ||
+          error.status === 404 ||
+          /provider not found/i.test(message)
+        ) {
+          throw new Error("GOOGLE_NOT_CONFIGURED");
+        }
+        throw new Error(message || "Sign-in failed");
+      }
+      if (result?.data?.url) {
+        window.location.href = result.data.url;
+        return;
+      }
+      throw new Error("GOOGLE_NOT_CONFIGURED");
+    } catch (err) {
+      if (err instanceof Error && err.message === "GOOGLE_NOT_CONFIGURED") throw err;
+      const message = err instanceof Error ? err.message : String(err ?? "");
+      if (/provider not found|GOOGLE_NOT_CONFIGURED|404/i.test(message)) {
         throw new Error("GOOGLE_NOT_CONFIGURED");
       }
-      throw new Error(message || "Sign-in failed");
+      throw err instanceof Error ? err : new Error(message || "Sign-in failed");
     }
-    if (data?.url) window.location.href = data.url;
-    return;
   }
 
   const { data, error } = await authClient.signIn.oauth2({

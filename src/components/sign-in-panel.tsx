@@ -217,7 +217,11 @@ export function SignInPanel({
             ) : null}
           </>
         ) : null}
-        {error ? <p className="text-sm text-primary">{error}</p> : null}
+        {error ? (
+          <p className="text-sm leading-relaxed text-primary" role="alert">
+            {error}
+          </p>
+        ) : null}
         <Button type="submit" className="h-12 w-full rounded-full text-base" disabled={busy}>
           {busy ? t("wait") : creating ? t("signupLink") : t("logIn")}
         </Button>
@@ -245,7 +249,8 @@ export function SignInPanel({
                   const message =
                     err instanceof Error && err.message ? err.message : t("signInError");
                   setError(
-                    message === "GOOGLE_NOT_CONFIGURED"
+                    message === "GOOGLE_NOT_CONFIGURED" ||
+                      /provider not found|GOOGLE_NOT_CONFIGURED/i.test(message)
                       ? t("googleNotConfigured")
                       : message,
                   );
