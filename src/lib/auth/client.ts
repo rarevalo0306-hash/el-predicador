@@ -143,6 +143,43 @@ export async function signIn(
     return;
   }
 
+  // Deployed / local: call native Google social directly. Avoid the Better Auth
+  // client helper here — on 404 it can fail without a usable `{ error }` shape,
+  // which made the Google button look dead on production.
+  if (providerId === "grok-google" || providerId === "google") {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    const bearer = getBearerToken();
+    if (bearer) headers.Authorization = `Bearer ${bearer}`;
+    const res = await fetch("/api/auth/sign-in/social", {
+      method: "POST",
+      headers,
+      credentials: "include",
+      body: JSON.stringify({
+        provider: "google",
+        callbackURL,
+        errorCallbackURL,
+      }),
+    });
+    const body = (await res.json().catch(() => ({}))) as {
+      url?: string;
+      message?: string;
+      code?: string;
+    };
+    if (!res.ok) {
+      if (res.status === 404 || body.code === "PROVIDER_NOT_FOUND") {
+        throw new Error("GOOGLE_NOT_CONFIGURED");
+      }
+      throw new Error(body.message || "Sign-in failed");
+    }
+    if (body.url) {
+      window.location.href = body.url;
+      return;
+    }
+    throw new Error("GOOGLE_NOT_CONFIGURED");
+  }
+
   const { data, error } = await authClient.signIn.oauth2({
     providerId,
     callbackURL,

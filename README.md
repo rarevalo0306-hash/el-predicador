@@ -15,11 +15,19 @@ Configúralas en el hosting (nunca en el código):
 
 | Variable | Uso |
 | --- | --- |
-| `CONTACTS_ADMIN_PIN` | Clave para ver la lista de contactos (obligatoria; sin ella la lista no abre) |
+| `BETTER_AUTH_URL` | URL pública, ej. `https://www.thepreacher.app` |
+| `BETTER_AUTH_SECRET` | Secreto largo para sesiones |
+| `DATABASE_URL` | Postgres (auth + estado + contactos) |
+| `GOOGLE_CLIENT_ID` | OAuth de Google (Crear / Entrar con Google) |
+| `GOOGLE_CLIENT_SECRET` | Secreto OAuth de Google |
+| `CONTACTS_ADMIN_PIN` | Clave para ver la lista de contactos |
 | `CONTACTS_ADMIN_USER_IDS` | Opcional: IDs de usuario permitidos, separados por coma |
 | `CONTACTS_EMAIL` | Correo FormSubmit para avisos de nuevos registros |
-| `DATABASE_URL` | Postgres (auth + estado + contactos) |
 | `VITE_AUTH_ENABLED` | `true` en deploy para cuentas |
+
+Para Google en [Google Cloud Console](https://console.cloud.google.com/apis/credentials): crea un cliente OAuth web y añade como URI de redirección:
+
+`https://www.thepreacher.app/api/auth/callback/google`
 
 ## Repo
 

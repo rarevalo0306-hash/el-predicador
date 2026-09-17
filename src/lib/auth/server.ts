@@ -80,18 +80,57 @@ const authDisabled = env("VITE_AUTH_ENABLED") === "false";
 const grokIssuer = env("GROK_AUTH_ISSUER") ?? GROK_ISSUER_DEFAULT;
 const grokClientId = env("GROK_AUTH_CLIENT_ID") ?? PREVIEW_CLIENT_ID;
 const grokClientSecret = env("GROK_AUTH_CLIENT_SECRET") ?? PREVIEW_CLIENT_SECRET;
+/** True when we have a real per-app broker client (not the preview-only fallback). */
+const hasDeployedGrokClient = Boolean(
+  env("GROK_AUTH_CLIENT_ID") && env("GROK_AUTH_CLIENT_SECRET"),
+);
 
-/** True when federated sign-in is active (real auth is enforced). */
-export const authConfigured =
-  !authDisabled && Boolean(grokClientId && grokClientSecret);
+/** Native Google OAuth (standalone Vercel deploys that are not Grok-broker injected). */
+const googleClientId = env("GOOGLE_CLIENT_ID");
+const googleClientSecret = env("GOOGLE_CLIENT_SECRET");
+const nativeGoogleEnabled = Boolean(googleClientId && googleClientSecret);
+
+function normalizePublicOrigin(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const trimmed = raw.trim().replace(/\/+$/, "");
+  if (!trimmed) return undefined;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+function originVariants(origin: string): string[] {
+  try {
+    const url = new URL(origin);
+    const hosts = new Set<string>([url.host]);
+    if (url.hostname.startsWith("www.")) {
+      hosts.add(url.host.replace(/^www\./, ""));
+    } else if (url.hostname.includes(".")) {
+      hosts.add(`www.${url.hostname}`);
+    }
+    return [...hosts].map((host) => `${url.protocol}//${host}`);
+  } catch {
+    return [origin];
+  }
+}
 
 // This app's own Better Auth origin. When deployed the deployer injects the
-// public URL. In the sandbox live preview there's no fixed URL (each preview gets
-// a dynamic `*.grok-sandbox.com` host), so we hand Better Auth a dynamic baseURL:
-// it derives the origin per-request from the (proxied) host, validated against the
-// preview allowlist, which makes the OAuth `redirect_uri` the concrete preview URL
-// the broker's preview client accepts.
-const explicitBaseURL = env("BETTER_AUTH_URL");
+// public URL. On Vercel without that injection, use the project production
+// domain (or the deployment URL) so OAuth redirect_uri is never localhost.
+// In the sandbox live preview there's no fixed URL (each preview gets a dynamic
+// `*.grok-sandbox.com` host), so we hand Better Auth a dynamic baseURL.
+const explicitBaseURL =
+  normalizePublicOrigin(env("BETTER_AUTH_URL")) ??
+  normalizePublicOrigin(env("VERCEL_PROJECT_PRODUCTION_URL")) ??
+  normalizePublicOrigin(env("VERCEL_URL"));
+
+/** True when federated Grok-broker sign-in is active and safe to use. */
+export const authConfigured =
+  !authDisabled &&
+  Boolean(grokClientId && grokClientSecret) &&
+  // Never point a production host at the preview-only broker client — its
+  // redirect_uri allowlist is `*.grok-sandbox.com` only.
+  (hasDeployedGrokClient || !explicitBaseURL);
+
 // Explicit `string[]` (not a readonly tuple) — Better Auth's DynamicBaseURLConfig
 // requires a mutable `allowedHosts: string[]`.
 const previewAllowedHosts: string[] = [...PREVIEW_ALLOWED_HOSTS];
@@ -116,7 +155,7 @@ const baseURL = explicitBaseURL ?? {
 // Origins Better Auth accepts on credentialed POSTs (sign-up/sign-in, etc.).
 // Missing entries here surface as FORBIDDEN "Invalid origin".
 const trustedOrigins: string[] = explicitBaseURL
-  ? [explicitBaseURL, ...LOCAL_DEV_ORIGINS]
+  ? [...originVariants(explicitBaseURL), ...LOCAL_DEV_ORIGINS]
   : [
       // Host wildcards (matched against Origin's host)
       ...previewAllowedHosts,
@@ -184,6 +223,20 @@ export const auth = betterAuth({
   // local loopback variants, or clients get "Invalid origin".
   trustedOrigins,
 
+  // Native Google for standalone deploys (GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET).
+  // The Grok broker path (genericOAuth) stays for preview / injected GROK_AUTH_*.
+  ...(nativeGoogleEnabled
+    ? {
+        socialProviders: {
+          google: {
+            clientId: googleClientId as string,
+            clientSecret: googleClientSecret as string,
+            prompt: "select_account" as const,
+          },
+        },
+      }
+    : {}),
+
   // Encrypt broker-issued OAuth tokens at rest, and treat the broker's upstreams
   // as trusted first-party identities. The broker owns identity and X emails are
   // synthetic/unverified, so WITHOUT this a login can fail with
@@ -196,6 +249,7 @@ export const auth = betterAuth({
       enabled: true,
       trustedProviders: [
         ...GROK_PROVIDERS.map((p) => p.providerId),
+        ...(nativeGoogleEnabled ? (["google"] as const) : []),
         GATE_PROVIDER_ID,
       ],
       // X's synthetic email is never "verified", so don't gate linking on the
