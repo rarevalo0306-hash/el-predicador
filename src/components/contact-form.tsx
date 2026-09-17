@@ -2,6 +2,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/phone-input";
+import { normalizePhone } from "@/lib/phone";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/components/language-switch";
@@ -29,6 +31,10 @@ export function ContactForm({ compact }: ContactFormProps) {
     event.preventDefault();
     if (!consent) {
       toast.error(t("contactNeedConsent"));
+      return;
+    }
+    if (!normalizePhone(phone)) {
+      toast.error(t("contactBadPhone"));
       return;
     }
     setBusy(true);
@@ -90,15 +96,7 @@ export function ContactForm({ compact }: ContactFormProps) {
       </div>
       <div className="grid gap-2">
         <Label htmlFor="contact-phone">{t("contactPhone")}</Label>
-        <Input
-          id="contact-phone"
-          type="tel"
-          value={phone}
-          onChange={(event) => setPhone(event.target.value)}
-          autoComplete="tel"
-          placeholder={t("contactPhonePh")}
-          required
-        />
+        <PhoneInput id="contact-phone" value={phone} onChange={setPhone} required />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="contact-address">{t("contactAddress")}</Label>

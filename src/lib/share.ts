@@ -1,3 +1,4 @@
+import { whatsAppUrl, smsUrl } from "@/lib/phone";
 import type { Locale } from "@/lib/i18n";
 import { t } from "@/lib/i18n";
 import type { Verse } from "@/lib/verses";
@@ -34,19 +35,11 @@ export function formatVerseMessage(
 }
 
 export function openWhatsApp(text: string, phone?: string) {
-  const digits = phone?.replace(/\D/g, "") ?? "";
-  const encoded = encodeURIComponent(text);
-  const url = digits
-    ? `https://wa.me/${digits}?text=${encoded}`
-    : `https://wa.me/?text=${encoded}`;
-  window.open(url, "_blank", "noopener,noreferrer");
+  window.open(whatsAppUrl(text, phone), "_blank", "noopener,noreferrer");
 }
 
 export function openSms(text: string, phone?: string) {
-  const digits = phone?.replace(/\D/g, "") ?? "";
-  const body = encodeURIComponent(text);
-  const url = digits ? `sms:${digits}?&body=${body}` : `sms:?&body=${body}`;
-  window.location.href = url;
+  window.location.href = smsUrl(text, phone);
 }
 
 export async function copyText(text: string) {
@@ -78,11 +71,7 @@ export async function tryNativeShare(title: string, text: string) {
   }
 }
 
-export async function tryNativeShareFile(
-  title: string,
-  text: string,
-  file: File,
-) {
+export async function tryNativeShareFile(title: string, text: string, file: File) {
   if (typeof navigator === "undefined" || typeof navigator.share !== "function") {
     return false;
   }

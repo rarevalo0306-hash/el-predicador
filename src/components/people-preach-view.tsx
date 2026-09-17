@@ -1,29 +1,16 @@
 import { useMemo, useState } from "react";
-import {
-  Bell,
-  Church,
-  MessageCircle,
-  Plus,
-  Trash2,
-  Users,
-} from "lucide-react";
+import { Bell, Church, MessageCircle, Plus, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/phone-input";
+import { normalizePhone, formatPhone } from "@/lib/phone";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/components/language-switch";
 import { cn } from "@/lib/utils";
-import {
-  useAppStore,
-  type Recipient,
-  type RecipientInput,
-} from "@/lib/store";
-import {
-  WEEKDAY_KEYS,
-  cultoInviteText,
-  type Weekday,
-} from "@/lib/church";
+import { useAppStore, type Recipient, type RecipientInput } from "@/lib/store";
+import { WEEKDAY_KEYS, cultoInviteText, type Weekday } from "@/lib/church";
 import { allDueItems } from "@/lib/preach-schedule";
 import {
   THEMES,
@@ -76,7 +63,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
     setForm({
       id: row.id,
       name: row.name,
-      phone: row.phone,
+      phone: normalizePhone(row.phone) ?? row.phone,
       themeId: row.themeId ?? "amor",
       notes: row.notes ?? "",
       dailyEnabled: row.dailyEnabled ?? false,
@@ -102,6 +89,10 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   }
 
   async function sendDaily(row: Recipient) {
+    if (!normalizePhone(row.phone)) {
+      toast.error(t("recipientNeedPhone"));
+      return;
+    }
     const themeId = (row.themeId ?? "amor") as ThemeId;
     const pool = versesForTheme(themeId);
     const base = pool[Math.floor(Math.random() * Math.max(pool.length, 1))] ?? getDailyVerse();
@@ -127,6 +118,10 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   }
 
   function sendCulto(row: Recipient) {
+    if (!normalizePhone(row.phone)) {
+      toast.error(t("recipientNeedPhone"));
+      return;
+    }
     const text = cultoInviteText(church, locale, row.name);
     openWhatsApp(text, row.phone);
     const stamp = new Date().toISOString().slice(0, 10);
@@ -214,10 +209,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                   <p className="text-xs text-muted-foreground">
                     {item.kind === "daily"
                       ? t("preachDueDaily", {
-                          theme: localizedTheme(
-                            item.recipient.themeId ?? "amor",
-                            locale,
-                          ).name,
+                          theme: localizedTheme(item.recipient.themeId ?? "amor", locale).name,
                         })
                       : t("preachDueCulto")}
                   </p>
@@ -338,10 +330,8 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       ) : (
         <>
           <div className="flex flex-col gap-3 rounded-xl bg-card px-4 py-5 shadow-paper">
-            <p className="text-sm font-medium">
-              {editingId ? t("personEdit") : t("personAdd")}
-            </p>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <p className="text-sm font-medium">{editingId ? t("personEdit") : t("personAdd")}</p>
+            <div className="grid items-start gap-2 sm:grid-cols-2">
               <div className="grid gap-1.5">
                 <Label htmlFor="p-name">{t("recipientName")}</Label>
                 <Input
@@ -353,12 +343,10 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="p-phone">{t("contactPhone")}</Label>
-                <Input
+                <PhoneInput
                   id="p-phone"
-                  inputMode="tel"
                   value={form.phone}
-                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                  placeholder={t("phonePlaceholder")}
+                  onChange={(phone) => setForm((f) => ({ ...f, phone }))}
                 />
               </div>
             </div>
@@ -464,7 +452,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="font-medium">{row.name}</p>
-                      <p className="text-xs text-muted-foreground">{row.phone}</p>
+                      <p className="text-xs text-muted-foreground">{formatPhone(row.phone)}</p>
                       <p className="mt-1 text-xs text-primary">
                         {localizedTheme(row.themeId ?? "amor", locale).name}
                         {row.dailyEnabled ? ` · ${t("personDailyOn")}` : ""}

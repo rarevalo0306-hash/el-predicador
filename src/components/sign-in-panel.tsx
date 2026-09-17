@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { GROK_PROVIDERS, authClient, authEnabled, signIn } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/phone-input";
+import { normalizePhone } from "@/lib/phone";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/components/language-switch";
@@ -89,6 +91,10 @@ export function SignInPanel({
       setError(t("contactNeedConsent"));
       return;
     }
+    if (needDetails && !normalizePhone(phone)) {
+      setError(t("contactBadPhone"));
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -123,9 +129,7 @@ export function SignInPanel({
       onSuccess?.();
       await navigate({ to: "/" });
     } catch (err) {
-      setError(
-        err instanceof Error && err.message ? err.message : t("signInError"),
-      );
+      setError(err instanceof Error && err.message ? err.message : t("signInError"));
     } finally {
       setBusy(false);
     }
@@ -183,16 +187,7 @@ export function SignInPanel({
               <>
                 <div className="grid gap-2">
                   <Label htmlFor="profile-phone">{t("contactPhone")}</Label>
-                  <Input
-                    id="profile-phone"
-                    type="tel"
-                    required
-                    value={phone}
-                    onChange={(event) => setPhone(event.target.value)}
-                    autoComplete="tel"
-                    placeholder={t("contactPhonePh")}
-                    className="h-12 rounded-full px-5"
-                  />
+                  <PhoneInput id="profile-phone" value={phone} onChange={setPhone} required />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="profile-address">{t("contactAddress")}</Label>

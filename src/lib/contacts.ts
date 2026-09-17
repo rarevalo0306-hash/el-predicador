@@ -1,3 +1,4 @@
+import { normalizePhone } from "@/lib/phone";
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { getSql } from "@/lib/db";
@@ -26,7 +27,6 @@ type ContactInput = {
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_RE = /^[0-9+()\s.-]{7,20}$/;
 
 /** Admin PIN must come from env — no public default. */
 function adminPin(): string | undefined {
@@ -52,14 +52,14 @@ function clean(value: unknown, max: number) {
 function parseInput(data: ContactInput) {
   const name = clean(data.name, 80);
   const email = clean(data.email, 120).toLowerCase();
-  const phone = clean(data.phone, 20);
+  const phone = normalizePhone(String(data.phone ?? ""));
   const address = clean(data.address, 200);
   const locale = data.locale === "en" ? "en" : "es";
   const origin = clean(data.origin, 40) || "app";
   if (!data.consent) throw new Error("consent");
   if (name.length < 2) throw new Error("name");
   if (!EMAIL_RE.test(email)) throw new Error("email");
-  if (!PHONE_RE.test(phone)) throw new Error("phone");
+  if (!phone) throw new Error("phone");
   if (address.length < 5) throw new Error("address");
   return { name, email, phone, address, locale, origin };
 }
@@ -130,16 +130,14 @@ export const listContacts = createServerFn({ method: "POST" })
     `;
     return {
       ok: true as const,
-      rows: rows.map(
-        (row): Contact => ({
-          id: row.id,
-          name: row.name,
-          email: row.email,
-          phone: row.phone,
-          address: row.address,
-          locale: row.locale,
-          createdAt: row.created_at,
-        }),
-      ),
+      rows: rows.map((row): Contact => ({
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        phone: row.phone,
+        address: row.address,
+        locale: row.locale,
+        createdAt: row.created_at,
+      })),
     };
   });

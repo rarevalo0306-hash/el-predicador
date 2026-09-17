@@ -1,3 +1,4 @@
+import { normalizePhone } from "@/lib/phone";
 import { todayKey } from "@/lib/verses";
 import type { Recipient } from "@/lib/store";
 import { nextServiceAt, type ChurchInfo } from "@/lib/church";
@@ -26,7 +27,7 @@ export function dueDailyRecipients(
   return recipients
     .filter((row) => {
       if (!row.dailyEnabled) return false;
-      if (row.phone.replace(/\D/g, "").length < 7) return false;
+      if (!normalizePhone(row.phone)) return false;
       const targetHour = Number.isFinite(row.dailyHour) ? row.dailyHour! : hour;
       if (currentHour < targetHour) return false;
       if (row.lastDailySentDate === today) return false;
@@ -52,7 +53,7 @@ export function dueCultoRecipients(
   return recipients
     .filter((row) => {
       if (!row.cultoEnabled) return false;
-      if (row.phone.replace(/\D/g, "").length < 7) return false;
+      if (!normalizePhone(row.phone)) return false;
       if (row.lastCultoSentDate === stamp) return false;
       return true;
     })

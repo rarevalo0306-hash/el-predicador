@@ -23,6 +23,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/phone-input";
+import { normalizePhone } from "@/lib/phone";
 import { useI18n } from "@/components/language-switch";
 import { cn } from "@/lib/utils";
 import { useAppStore, type Recipient, type SendDraft } from "@/lib/store";
@@ -154,6 +156,13 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
   }
 
   function startQueue(channel: QueueChannel) {
+    if (
+      selectedPeople.some((person) => !normalizePhone(person.phone)) ||
+      (selectedPeople.length === 0 && phone.trim() && !normalizePhone(phone))
+    ) {
+      toast.error(t("recipientNeedPhone"));
+      return;
+    }
     if (selectedPeople.length === 0) {
       if (channel === "whatsapp") {
         openWhatsApp(message, phone);
@@ -186,6 +195,10 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
       return;
     }
     const person = queue.people[nextIndex];
+    if (!normalizePhone(person.phone)) {
+      toast.error(t("recipientNeedPhone"));
+      return;
+    }
     deliverTo(queue.channel, person);
     setQueue({ ...queue, index: nextIndex });
     toast(
@@ -243,11 +256,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
   async function handleShare() {
     try {
       const file = await makeCard();
-      const shared = await tryNativeShareFile(
-        shown ? shown.ref : "The Preacher",
-        message,
-        file,
-      );
+      const shared = await tryNativeShareFile(shown ? shown.ref : "The Preacher", message, file);
       if (shared) {
         markSent();
         toast(t("readyToShare"));
@@ -256,10 +265,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
     } catch {
       /* fall through to text share */
     }
-    const shared = await tryNativeShare(
-      shown ? shown.ref : "The Preacher",
-      message,
-    );
+    const shared = await tryNativeShare(shown ? shown.ref : "The Preacher", message);
     if (shared) {
       markSent();
       toast(t("readyToShare"));
@@ -342,7 +348,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                     {t("recipientsSelected", { n: selectedPeople.length })}
                   </p>
                 ) : null}
-                <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid items-start gap-2 sm:grid-cols-2">
                   <div className="grid gap-1.5">
                     <Label htmlFor="person-name">{t("recipientName")}</Label>
                     <Input
@@ -355,14 +361,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                   </div>
                   <div className="grid gap-1.5">
                     <Label htmlFor="phone">{t("phoneOptional")}</Label>
-                    <Input
-                      id="phone"
-                      inputMode="tel"
-                      autoComplete="tel"
-                      value={phone}
-                      onChange={(event) => setPhone(event.target.value)}
-                      placeholder={t("phonePlaceholder")}
-                    />
+                    <PhoneInput id="phone" value={phone} onChange={setPhone} />
                   </div>
                 </div>
                 <Button

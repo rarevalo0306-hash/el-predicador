@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { normalizePhone, restorePhone } from "@/lib/phone";
 import type { MessageKind } from "@/lib/messages";
 import { persistLocale, type Locale } from "@/lib/i18n";
 import { todayKey, type ThemeId, type Verse } from "@/lib/verses";
@@ -140,10 +141,6 @@ type AppState = CloudPayload & {
   snapshotCloud: () => CloudPayload;
 };
 
-function normalizePhone(phone: string) {
-  return phone.replace(/\D/g, "");
-}
-
 export const useAppStore = create<AppState>()((set, get) => ({
   ...EMPTY_CLOUD,
   locale: "es",
@@ -207,7 +204,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   upsertRecipient: (item) => {
     const name = item.name.trim();
     const phone = normalizePhone(item.phone);
-    if (!name || phone.length < 7) return null;
+    if (!name || !phone) return null;
     const existing = get().recipients.find(
       (row) => row.id === item.id || normalizePhone(row.phone) === phone,
     );
@@ -243,10 +240,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       lastCultoSentDate: existing?.lastCultoSentDate,
     };
     set((state) => ({
-      recipients: [
-        base,
-        ...state.recipients.filter((row) => row.id !== base.id),
-      ].slice(0, 80),
+      recipients: [base, ...state.recipients.filter((row) => row.id !== base.id)].slice(0, 80),
     }));
     return base;
   },
@@ -337,7 +331,9 @@ export const useAppStore = create<AppState>()((set, get) => ({
         typeof payload.notifyHour === "number" && Number.isFinite(payload.notifyHour)
           ? Math.min(23, Math.max(0, Math.round(payload.notifyHour)))
           : 8,
-      recipients: Array.isArray(payload.recipients) ? payload.recipients : [],
+      recipients: Array.isArray(payload.recipients)
+        ? payload.recipients.map((row) => ({ ...row, phone: restorePhone(row.phone) }))
+        : [],
       church: normalizeChurch(payload.church),
       highlights: Array.isArray(payload.highlights) ? payload.highlights : [],
       fontScale: scale,

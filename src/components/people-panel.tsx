@@ -1,3 +1,4 @@
+import { formatPhone, normalizePhone } from "@/lib/phone";
 import { useState } from "react";
 import { Download, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
@@ -100,7 +101,8 @@ export function PeoplePanel() {
             ) : (
               <ul className="flex flex-col gap-2">
                 {rows.map((row) => {
-                  const digits = row.phone.replace(/\D/g, "");
+                  const number = normalizePhone(row.phone);
+                  const digits = number?.slice(1);
                   return (
                     <li
                       key={row.id}
@@ -109,10 +111,10 @@ export function PeoplePanel() {
                       <p className="font-medium">{row.name}</p>
                       <p className="mt-1 text-muted-foreground">{row.email}</p>
                       <p className="text-muted-foreground">
-                        {row.phone || t("peopleNoPhone")}
+                        {formatPhone(row.phone) || t("peopleNoPhone")}
                       </p>
                       <p className="mt-1 text-muted-foreground">{row.address}</p>
-                      {digits.length >= 7 ? (
+                      {number ? (
                         <div className="mt-3 flex gap-2">
                           <Button asChild variant="outline" size="sm" className="flex-1">
                             <a
@@ -124,9 +126,7 @@ export function PeoplePanel() {
                             </a>
                           </Button>
                           <Button asChild variant="outline" size="sm" className="flex-1">
-                            <a href={`sms:${digits}`}>
-                              {t("peopleSms")}
-                            </a>
+                            <a href={`sms:${number}`}>{t("peopleSms")}</a>
                           </Button>
                         </div>
                       ) : null}

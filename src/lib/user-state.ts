@@ -1,3 +1,4 @@
+import { restorePhone } from "@/lib/phone";
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { getSql } from "@/lib/db";
@@ -9,7 +10,7 @@ function parseRecipient(row: unknown): Recipient | null {
   if (!row || typeof row !== "object") return null;
   const value = row as Record<string, unknown>;
   if (typeof value.id !== "string" || typeof value.name !== "string") return null;
-  const phone = String(value.phone ?? "").replace(/\D/g, "");
+  const phone = restorePhone(String(value.phone ?? ""));
   if (phone.length < 7) return null;
   const dailyHour = Number(value.dailyHour);
   return {
