@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { GROK_PROVIDERS, authClient, authEnabled, signIn } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -248,12 +249,13 @@ export function SignInPanel({
                 } catch (err) {
                   const message =
                     err instanceof Error && err.message ? err.message : t("signInError");
-                  setError(
+                  const friendly =
                     message === "GOOGLE_NOT_CONFIGURED" ||
-                      /provider not found|GOOGLE_NOT_CONFIGURED/i.test(message)
+                    /provider not found|GOOGLE_NOT_CONFIGURED/i.test(message)
                       ? t("googleNotConfigured")
-                      : message,
-                  );
+                      : message;
+                  setError(friendly);
+                  toast.error(friendly);
                 } finally {
                   setBusy(false);
                 }

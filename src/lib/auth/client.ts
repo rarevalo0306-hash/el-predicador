@@ -143,44 +143,41 @@ export async function signIn(
     return;
   }
 
-  // Deployed / local: prefer native Google social provider. The Grok preview
-  // broker client must not be used on production hosts (redirect_uri rejected).
+  // Deployed / local: call native Google social directly. Avoid the Better Auth
+  // client helper here — on 404 it can fail without a usable `{ error }` shape,
+  // which made the Google button look dead on production.
   if (providerId === "grok-google" || providerId === "google") {
-    try {
-      const result = await authClient.signIn.social({
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    const bearer = getBearerToken();
+    if (bearer) headers.Authorization = `Bearer ${bearer}`;
+    const res = await fetch("/api/auth/sign-in/social", {
+      method: "POST",
+      headers,
+      credentials: "include",
+      body: JSON.stringify({
         provider: "google",
         callbackURL,
         errorCallbackURL,
-      });
-      const error = result?.error as
-        | { message?: string; code?: string; status?: number; statusText?: string }
-        | undefined;
-      if (error) {
-        const code = String(error.code ?? error.status ?? "");
-        const message = String(error.message ?? error.statusText ?? "");
-        if (
-          code === "PROVIDER_NOT_FOUND" ||
-          code === "404" ||
-          error.status === 404 ||
-          /provider not found/i.test(message)
-        ) {
-          throw new Error("GOOGLE_NOT_CONFIGURED");
-        }
-        throw new Error(message || "Sign-in failed");
-      }
-      if (result?.data?.url) {
-        window.location.href = result.data.url;
-        return;
-      }
-      throw new Error("GOOGLE_NOT_CONFIGURED");
-    } catch (err) {
-      if (err instanceof Error && err.message === "GOOGLE_NOT_CONFIGURED") throw err;
-      const message = err instanceof Error ? err.message : String(err ?? "");
-      if (/provider not found|GOOGLE_NOT_CONFIGURED|404/i.test(message)) {
+      }),
+    });
+    const body = (await res.json().catch(() => ({}))) as {
+      url?: string;
+      message?: string;
+      code?: string;
+    };
+    if (!res.ok) {
+      if (res.status === 404 || body.code === "PROVIDER_NOT_FOUND") {
         throw new Error("GOOGLE_NOT_CONFIGURED");
       }
-      throw err instanceof Error ? err : new Error(message || "Sign-in failed");
+      throw new Error(body.message || "Sign-in failed");
     }
+    if (body.url) {
+      window.location.href = body.url;
+      return;
+    }
+    throw new Error("GOOGLE_NOT_CONFIGURED");
   }
 
   const { data, error } = await authClient.signIn.oauth2({
