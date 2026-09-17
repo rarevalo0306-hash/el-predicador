@@ -61,6 +61,7 @@ function PreacherApp({
   const [sendDraft, setSendDraft] = useState<SendDraft>({});
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [profileMode, setProfileMode] = useState<"entrar" | "crear">("entrar");
   const ready = useCloudSync(userId, sessionReady);
   const notify = useAppStore((s) => s.notify);
 
@@ -115,13 +116,28 @@ function PreacherApp({
               )}
             </button>
           ) : (
-            <button
-              type="button"
-              onClick={() => setProfileOpen(true)}
-              className="inline-flex h-11 items-center rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground"
-            >
-              {t("logIn")}
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setProfileMode("entrar");
+                  setProfileOpen(true);
+                }}
+                className="inline-flex h-11 items-center rounded-full border border-border bg-card px-3.5 text-sm font-medium text-foreground"
+              >
+                {t("logIn")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setProfileMode("crear");
+                  setProfileOpen(true);
+                }}
+                className="inline-flex h-11 items-center rounded-full bg-primary px-3.5 text-sm font-medium text-primary-foreground"
+              >
+                {t("signupLink")}
+              </button>
+            </div>
           )}
           <button
             type="button"
@@ -212,10 +228,20 @@ function PreacherApp({
         onOpenChange={setSettingsOpen}
         onOpenProfile={() => {
           setSettingsOpen(false);
+          setProfileMode("entrar");
+          setProfileOpen(true);
+        }}
+        onOpenSignUp={() => {
+          setSettingsOpen(false);
+          setProfileMode("crear");
           setProfileOpen(true);
         }}
       />
-      <ProfileDrawer open={profileOpen} onOpenChange={setProfileOpen} />
+      <ProfileDrawer
+        open={profileOpen}
+        onOpenChange={setProfileOpen}
+        initialMode={profileMode}
+      />
     </div>
   );
 }

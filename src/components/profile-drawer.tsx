@@ -14,20 +14,27 @@ import { useI18n } from "@/components/language-switch";
 type ProfileDrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialMode?: "entrar" | "crear";
 };
 
-export function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps) {
+export function ProfileDrawer({
+  open,
+  onOpenChange,
+  initialMode = "entrar",
+}: ProfileDrawerProps) {
   const { t } = useI18n();
   const { user, isPending } = useCurrentUserState();
   const greeting = user?.displayName || user?.primaryEmail || "";
+  const guestTitle = initialMode === "crear" ? t("signupTitle") : t("logIn");
+  const guestDesc = initialMode === "crear" ? t("profileDesc") : t("loginSub");
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>{user ? t("profileTitle") : t("logIn")}</DrawerTitle>
+          <DrawerTitle>{user ? t("profileTitle") : guestTitle}</DrawerTitle>
           <DrawerDescription>
-            {user ? t("profileHello", { name: greeting }) : t("loginSub")}
+            {user ? t("profileHello", { name: greeting }) : guestDesc}
           </DrawerDescription>
         </DrawerHeader>
         <div className="flex flex-col gap-5 px-5 pb-8">
@@ -39,8 +46,9 @@ export function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps) {
               {t("profileGuest")}
             </p>
             <SignInPanel
+              key={initialMode}
               collectDetails
-              initialMode="entrar"
+              initialMode={initialMode}
               onSuccess={() => onOpenChange(false)}
             />
           </SignedOut>
