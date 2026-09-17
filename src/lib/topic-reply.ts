@@ -1,5 +1,5 @@
-import { PREACH_CASES } from "@/lib/preach-cases";
-import { DOCTRINE_TOPICS } from "@/lib/doctrine";
+import { localizedCase, PREACH_CASES } from "@/lib/preach-cases";
+import { DOCTRINE_TOPICS, localizedDoctrine } from "@/lib/doctrine";
 import type { Locale } from "@/lib/i18n";
 import {
   THEMES,
@@ -121,15 +121,21 @@ export function answerTopic(query: string, locale: Locale): TopicReply | null {
 
   const doctrine = DOCTRINE_TOPICS.find((item) => {
     const hay = fold(needle);
-    return hay.includes(fold(item.title)) || hay.includes(fold(item.id));
+    const localized = localizedDoctrine(item, locale);
+    return (
+      hay.includes(fold(item.title)) ||
+      hay.includes(fold(item.id)) ||
+      hay.includes(fold(localized.title))
+    );
   });
   if (doctrine) {
+    const copy = localizedDoctrine(doctrine, locale);
     const verses = uniqueVerses(
-      doctrine.verseIds.map((id) => getVerseById(id)).filter((row): row is Verse => Boolean(row)),
+      copy.verseIds.map((id) => getVerseById(id)).filter((row): row is Verse => Boolean(row)),
     );
     return {
-      title: doctrine.title,
-      body: locale === "en" ? compose(needle, verses, locale, doctrine.issue) : doctrine.letter,
+      title: copy.title,
+      body: copy.letter,
       verses: verses.length ? verses : searchVerses(needle).slice(0, 5),
     };
   }
@@ -139,20 +145,23 @@ export function answerTopic(query: string, locale: Locale): TopicReply | null {
     ? PREACH_CASES.find((item) => item.id === hint.caseId)
     : PREACH_CASES.find((item) => {
         const hay = fold(needle);
+        const localized = localizedCase(item, locale);
         return (
           hay.includes(fold(item.title)) ||
           hay.includes(fold(item.id)) ||
+          hay.includes(fold(localized.title)) ||
           item.who.split(/[.,]/).some((bit) => bit.trim().length > 4 && hay.includes(fold(bit)))
         );
       });
 
   if (preach) {
+    const copy = localizedCase(preach, locale);
     const verses = uniqueVerses(
-      preach.verseIds.map((id) => getVerseById(id)).filter((row): row is Verse => Boolean(row)),
+      copy.verseIds.map((id) => getVerseById(id)).filter((row): row is Verse => Boolean(row)),
     );
     return {
-      title: preach.title,
-      body: locale === "en" ? compose(needle, verses, locale, preach.issue) : preach.letter,
+      title: copy.title,
+      body: copy.letter,
       verses: verses.length ? verses : searchVerses(needle).slice(0, 5),
     };
   }

@@ -28,8 +28,18 @@ type ContactInput = {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^[0-9+()\s.-]{7,20}$/;
 
-function adminPin() {
-  return env("CONTACTS_ADMIN_PIN") || "palabra-viva";
+/** Admin PIN must come from env — no public default. */
+function adminPin(): string | undefined {
+  return env("CONTACTS_ADMIN_PIN");
+}
+
+function adminUserIds(): string[] {
+  const raw = env("CONTACTS_ADMIN_USER_IDS");
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
 }
 
 function clean(value: unknown, max: number) {
@@ -52,6 +62,15 @@ function parseInput(data: ContactInput) {
   if (!PHONE_RE.test(phone)) throw new Error("phone");
   if (address.length < 5) throw new Error("address");
   return { name, email, phone, address, locale, origin };
+}
+
+function isAuthorizedAdmin(userId: string, pin: string): boolean {
+  const expected = adminPin();
+  if (!expected) return false;
+  if (clean(pin, 40) !== expected) return false;
+  const allow = adminUserIds();
+  if (allow.length > 0 && !allow.includes(userId)) return false;
+  return true;
 }
 
 export const submitContact = createServerFn({ method: "POST" })
@@ -88,8 +107,11 @@ export const submitContact = createServerFn({ method: "POST" })
 export const listContacts = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator((data: { pin: string }) => data)
-  .handler(async ({ data }) => {
-    if (clean(data.pin, 40) !== adminPin()) {
+  .handler(async ({ data, context }) => {
+    if (!adminPin()) {
+      return { ok: false as const, error: "unavailable" as const };
+    }
+    if (!isAuthorizedAdmin(context.userId, data.pin)) {
       return { ok: false as const, error: "pin" as const };
     }
     const sql = await getSql();

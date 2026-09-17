@@ -3,8 +3,6 @@ export const REGISTRATION_SHEET_ID =
 
 export const REGISTRATION_SHEET_URL = `https://docs.google.com/spreadsheets/d/${REGISTRATION_SHEET_ID}/edit`;
 
-const FORMSUBMIT_URL = "https://formsubmit.co/ajax/rarevalo0306@gmail.com";
-
 export type RegistrationRow = {
   name: string;
   email: string;
@@ -14,17 +12,24 @@ export type RegistrationRow = {
   origin?: string;
 };
 
+/**
+ * Best-effort inbox copy. Destination comes only from CONTACTS_EMAIL —
+ * never hardcode an address in the repo.
+ */
 export async function forwardRegistration(row: RegistrationRow) {
+  const inbox = process.env.CONTACTS_EMAIL?.trim();
+  if (!inbox) return;
+
   const stamped = {
     ...row,
     fecha: new Date().toISOString(),
     origen: row.origin || "app",
     _subject: "El Predicador — nuevo registro",
     _template: "table",
-    _captcha: "false",
+    _captcha: "true",
   };
   try {
-    await fetch(FORMSUBMIT_URL, {
+    await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(inbox)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify(stamped),

@@ -69,6 +69,23 @@ export function SettingsDrawer({
           <DrawerDescription>{t("settingsDesc")}</DrawerDescription>
         </DrawerHeader>
         <div className="flex flex-col gap-5 px-5 pb-8">
+          <div className="rounded-lg bg-secondary px-4 py-4">
+            <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
+              {t("installTitle")}
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {t("installDesc")}
+            </p>
+            <Button asChild className="mt-4 w-full">
+              <a href="/?install=1&platform=ios">
+                <Smartphone className="size-4" />
+                {t("installIphone")}
+              </a>
+            </Button>
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+              {t("installAndroid")}
+            </p>
+          </div>
           <div className="rounded-lg bg-secondary px-4 py-3">
             <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
               {t("yourAccount")}
@@ -140,28 +157,16 @@ export function SettingsDrawer({
             <p className="text-sm font-medium">{t("contactTitle")}</p>
             <ContactForm compact />
           </div>
-          <div className="rounded-lg border border-border bg-card px-4 py-4">
-            <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
-              {t("peopleTitle")}
-            </p>
-            <div className="mt-3">
-              <PeoplePanel />
+          <SignedIn>
+            <div className="rounded-lg border border-border bg-card px-4 py-4">
+              <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
+                {t("peopleTitle")}
+              </p>
+              <div className="mt-3">
+                <PeoplePanel />
+              </div>
             </div>
-          </div>
-          <div className="rounded-lg bg-card px-4 py-4 shadow-paper">
-            <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
-              {t("installTitle")}
-            </p>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              {t("installDesc")}
-            </p>
-            <Button asChild className="mt-4 w-full" variant="outline">
-              <a href="/?install=1&platform=ios">
-                <Smartphone />
-                {t("installIphone")}
-              </a>
-            </Button>
-          </div>
+          </SignedIn>
         </div>
       </DrawerContent>
     </Drawer>

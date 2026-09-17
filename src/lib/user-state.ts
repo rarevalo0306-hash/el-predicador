@@ -44,12 +44,27 @@ export const getMyState = createServerFn({ method: "GET" })
     return parsePayload(rows[0]?.payload);
   });
 
+const MAX_CLOUD_BYTES = 200_000;
+
 export const saveMyState = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((data: CloudPayload) => data)
+  .validator((data: CloudPayload) => {
+    if (!data || typeof data !== "object") {
+      throw new Error("invalid payload");
+    }
+    const payload = JSON.stringify(data);
+    if (payload.length > MAX_CLOUD_BYTES) {
+      throw new Error("payload too large");
+    }
+    return data;
+  })
   .handler(async ({ context, data }) => {
     const sql = await getSql();
-    const payload = JSON.stringify(data);
+    const normalized = parsePayload(JSON.stringify(data)) ?? data;
+    const payload = JSON.stringify(normalized);
+    if (payload.length > MAX_CLOUD_BYTES) {
+      throw new Error("payload too large");
+    }
     await sql`
       insert into preacher_state (user_id, payload, updated_at)
       values (${context.userId}, ${payload}, now())

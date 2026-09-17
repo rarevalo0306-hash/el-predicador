@@ -248,20 +248,8 @@
       localStorage.setItem("preacher-contacted", "1");
       toast(t("contactOk"));
       render();
-    } catch (err) {
-      try {
-        const mail = await fetch("https://formsubmit.co/ajax/rarevalo0306@gmail.com", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Accept: "application/json" },
-          body: JSON.stringify({ ...payload, _subject: "Nuevo contacto · El Predicador" }),
-        });
-        if (!mail.ok) throw new Error("mail");
-        localStorage.setItem("preacher-contacted", "1");
-        toast(t("contactOk"));
-        render();
-      } catch {
-        toast(t("contactFail"));
-      }
+    } catch {
+      toast(t("contactFail"));
     }
   }
 

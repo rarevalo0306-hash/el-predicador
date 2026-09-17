@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useI18n } from "@/components/language-switch";
+import { SignedIn, SignedOut } from "@/lib/auth/gates";
 import { listContacts, type Contact } from "@/lib/contacts";
 import { REGISTRATION_SHEET_URL } from "@/lib/sheet";
 
@@ -31,7 +32,7 @@ export function PeoplePanel() {
       const result = await listContacts({ data: { pin } });
       if (!result.ok) {
         setRows(null);
-        toast.error(t("peopleBadPin"));
+        toast.error(result.error === "unavailable" ? t("peopleUnavailable") : t("peopleBadPin"));
         return;
       }
       setRows(result.rows);
@@ -56,59 +57,64 @@ export function PeoplePanel() {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm leading-relaxed text-muted-foreground">{t("peopleLead")}</p>
-      <Button asChild variant="outline" className="h-11 w-full">
-        <a href={REGISTRATION_SHEET_URL} target="_blank" rel="noreferrer">
-          <FileSpreadsheet className="size-4" />
-          {t("sheetsOpen")}
-        </a>
-      </Button>
-      <p className="text-xs leading-relaxed text-muted-foreground">{t("sheetsHint")}</p>
-      <form className="flex flex-col gap-3" onSubmit={(event) => void load(event)}>
-        <div className="grid gap-2">
-          <Label htmlFor="people-pin">{t("peoplePin")}</Label>
-          <Input
-            id="people-pin"
-            type="password"
-            value={pin}
-            onChange={(event) => setPin(event.target.value)}
-            autoComplete="off"
-          />
-        </div>
-        <Button type="submit" variant="outline" className="h-11 w-full" disabled={busy}>
-          {busy ? t("wait") : t("peopleOpen")}
+      <SignedOut>
+        <p className="text-sm leading-relaxed text-muted-foreground">{t("peopleNeedSignIn")}</p>
+      </SignedOut>
+      <SignedIn>
+        <p className="text-sm leading-relaxed text-muted-foreground">{t("peopleLead")}</p>
+        <Button asChild variant="outline" className="h-11 w-full">
+          <a href={REGISTRATION_SHEET_URL} target="_blank" rel="noreferrer">
+            <FileSpreadsheet className="size-4" />
+            {t("sheetsOpen")}
+          </a>
         </Button>
-      </form>
-      {rows ? (
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-medium">{t("peopleCount", { n: rows.length })}</p>
-            {rows.length ? (
-              <Button type="button" variant="ghost" size="sm" onClick={download}>
-                <Download className="size-4" />
-                {t("peopleCsv")}
-              </Button>
-            ) : null}
+        <p className="text-xs leading-relaxed text-muted-foreground">{t("sheetsHint")}</p>
+        <form className="flex flex-col gap-3" onSubmit={(event) => void load(event)}>
+          <div className="grid gap-2">
+            <Label htmlFor="people-pin">{t("peoplePin")}</Label>
+            <Input
+              id="people-pin"
+              type="password"
+              value={pin}
+              onChange={(event) => setPin(event.target.value)}
+              autoComplete="off"
+            />
           </div>
-          {rows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("peopleEmpty")}</p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {rows.map((row) => (
-                <li
-                  key={row.id}
-                  className="rounded-lg border border-border bg-card px-3 py-3 text-sm"
-                >
-                  <p className="font-medium">{row.name}</p>
-                  <p className="mt-1 text-muted-foreground">{row.email}</p>
-                  <p className="text-muted-foreground">{row.phone}</p>
-                  <p className="mt-1 text-muted-foreground">{row.address}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      ) : null}
+          <Button type="submit" variant="outline" className="h-11 w-full" disabled={busy}>
+            {busy ? t("wait") : t("peopleOpen")}
+          </Button>
+        </form>
+        {rows ? (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium">{t("peopleCount", { n: rows.length })}</p>
+              {rows.length ? (
+                <Button type="button" variant="ghost" size="sm" onClick={download}>
+                  <Download className="size-4" />
+                  {t("peopleCsv")}
+                </Button>
+              ) : null}
+            </div>
+            {rows.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("peopleEmpty")}</p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {rows.map((row) => (
+                  <li
+                    key={row.id}
+                    className="rounded-lg border border-border bg-card px-3 py-3 text-sm"
+                  >
+                    <p className="font-medium">{row.name}</p>
+                    <p className="mt-1 text-muted-foreground">{row.email}</p>
+                    <p className="text-muted-foreground">{row.phone}</p>
+                    <p className="mt-1 text-muted-foreground">{row.address}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : null}
+      </SignedIn>
     </div>
   );
 }
