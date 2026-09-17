@@ -39,7 +39,7 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
             {t("loadingVerse")}
           </p>
         ) : (
-          <blockquote className="font-serif text-2xl leading-snug tracking-tight text-foreground sm:text-[1.7rem]">
+          <blockquote className="reader-verse-text tracking-tight text-foreground sm:text-[1.15em]">
             {shown.text}
           </blockquote>
         )}

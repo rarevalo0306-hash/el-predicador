@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Bookmark, ChevronLeft, ChevronRight, Heart, Languages, Send } from "lucide-react";
+import {
+  ArrowLeft,
+  Bookmark,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Heart,
+  Highlighter,
+  Languages,
+  Send,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +33,8 @@ import { chapterToVerses, loadCachedChapter, type RecobroChapter } from "@/lib/r
 import { isSamePlace, useAppStore, type ReadingPlace } from "@/lib/store";
 import type { Verse } from "@/lib/verses";
 import { NviCompare } from "@/components/nvi-compare";
+import { combineVerses, formatVerseRange } from "@/lib/reader-prefs";
+import { copyText, formatVerseMessage } from "@/lib/share";
 
 type BibleViewProps = {
   onSend: (verse: Verse) => void;
@@ -408,18 +420,49 @@ function ChapterReader({
   const toggleFavorite = useAppStore((s) => s.toggleFavorite);
   const bookmarks = useAppStore((s) => s.bookmarks);
   const toggleBookmark = useAppStore((s) => s.toggleBookmark);
+  const highlights = useAppStore((s) => s.highlights);
+  const toggleHighlight = useAppStore((s) => s.toggleHighlight);
+  const displayName = useAppStore((s) => s.displayName);
+  const [picked, setPicked] = useState<number[]>(() =>
+    selected !== null ? [selected] : [],
+  );
+
+  useEffect(() => {
+    setPicked(selected !== null ? [selected] : []);
+  }, [book.id, chapter]);
+
+  useEffect(() => {
+    if (selected === null) return;
+    setPicked((prev) => (prev.includes(selected) ? prev : [...prev, selected]));
+  }, [selected]);
+
   const verses = data && book ? chapterToVerses(book, data, locale) : [];
-  const selectedId =
-    selected !== null
-      ? recobroVerseId(book.id, chapter, selected, locale)
-      : null;
-  const selectedVerse =
-    selectedId ? verses.find((item) => item.id === selectedId) : undefined;
+  const pickedSorted = useMemo(
+    () => [...picked].sort((a, b) => a - b),
+    [picked],
+  );
+  const pickedVerses = useMemo(
+    () =>
+      pickedSorted
+        .map((n) =>
+          verses.find(
+            (item) => item.id === recobroVerseId(book.id, chapter, n, locale),
+          ),
+        )
+        .filter((item): item is Verse => Boolean(item)),
+    [pickedSorted, verses, book.id, chapter, locale],
+  );
+  const combined = useMemo(
+    () => combineVerses(pickedVerses, bookAbbr(book, locale), chapter),
+    [pickedVerses, book, chapter, locale],
+  );
+  const rangeLabel = formatVerseRange(pickedSorted);
   const officialUrl = recobroChapterUrl(book, chapter, locale);
+  const lastPicked = pickedSorted.at(-1) ?? null;
   const currentPlace: ReadingPlace = {
     bookId: book.id,
     chapter,
-    verse: selected ?? undefined,
+    verse: lastPicked ?? undefined,
     at: Date.now(),
   };
   const marked = bookmarks.some((place) => isSamePlace(place, currentPlace));
@@ -435,12 +478,48 @@ function ChapterReader({
   );
   const name = bookName(book, locale);
   const abbr = bookAbbr(book, locale);
+  const allHighlighted =
+    pickedVerses.length > 0 &&
+    pickedVerses.every((v) => highlights.includes(v.id));
 
   useEffect(() => {
-    if (selected === null) return;
-    const node = document.getElementById(`verse-${selected}`);
+    if (lastPicked === null) return;
+    const node = document.getElementById(`verse-${lastPicked}`);
     node?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [selected, data]);
+  }, [lastPicked, data]);
+
+  function togglePick(n: number) {
+    setPicked((prev) => {
+      const next = prev.includes(n)
+        ? prev.filter((item) => item !== n)
+        : [...prev, n];
+      onSelected(next.length ? next[next.length - 1]! : null);
+      return next;
+    });
+  }
+
+  async function handleCopy() {
+    if (!combined) return;
+    try {
+      await copyText(formatVerseMessage(combined, undefined, displayName, locale));
+      toast(t("copied"));
+    } catch {
+      toast(t("copyFail"));
+    }
+  }
+
+  function handleHighlight() {
+    if (!pickedVerses.length) return;
+    for (const verse of pickedVerses) {
+      const on = highlights.includes(verse.id);
+      if (allHighlighted) {
+        if (on) toggleHighlight(verse.id);
+      } else if (!on) {
+        toggleHighlight(verse.id, verse);
+      }
+    }
+    toast(allHighlighted ? t("highlightOff") : t("highlightOn"));
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -523,17 +602,19 @@ function ChapterReader({
           <div className="flex flex-col gap-3">
             {verses.map((verse) => {
               const n = Number(verse.id.split("-").at(-1));
-              const active = selected === n;
+              const active = picked.includes(n);
+              const lit = highlights.includes(verse.id);
               return (
                 <button
                   key={verse.id}
                   id={`verse-${n}`}
                   type="button"
-                  onClick={() => onSelected(active ? null : n)}
+                  onClick={() => togglePick(n)}
+                  aria-pressed={active}
                   className={cn(
                     "flex gap-3 rounded-md px-2 py-2 text-left transition-colors duration-150",
-                    active ? "bg-secondary" : "hover:bg-secondary/60",
-                    markedVerses.has(n) && !active && "bg-secondary/50",
+                    active ? "bg-secondary ring-1 ring-primary/30" : "hover:bg-secondary/60",
+                    markedVerses.has(n) && !active && "bg-secondary/40",
                   )}
                 >
                   <span className="mt-1 flex w-6 shrink-0 flex-col items-center gap-1 text-xs font-medium text-primary">
@@ -542,7 +623,12 @@ function ChapterReader({
                       <Bookmark className="size-3 fill-primary text-primary" />
                     ) : null}
                   </span>
-                  <span className="font-serif text-[1.05rem] leading-relaxed text-foreground">
+                  <span
+                    className={cn(
+                      "reader-verse-text text-foreground",
+                      lit && "verse-highlight",
+                    )}
+                  >
                     {verse.text}
                   </span>
                 </button>
@@ -551,49 +637,89 @@ function ChapterReader({
           </div>
         </div>
       ) : null}
-      {selectedVerse ? (
-        <div className="sticky bottom-24 z-30 flex gap-2 rounded-xl bg-card p-3 shadow-paper">
-          <Button
-            className="flex-1"
-            onClick={() => onSend(selectedVerse)}
-          >
-            <Send />
-            {t("sendN", { ref: `${abbr} ${chapter}:${selected}` })}
-          </Button>
-          <Button
-            type="button"
-            variant={marked ? "secondary" : "outline"}
-            size="icon"
-            aria-label={marked ? t("unmarkHere") : t("markHere")}
-            aria-pressed={marked}
-            onClick={() => {
-              toggleBookmark(currentPlace);
-              toast(marked ? t("bookmarkRemoved") : t("bookmarkSet"));
-            }}
-          >
-            <Bookmark className={cn(marked && "fill-primary text-primary")} />
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            aria-label={t("saveVerse")}
-            aria-pressed={favorites.includes(selectedVerse.id)}
-            onClick={() => {
-              toggleFavorite(selectedVerse.id, selectedVerse);
-              toast(
-                favorites.includes(selectedVerse.id)
-                  ? t("removedSaved")
-                  : t("saved"),
-              );
-            }}
-          >
-            <Heart
-              className={cn(
-                favorites.includes(selectedVerse.id) && "fill-primary text-primary",
-              )}
-            />
-          </Button>
+      {combined ? (
+        <div className="sticky bottom-24 z-30 flex flex-col gap-2 rounded-xl bg-card p-3 shadow-paper">
+          <div className="flex items-center justify-between gap-2 px-1">
+            <p className="text-xs font-medium text-primary">
+              {pickedSorted.length > 1
+                ? t("versesSelected", { n: pickedSorted.length })
+                : `${abbr} ${chapter}:${rangeLabel}`}
+            </p>
+            {pickedSorted.length > 1 ? (
+              <button
+                type="button"
+                className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+                onClick={() => {
+                  setPicked([]);
+                  onSelected(null);
+                }}
+              >
+                {t("clearSelection")}
+              </button>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button className="min-w-[8rem] flex-1" onClick={() => onSend(combined)}>
+              <Send />
+              {t("sendN", { ref: `${abbr} ${chapter}:${rangeLabel}` })}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label={t("copyVerses")}
+              onClick={() => void handleCopy()}
+            >
+              <Copy />
+            </Button>
+            <Button
+              type="button"
+              variant={allHighlighted ? "secondary" : "outline"}
+              size="icon"
+              aria-label={allHighlighted ? t("unhighlightVerse") : t("highlightVerse")}
+              aria-pressed={allHighlighted}
+              onClick={handleHighlight}
+            >
+              <Highlighter
+                className={cn(allHighlighted && "fill-amber-400 text-amber-700")}
+              />
+            </Button>
+            <Button
+              type="button"
+              variant={marked ? "secondary" : "outline"}
+              size="icon"
+              aria-label={marked ? t("unmarkHere") : t("markHere")}
+              aria-pressed={marked}
+              onClick={() => {
+                toggleBookmark(currentPlace);
+                toast(marked ? t("bookmarkRemoved") : t("bookmarkSet"));
+              }}
+            >
+              <Bookmark className={cn(marked && "fill-primary text-primary")} />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label={t("saveVerse")}
+              aria-pressed={pickedVerses.every((v) => favorites.includes(v.id))}
+              onClick={() => {
+                for (const verse of pickedVerses) {
+                  if (!favorites.includes(verse.id)) {
+                    toggleFavorite(verse.id, verse);
+                  }
+                }
+                toast(t("saved"));
+              }}
+            >
+              <Heart
+                className={cn(
+                  pickedVerses.some((v) => favorites.includes(v.id)) &&
+                    "fill-primary text-primary",
+                )}
+              />
+            </Button>
+          </div>
         </div>
       ) : (
         <p className="text-center text-xs text-muted-foreground">{t("tapVerse")}</p>

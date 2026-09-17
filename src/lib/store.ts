@@ -53,6 +53,10 @@ export type CloudPayload = {
   dailyDate: string;
   readingPlace: ReadingPlace | null;
   bookmarks: ReadingPlace[];
+  /** Bible verse ids with yellow highlight. */
+  highlights: string[];
+  /** Reader text size: 0 small … 3 largest. */
+  fontScale: 0 | 1 | 2 | 3;
   locale?: Locale;
 };
 
@@ -70,6 +74,8 @@ export const EMPTY_CLOUD: CloudPayload = {
   dailyDate: "",
   readingPlace: null,
   bookmarks: [],
+  highlights: [],
+  fontScale: 1,
 };
 
 function placeKey(place: Pick<ReadingPlace, "bookId" | "chapter" | "verse">) {
@@ -100,6 +106,8 @@ type AppState = CloudPayload & {
   ensureToday: () => void;
   setReadingPlace: (place: ReadingPlace) => void;
   toggleBookmark: (place: ReadingPlace) => void;
+  toggleHighlight: (verseId: string, verse?: Verse) => void;
+  setFontScale: (scale: 0 | 1 | 2 | 3) => void;
   setLocale: (locale: Locale) => void;
   hydrateFromCloud: (payload: CloudPayload) => void;
   snapshotCloud: () => CloudPayload;
@@ -229,6 +237,20 @@ export const useAppStore = create<AppState>()((set, get) => ({
           : [place, ...state.bookmarks].slice(0, 20),
       };
     }),
+  toggleHighlight: (verseId, verse) =>
+    set((state) => {
+      const on = state.highlights.includes(verseId);
+      return {
+        highlights: on
+          ? state.highlights.filter((id) => id !== verseId)
+          : [verseId, ...state.highlights].slice(0, 200),
+        verseMemory:
+          verse && !on
+            ? { ...state.verseMemory, [verse.id]: verse }
+            : state.verseMemory,
+      };
+    }),
+  setFontScale: (fontScale) => set({ fontScale }),
   setLocale: (locale) => {
     persistLocale(locale);
     set({ locale });
@@ -236,6 +258,13 @@ export const useAppStore = create<AppState>()((set, get) => ({
   hydrateFromCloud: (payload) => {
     const locale = payload.locale ?? get().locale;
     persistLocale(locale);
+    const scale =
+      payload.fontScale === 0 ||
+      payload.fontScale === 1 ||
+      payload.fontScale === 2 ||
+      payload.fontScale === 3
+        ? payload.fontScale
+        : 1;
     set({
       ...EMPTY_CLOUD,
       ...payload,
@@ -244,6 +273,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
           ? Math.min(23, Math.max(0, Math.round(payload.notifyHour)))
           : 8,
       recipients: Array.isArray(payload.recipients) ? payload.recipients : [],
+      highlights: Array.isArray(payload.highlights) ? payload.highlights : [],
+      fontScale: scale,
       locale,
     });
   },
@@ -263,6 +294,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
       dailyDate: state.dailyDate,
       readingPlace: state.readingPlace,
       bookmarks: state.bookmarks,
+      highlights: state.highlights,
+      fontScale: state.fontScale,
       locale: state.locale,
     };
   },
