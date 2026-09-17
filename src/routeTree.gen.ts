@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ApiAuthStatusRouteImport } from './routes/api/auth-status'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiCronMessagesRouteImport } from './routes/api/cron/messages'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +35,25 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCronMessagesRoute = ApiCronMessagesRouteImport.update({
+  id: '/api/cron/messages',
+  path: '/api/cron/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/messages': typeof ApiCronMessagesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/messages': typeof ApiCronMessagesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,21 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/messages': typeof ApiCronMessagesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/api/auth-status' | '/api/auth/$'
+  fullPaths:
+    '/' | '/login' | '/api/auth-status' | '/api/auth/$' | '/api/cron/messages'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/api/auth-status' | '/api/auth/$'
-  id: '__root__' | '/' | '/login' | '/api/auth-status' | '/api/auth/$'
+  to: '/' | '/login' | '/api/auth-status' | '/api/auth/$' | '/api/cron/messages'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/api/auth-status'
+    | '/api/auth/$'
+    | '/api/cron/messages'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +83,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ApiAuthStatusRoute: typeof ApiAuthStatusRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiCronMessagesRoute: typeof ApiCronMessagesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +116,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cron/messages': {
+      id: '/api/cron/messages'
+      path: '/api/cron/messages'
+      fullPath: '/api/cron/messages'
+      preLoaderRoute: typeof ApiCronMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +131,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ApiAuthStatusRoute: ApiAuthStatusRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiCronMessagesRoute: ApiCronMessagesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

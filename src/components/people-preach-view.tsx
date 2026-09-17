@@ -1,3 +1,5 @@
+import { MessageSchedulePanel } from "@/components/message-schedule-panel";
+import { scheduleCopy } from "@/lib/schedule-copy";
 import { useMemo, useState } from "react";
 import { Bell, Church, MessageCircle, Plus, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
@@ -51,7 +53,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   const notifyHour = useAppStore((s) => s.notifyHour);
   const [form, setForm] = useState<RecipientInput>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [section, setSection] = useState<"people" | "church">("people");
+  const [section, setSection] = useState<"people" | "church" | "schedules">("people");
 
   const due = useMemo(
     () => allDueItems(recipients, church, notifyHour),
@@ -163,6 +165,9 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
         <p className="mt-1 text-sm text-muted-foreground">{t("preachSub")}</p>
       </header>
 
+      <Button type="button" className="h-12 w-full" onClick={() => setSection("schedules")} aria-pressed={section === "schedules"}>
+        {scheduleCopy(locale).title}
+      </Button>
       <div className="grid grid-cols-2 gap-2">
         <button
           type="button"
@@ -192,7 +197,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
         </button>
       </div>
 
-      {due.length > 0 ? (
+      {section !== "schedules" && due.length > 0 ? (
         <div className="rounded-xl border border-primary/30 bg-secondary px-4 py-4">
           <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
             {t("preachDueTitle")}
@@ -232,12 +237,12 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
         </div>
       ) : null}
 
-      <Button type="button" variant="outline" className="w-full" onClick={() => void enableReminders()}>
+      {section !== "schedules" ? <Button type="button" variant="outline" className="w-full" onClick={() => void enableReminders()}>
         <Bell className="size-4" />
         {t("preachEnableAlerts")}
-      </Button>
+      </Button> : null}
 
-      {section === "church" ? (
+      {section === "schedules" ? <MessageSchedulePanel /> : section === "church" ? (
         <div className="flex flex-col gap-4 rounded-xl bg-card px-4 py-5 shadow-paper">
           <p className="text-sm text-muted-foreground">{t("churchHint")}</p>
           <div className="grid gap-2">

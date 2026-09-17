@@ -1,3 +1,5 @@
+import { MessageSchedulePanel } from "@/components/message-schedule-panel";
+import { scheduleCopy } from "@/lib/schedule-copy";
 import { useEffect, useMemo, useState } from "react";
 import {
   Bookmark,
@@ -67,6 +69,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
   const addSent = useAppStore((s) => s.addSent);
   const rememberVerse = useAppStore((s) => s.rememberVerse);
   const saveMessage = useAppStore((s) => s.saveMessage);
+  const [scheduling, setScheduling] = useState(false);
   const [note, setNote] = useState("");
   const [phone, setPhone] = useState("");
   const [personName, setPersonName] = useState("");
@@ -78,6 +81,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
 
   useEffect(() => {
     if (!open) return;
+    setScheduling(false);
     setNote(draft?.note ?? "");
     setActiveTemplate(draft?.kind ?? null);
     setPhone("");
@@ -294,7 +298,12 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
           <DrawerTitle>{t("sendTitle")}</DrawerTitle>
           <DrawerDescription>{t("sendDesc")}</DrawerDescription>
         </DrawerHeader>
-        {error ? (
+        {scheduling ? (
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 pb-8">
+            <Button type="button" variant="outline" onClick={() => setScheduling(false)}>{scheduleCopy(locale).back}</Button>
+            <MessageSchedulePanel initialMessage={message} initialPerson={selectedPeople.length === 1 ? selectedPeople[0] : { name: personName, phone }} />
+          </div>
+        ) : error ? (
           <div className="flex flex-col gap-3 px-5 pb-6">
             <p className="text-sm text-muted-foreground">{t("couldNotRead")}</p>
             <Button type="button" variant="outline" onClick={retry}>
@@ -407,6 +416,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                 />
               </div>
 
+              <Button type="button" className="w-full" onClick={() => setScheduling(true)}>{scheduleCopy(locale).scheduleThis}</Button>
               <Button
                 type="button"
                 variant="secondary"

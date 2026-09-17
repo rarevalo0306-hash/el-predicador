@@ -1,0 +1,184 @@
+import { before, after, beforeEach, test } from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { PGlite } from "@electric-sql/pglite";
+import type { Sql } from "../db.ts";
+import { runScheduledMessages, validCronAuthorization } from "./worker.server.ts";
+import { saveSchedule, listSchedules, setScheduleEnabled } from "./schedules.server.ts";
+import type { ScheduleInput } from "../message-schedule.ts";
+const db = new PGlite();
+const sql = (async (parts: TemplateStringsArray, ...values: unknown[]) => {
+  let text = parts[0];
+  values.forEach((_, i) => {
+    text += `$${i + 1}${parts[i + 1]}`;
+  });
+  return (await db.query(text, values)).rows;
+}) as Sql;
+sql.query = async <T>(text: string, values: unknown[] = []) =>
+  (await db.query<T>(text, values)).rows;
+const schedule: ScheduleInput = {
+  recipientName: "Test",
+  phone: "+12015550123",
+  message: "Test",
+  channel: "whatsapp",
+  days: [0, 1, 2, 3, 4, 5, 6],
+  time: "09:15",
+  timeZone: "America/New_York",
+  consent: true,
+};
+const now = new Date("2026-09-17T13:15:30Z");
+const ready = () => ({ whatsapp: true, sms: true });
+before(async () => {
+  await db.exec(
+    await readFile(new URL("../../../migrations/0001_auth.sql", import.meta.url), "utf8"),
+  );
+  await db.exec(
+    await readFile(
+      new URL("../../../migrations/20260917153827_scheduled_messages.sql", import.meta.url),
+      "utf8",
+    ),
+  );
+  await db.exec(
+    `insert into "user" (id,name,email,"emailVerified","createdAt","updatedAt") values ('owner','Owner','owner@example.com',true,now(),now()),('other','Other','other@example.com',true,now(),now())`,
+  );
+});
+beforeEach(async () => {
+  await db.exec("truncate message_schedules cascade");
+});
+after(async () => {
+  await db.close();
+});
+async function due() {
+  const { id } = await saveSchedule("owner", schedule, sql);
+  await sql`update message_schedules set enabled=true,next_run_at=${"2026-09-17T13:15:00Z"} where id=${id}`;
+  return id;
+}
+test("cron rejects absent, invalid and prefix-confused authorization", () => {
+  assert.equal(validCronAuthorization(null, undefined), false);
+  assert.equal(validCronAuthorization("Bearer undefined", undefined), false);
+  assert.equal(validCronAuthorization("Bearer x", "secret"), false);
+  assert.equal(validCronAuthorization("Bearer secret", "secret"), true);
+});
+test("schedules persist days, minutes and zone, and are isolated by account", async () => {
+  const { id } = await saveSchedule("owner", schedule, sql);
+  const own = await listSchedules("owner", sql);
+  assert.equal(own.schedules[0].time, "09:15");
+  assert.equal(own.schedules[0].enabled, false);
+  assert.equal((await listSchedules("other", sql)).schedules.length, 0);
+  await assert.rejects(
+    () => saveSchedule("other", { ...schedule, id, message: "Intrusion" }, sql),
+    /scheduleBusy/,
+  );
+  await assert.rejects(() => setScheduleEnabled("other", id, false, sql), /scheduleBusy/);
+  await assert.rejects(() => setScheduleEnabled("owner", id, true, sql), /scheduleNotConnected/);
+});
+test("overlapping and repeated cron runs submit an occurrence only once", async () => {
+  await due();
+  let sent = 0;
+  const send = async () => {
+    sent++;
+    return { status: "accepted" as const, providerId: "SMtest" };
+  };
+  await Promise.all([
+    runScheduledMessages(sql, now, send, ready),
+    runScheduledMessages(sql, now, send, ready),
+  ]);
+  await runScheduledMessages(sql, new Date(now.getTime() + 60_000), send, ready);
+  assert.equal(sent, 1);
+  const { schedules } = await listSchedules("owner", sql);
+  assert.equal(schedules[0].lastStatus, "accepted");
+  assert.equal(schedules[0].nextRunAt, "2026-09-18T13:15:00.000Z");
+});
+test("activation requires consent, computes a future occurrence and can be paused", async () => {
+  const { id } = await saveSchedule("owner", { ...schedule, consent: false }, sql);
+  await assert.rejects(
+    () => setScheduleEnabled("owner", id, true, sql, ready),
+    /scheduleConsentRequired/,
+  );
+  await saveSchedule("owner", { ...schedule, id }, sql);
+  await setScheduleEnabled("owner", id, true, sql, ready);
+  const active = (await listSchedules("owner", sql)).schedules[0];
+  assert.equal(active.enabled, true);
+  assert.ok(new Date(active.nextRunAt!).getTime() > Date.now());
+  await setScheduleEnabled("owner", id, false, sql, ready);
+  assert.equal((await listSchedules("owner", sql)).schedules[0].nextRunAt, null);
+});
+test("activation cannot overwrite an edit completed by another request", async () => {
+  const { id } = await saveSchedule("owner", schedule, sql);
+  const racingSql = (async (parts: TemplateStringsArray, ...values: unknown[]) => {
+    const rows = await sql(parts, ...values);
+    if (parts[0].startsWith("select *, updated_at")) {
+      await sql`update message_schedules set message='Edited', updated_at=updated_at+interval '1 second' where id=${id}`;
+    }
+    return rows;
+  }) as Sql;
+  await assert.rejects(
+    () => setScheduleEnabled("owner", id, true, racingSql, ready),
+    /scheduleBusy/,
+  );
+  const saved = (await listSchedules("owner", sql)).schedules[0];
+  assert.equal(saved.message, "Edited");
+  assert.equal(saved.enabled, false);
+});
+test("provider uncertainty is recorded without automatically repeating the message", async () => {
+  await due();
+  let sent = 0;
+  const send = async () => {
+    sent++;
+    throw new Error("timeout after provider acceptance");
+  };
+  await runScheduledMessages(sql, now, send, ready);
+  await runScheduledMessages(sql, now, send, ready);
+  assert.equal(sent, 1);
+  assert.equal((await listSchedules("owner", sql)).schedules[0].lastStatus, "unknown");
+});
+test("an interrupted occurrence is never sent again when its lease expires", async () => {
+  const id = await due();
+  await sql`insert into message_deliveries (id,schedule_id,scheduled_for,status) values ('interrupted',${id},${"2026-09-17T13:15:00Z"},'sending')`;
+  let sent = 0;
+  await runScheduledMessages(
+    sql,
+    now,
+    async () => {
+      sent++;
+      return { status: "accepted" };
+    },
+    ready,
+  );
+  assert.equal(sent, 0);
+  assert.equal((await listSchedules("owner", sql)).schedules[0].lastStatus, "unknown");
+});
+test("paused and stale schedules do not send, and disabling configuration stops sending", async () => {
+  const id = await due();
+  let sent = 0;
+  const send = async () => {
+    sent++;
+    return { status: "accepted" as const };
+  };
+  await runScheduledMessages(sql, new Date("2026-09-17T14:00:00Z"), send, ready);
+  assert.equal(sent, 0);
+  assert.equal((await listSchedules("owner", sql)).schedules[0].lastStatus, "skipped");
+  await sql`update message_schedules set next_run_at=${"2026-09-18T13:15:00Z"} where id=${id}`;
+  await runScheduledMessages(sql, new Date("2026-09-18T13:15:01Z"), send, () => ({
+    whatsapp: false,
+    sms: false,
+  }));
+  assert.equal(sent, 0);
+  assert.equal((await listSchedules("owner", sql)).schedules[0].enabled, false);
+});
+test("editing pauses a schedule and refuses changes while a send is in progress", async () => {
+  const id = await due();
+  await saveSchedule("owner", { ...schedule, id, time: "15:45" }, sql);
+  const saved = (await listSchedules("owner", sql)).schedules[0];
+  assert.equal(saved.enabled, false);
+  assert.equal(saved.time, "15:45");
+  await sql`update message_schedules set lease_until=now()+interval '3 minutes' where id=${id}`;
+  await assert.rejects(() => saveSchedule("owner", { ...schedule, id }, sql), /scheduleBusy/);
+});
+test("private scheduling tables have row level security enabled", async () => {
+  const rows = await sql<{
+    relrowsecurity: boolean;
+  }>`select relrowsecurity from pg_class where relname in ('message_schedules','message_deliveries')`;
+  assert.equal(rows.length, 2);
+  assert.ok(rows.every((r) => r.relrowsecurity));
+});
