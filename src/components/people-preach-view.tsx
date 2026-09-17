@@ -2,8 +2,8 @@ import { MessageLanguageSelect } from "@/components/message-language-select";
 import { messageLanguageName } from "@/lib/message-language";
 import { MessageSchedulePanel } from "@/components/message-schedule-panel";
 import { scheduleCopy } from "@/lib/schedule-copy";
-import { useMemo, useState } from "react";
-import { Bell, Church, MessageCircle, Plus, Trash2, Users } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Bell, Church, ContactRound, MessageCircle, Plus, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/components/language-switch";
 import { cn } from "@/lib/utils";
-import { useAppStore, type Recipient, type RecipientInput, type SendDraft } from "@/lib/store";
+import { canPickDeviceContacts, pickDeviceContacts } from "@/lib/device-contacts";
+import {
+  MAX_RECIPIENTS,
+  useAppStore,
+  type Recipient,
+  type RecipientInput,
+  type SendDraft,
+} from "@/lib/store";
 import { WEEKDAY_KEYS, cultoInviteText, type Weekday } from "@/lib/church";
 import { allDueItems } from "@/lib/preach-schedule";
 import {
@@ -56,6 +63,12 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   const [form, setForm] = useState<RecipientInput>(() => ({ ...emptyForm, messageLocale: locale }));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [section, setSection] = useState<"people" | "church" | "schedules">("people");
+  // Settled after mount: the server has no navigator, and deciding during the
+  // first render would make the markup disagree with what the phone supports.
+  const [canPickContacts, setCanPickContacts] = useState(false);
+  const [importing, setImporting] = useState(false);
+
+  useEffect(() => setCanPickContacts(canPickDeviceContacts()), []);
 
   const due = useMemo(
     () => allDueItems(recipients, church, notifyHour),
@@ -81,6 +94,59 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   function resetForm() {
     setEditingId(null);
     setForm({ ...emptyForm, messageLocale: locale });
+  }
+
+  async function importFromPhone() {
+    setImporting(true);
+    try {
+      const { contacts, skipped } = await pickDeviceContacts();
+      if (!contacts.length) {
+        // Picking nobody is a cancel; only say something when entries were unusable.
+        if (skipped) toast.error(t("personImportNone"));
+        return;
+      }
+      // Someone already saved is updated in place, so they cost no slot.
+      const known = new Set(recipients.map((row) => normalizePhone(row.phone)).filter(Boolean));
+      const room = Math.max(0, MAX_RECIPIENTS - recipients.length);
+      let taken = 0;
+      let overflow = 0;
+      let added = 0;
+      for (const contact of contacts) {
+        const isNew = !known.has(contact.phone);
+        if (isNew && taken >= room) {
+          overflow += 1;
+          continue;
+        }
+        const saved = upsertRecipient({
+          ...emptyForm,
+          name: contact.name || formatPhone(contact.phone),
+          phone: contact.phone,
+          messageLocale: locale,
+          // Reminders stay off on an import: picking twenty people at once is
+          // not twenty decisions to message them daily. Each one can be turned
+          // on from its card.
+          dailyEnabled: false,
+          cultoEnabled: false,
+        });
+        if (!saved) continue;
+        if (isNew) taken += 1;
+        added += 1;
+      }
+      if (!added) {
+        toast.error(overflow ? t("personImportFull") : t("personImportNone"));
+        return;
+      }
+      toast.success(added === 1 ? t("personImportedOne") : t("personImported", { n: added }));
+      if (overflow) toast.error(t("personImportFull"));
+      else if (skipped) toast(t("personImportSkipped", { n: skipped }));
+    } catch (error) {
+      // Dismissing the phone's picker is not a failure worth reporting.
+      if ((error as Error | undefined)?.name !== "AbortError") {
+        toast.error(t("personImportError"));
+      }
+    } finally {
+      setImporting(false);
+    }
   }
 
   function handleSave() {
@@ -350,6 +416,21 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
         <>
           <div className="flex flex-col gap-3 rounded-xl bg-card px-4 py-5 shadow-paper">
             <p className="text-sm font-medium">{editingId ? t("personEdit") : t("personAdd")}</p>
+            {canPickContacts && !editingId ? (
+              <div className="grid gap-1.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 w-full"
+                  disabled={importing}
+                  onClick={() => void importFromPhone()}
+                >
+                  <ContactRound className="size-4" />
+                  {importing ? t("wait") : t("personFromPhone")}
+                </Button>
+                <p className="text-xs text-muted-foreground">{t("personFromPhoneHint")}</p>
+              </div>
+            ) : null}
             <div className="grid items-start gap-2 sm:grid-cols-2">
               <div className="grid gap-1.5">
                 <Label htmlFor="p-name">{t("recipientName")}</Label>
