@@ -86,9 +86,31 @@ const hasDeployedGrokClient = Boolean(
 );
 
 /** Native Google OAuth (standalone Vercel deploys that are not Grok-broker injected). */
-const googleClientId = env("GOOGLE_CLIENT_ID");
-const googleClientSecret = env("GOOGLE_CLIENT_SECRET");
+function cleanGoogleCredential(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  let next = value.trim();
+  // People sometimes paste quoted values into Vercel.
+  if (
+    (next.startsWith('"') && next.endsWith('"')) ||
+    (next.startsWith("'") && next.endsWith("'"))
+  ) {
+    next = next.slice(1, -1).trim();
+  }
+  return next || undefined;
+}
+
+const googleClientId = cleanGoogleCredential(env("GOOGLE_CLIENT_ID"));
+const googleClientSecret = cleanGoogleCredential(env("GOOGLE_CLIENT_SECRET"));
 const nativeGoogleEnabled = Boolean(googleClientId && googleClientSecret);
+
+if (typeof console !== "undefined") {
+  console.info(
+    `[auth] google native=${nativeGoogleEnabled ? "on" : "off"} base=${
+      env("BETTER_AUTH_URL") || env("VERCEL_PROJECT_PRODUCTION_URL") || "dynamic"
+    }`,
+  );
+}
+
 
 function normalizePublicOrigin(raw: string | undefined): string | undefined {
   if (!raw) return undefined;
