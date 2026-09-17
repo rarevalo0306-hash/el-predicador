@@ -1,5 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bookmark, Copy, ImageDown, Mail, MessageCircle, Printer, Share2, Smartphone } from "lucide-react";
+import {
+  Bookmark,
+  Copy,
+  ImageDown,
+  Mail,
+  MessageCircle,
+  Printer,
+  Share2,
+  Smartphone,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   Drawer,
@@ -14,7 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/components/language-switch";
 import { cn } from "@/lib/utils";
-import { useAppStore, type SendDraft } from "@/lib/store";
+import { useAppStore, type Recipient, type SendDraft } from "@/lib/store";
 import { kindFromTemplate, messageTemplates } from "@/lib/messages";
 import {
   copyText,
@@ -38,15 +49,28 @@ type SendDrawerProps = {
   onOpenChange: (open: boolean) => void;
 };
 
+type QueueChannel = "whatsapp" | "sms";
+
+type SendQueue = {
+  channel: QueueChannel;
+  people: Recipient[];
+  index: number;
+};
+
 export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps) {
   const { locale, t } = useI18n();
   const displayName = useAppStore((s) => s.displayName);
+  const recipients = useAppStore((s) => s.recipients);
+  const upsertRecipient = useAppStore((s) => s.upsertRecipient);
   const addSent = useAppStore((s) => s.addSent);
   const rememberVerse = useAppStore((s) => s.rememberVerse);
   const saveMessage = useAppStore((s) => s.saveMessage);
   const [note, setNote] = useState("");
   const [phone, setPhone] = useState("");
+  const [personName, setPersonName] = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
+  const [queue, setQueue] = useState<SendQueue | null>(null);
   const templates = messageTemplates(locale);
   const { verse: shown, error, retry } = useHydratedVerse(verse, locale);
 
@@ -55,12 +79,20 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
     setNote(draft?.note ?? "");
     setActiveTemplate(draft?.kind ?? null);
     setPhone("");
+    setPersonName("");
+    setSelectedIds([]);
+    setQueue(null);
   }, [open, verse?.id, draft?.note, draft?.kind]);
 
   const message = useMemo(() => {
     if (!shown) return "";
     return formatVerseMessage(shown, note, displayName, locale);
   }, [shown, note, displayName, locale]);
+
+  const selectedPeople = useMemo(
+    () => recipients.filter((row) => selectedIds.includes(row.id)),
+    [recipients, selectedIds],
+  );
 
   function pickTemplate(id: string, text: string) {
     if (activeTemplate === id) {
@@ -98,6 +130,73 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
     toast(saved ? t("messageSaved") : t("messageAlready"));
   }
 
+  function toggleRecipient(id: string) {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  }
+
+  function handleSaveRecipient() {
+    const saved = upsertRecipient({ name: personName || phone, phone });
+    if (!saved) {
+      toast(t("recipientNeedPhone"));
+      return;
+    }
+    setSelectedIds((prev) => (prev.includes(saved.id) ? prev : [...prev, saved.id]));
+    setPhone("");
+    setPersonName("");
+    toast(t("recipientSaved"));
+  }
+
+  function deliverTo(channel: QueueChannel, person: Recipient) {
+    if (channel === "whatsapp") openWhatsApp(message, person.phone);
+    else openSms(message, person.phone);
+  }
+
+  function startQueue(channel: QueueChannel) {
+    if (selectedPeople.length === 0) {
+      if (channel === "whatsapp") {
+        openWhatsApp(message, phone);
+        markSent();
+        toast(t("openingWhatsApp"));
+      } else {
+        openSms(message, phone);
+        markSent();
+        toast(t("openingSms"));
+      }
+      return;
+    }
+    const people = selectedPeople;
+    deliverTo(channel, people[0]);
+    markSent();
+    if (people.length === 1) {
+      toast(channel === "whatsapp" ? t("openingWhatsApp") : t("openingSms"));
+      return;
+    }
+    setQueue({ channel, people, index: 0 });
+    toast(t("queueOpened", { name: people[0].name, n: 1, total: people.length }));
+  }
+
+  function queueNext() {
+    if (!queue) return;
+    const nextIndex = queue.index + 1;
+    if (nextIndex >= queue.people.length) {
+      setQueue(null);
+      toast(t("queueDone"));
+      return;
+    }
+    const person = queue.people[nextIndex];
+    deliverTo(queue.channel, person);
+    setQueue({ ...queue, index: nextIndex });
+    toast(
+      t("queueOpened", {
+        name: person.name,
+        n: nextIndex + 1,
+        total: queue.people.length,
+      }),
+    );
+  }
+
   async function handleCopy() {
     try {
       await copyText(message);
@@ -106,18 +205,6 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
     } catch {
       toast(t("copyFail"));
     }
-  }
-
-  function handleWhatsApp() {
-    openWhatsApp(message, phone);
-    markSent();
-    toast(t("openingWhatsApp"));
-  }
-
-  function handleSms() {
-    openSms(message, phone);
-    markSent();
-    toast(t("openingSms"));
   }
 
   function handleMail() {
@@ -189,7 +276,10 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
         if (!next) {
           setNote("");
           setPhone("");
+          setPersonName("");
+          setSelectedIds([]);
           setActiveTemplate(null);
+          setQueue(null);
         }
       }}
     >
@@ -216,6 +306,77 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                   {shown.ref}
                 </p>
               </div>
+              <div className="grid gap-2 rounded-lg border border-border bg-card px-3 py-3">
+                <div className="flex items-center gap-2">
+                  <Users className="size-4 text-primary" />
+                  <p className="text-sm font-medium">{t("recipientsTitle")}</p>
+                </div>
+                <p className="text-xs text-muted-foreground">{t("recipientsHint")}</p>
+                {recipients.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {recipients.map((row) => {
+                      const on = selectedIds.includes(row.id);
+                      return (
+                        <button
+                          key={row.id}
+                          type="button"
+                          onClick={() => toggleRecipient(row.id)}
+                          className={cn(
+                            "h-9 rounded-full border px-3 text-sm font-medium transition-colors",
+                            on
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-background text-foreground",
+                          )}
+                          aria-pressed={on}
+                        >
+                          {row.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">{t("recipientsEmpty")}</p>
+                )}
+                {selectedPeople.length > 1 ? (
+                  <p className="text-xs font-medium text-primary">
+                    {t("recipientsSelected", { n: selectedPeople.length })}
+                  </p>
+                ) : null}
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="person-name">{t("recipientName")}</Label>
+                    <Input
+                      id="person-name"
+                      value={personName}
+                      onChange={(event) => setPersonName(event.target.value)}
+                      placeholder={t("recipientNamePh")}
+                      autoComplete="name"
+                    />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="phone">{t("phoneOptional")}</Label>
+                    <Input
+                      id="phone"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      value={phone}
+                      onChange={(event) => setPhone(event.target.value)}
+                      placeholder={t("phonePlaceholder")}
+                    />
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full"
+                  onClick={handleSaveRecipient}
+                  disabled={!phone.trim()}
+                >
+                  <UserPlus className="size-4" />
+                  {t("recipientSave")}
+                </Button>
+              </div>
+
               <div className="flex flex-wrap gap-2">
                 {templates.map((template) => (
                   <button
@@ -246,18 +407,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                   className="min-h-20"
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="phone">{t("phoneOptional")}</Label>
-                <Input
-                  id="phone"
-                  inputMode="tel"
-                  autoComplete="tel"
-                  value={phone}
-                  onChange={(event) => setPhone(event.target.value)}
-                  placeholder={t("phonePlaceholder")}
-                />
-                <p className="text-xs text-muted-foreground">{t("phoneHint")}</p>
-              </div>
+
               <Button
                 type="button"
                 variant="secondary"
@@ -268,51 +418,83 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                 {t("saveThisMessage")}
               </Button>
             </div>
-            <div className="grid shrink-0 grid-cols-2 gap-2 border-t border-border px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-              <ChannelButton
-                icon={<MessageCircle />}
-                label="WhatsApp"
-                hint={t("mostUsed")}
-                onClick={handleWhatsApp}
-              />
-              <ChannelButton
-                icon={<Smartphone />}
-                label="SMS"
-                hint={t("textMessage")}
-                onClick={handleSms}
-              />
-              <ChannelButton
-                icon={<Mail />}
-                label={t("mailAction")}
-                hint={t("mailHint")}
-                onClick={handleMail}
-              />
-              <ChannelButton
-                icon={<Copy />}
-                label={t("copyAction")}
-                hint={t("pasteAnywhere")}
-                onClick={() => void handleCopy()}
-              />
-              <ChannelButton
-                icon={<ImageDown />}
-                label={t("saveImage")}
-                hint={t("saveImageHint")}
-                onClick={() => void handleSaveImage()}
-              />
-              <ChannelButton
-                icon={<Printer />}
-                label={t("printAction")}
-                hint={t("printHint")}
-                onClick={() => void handlePrint()}
-              />
-              <ChannelButton
-                icon={<Share2 />}
-                label={t("shareAction")}
-                hint={t("otherApps")}
-                className="col-span-2"
-                onClick={() => void handleShare()}
-              />
-            </div>
+
+            {queue ? (
+              <div className="shrink-0 border-t border-border bg-secondary px-5 py-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                <p className="text-sm font-medium">
+                  {t("queueProgress", {
+                    name: queue.people[queue.index]?.name ?? "",
+                    n: queue.index + 1,
+                    total: queue.people.length,
+                  })}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{t("queueNextHint")}</p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <Button type="button" variant="outline" onClick={() => setQueue(null)}>
+                    {t("queueStop")}
+                  </Button>
+                  <Button type="button" onClick={queueNext}>
+                    {queue.index + 1 >= queue.people.length
+                      ? t("queueDone")
+                      : t("queueNext")}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid shrink-0 grid-cols-2 gap-2 border-t border-border px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+                <ChannelButton
+                  icon={<MessageCircle />}
+                  label="WhatsApp"
+                  hint={
+                    selectedPeople.length > 1
+                      ? t("sendToN", { n: selectedPeople.length })
+                      : t("mostUsed")
+                  }
+                  onClick={() => startQueue("whatsapp")}
+                />
+                <ChannelButton
+                  icon={<Smartphone />}
+                  label="SMS"
+                  hint={
+                    selectedPeople.length > 1
+                      ? t("sendToN", { n: selectedPeople.length })
+                      : t("textMessage")
+                  }
+                  onClick={() => startQueue("sms")}
+                />
+                <ChannelButton
+                  icon={<Mail />}
+                  label={t("mailAction")}
+                  hint={t("mailHint")}
+                  onClick={handleMail}
+                />
+                <ChannelButton
+                  icon={<Copy />}
+                  label={t("copyAction")}
+                  hint={t("pasteAnywhere")}
+                  onClick={() => void handleCopy()}
+                />
+                <ChannelButton
+                  icon={<ImageDown />}
+                  label={t("saveImage")}
+                  hint={t("saveImageHint")}
+                  onClick={() => void handleSaveImage()}
+                />
+                <ChannelButton
+                  icon={<Printer />}
+                  label={t("printAction")}
+                  hint={t("printHint")}
+                  onClick={() => void handlePrint()}
+                />
+                <ChannelButton
+                  icon={<Share2 />}
+                  label={t("shareAction")}
+                  hint={t("otherApps")}
+                  className="col-span-2"
+                  onClick={() => void handleShare()}
+                />
+              </div>
+            )}
           </>
         ) : (
           <p className="px-5 pb-6 text-sm text-muted-foreground">{t("loadingVerse")}</p>

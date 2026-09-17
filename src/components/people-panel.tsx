@@ -99,17 +99,40 @@ export function PeoplePanel() {
               <p className="text-sm text-muted-foreground">{t("peopleEmpty")}</p>
             ) : (
               <ul className="flex flex-col gap-2">
-                {rows.map((row) => (
-                  <li
-                    key={row.id}
-                    className="rounded-lg border border-border bg-card px-3 py-3 text-sm"
-                  >
-                    <p className="font-medium">{row.name}</p>
-                    <p className="mt-1 text-muted-foreground">{row.email}</p>
-                    <p className="text-muted-foreground">{row.phone}</p>
-                    <p className="mt-1 text-muted-foreground">{row.address}</p>
-                  </li>
-                ))}
+                {rows.map((row) => {
+                  const digits = row.phone.replace(/\D/g, "");
+                  return (
+                    <li
+                      key={row.id}
+                      className="rounded-lg border border-border bg-card px-3 py-3 text-sm"
+                    >
+                      <p className="font-medium">{row.name}</p>
+                      <p className="mt-1 text-muted-foreground">{row.email}</p>
+                      <p className="text-muted-foreground">
+                        {row.phone || t("peopleNoPhone")}
+                      </p>
+                      <p className="mt-1 text-muted-foreground">{row.address}</p>
+                      {digits.length >= 7 ? (
+                        <div className="mt-3 flex gap-2">
+                          <Button asChild variant="outline" size="sm" className="flex-1">
+                            <a
+                              href={`https://wa.me/${digits}`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {t("peopleWhatsApp")}
+                            </a>
+                          </Button>
+                          <Button asChild variant="outline" size="sm" className="flex-1">
+                            <a href={`sms:${digits}`}>
+                              {t("peopleSms")}
+                            </a>
+                          </Button>
+                        </div>
+                      ) : null}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
