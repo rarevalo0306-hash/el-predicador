@@ -30,6 +30,14 @@ export type SendDraft = {
   kind?: MessageKind | null;
 };
 
+/** People you preach to — local phone book for WhatsApp / SMS. */
+export type Recipient = {
+  id: string;
+  name: string;
+  phone: string;
+  at: number;
+};
+
 export type CloudPayload = {
   favorites: string[];
   favoriteKinds: Record<string, MessageKind>;
@@ -37,6 +45,9 @@ export type CloudPayload = {
   savedMessages: SavedMessage[];
   displayName: string;
   notify: boolean;
+  /** Preferred local hour (0–23) for the daily verse reminder. */
+  notifyHour: number;
+  recipients: Recipient[];
   sent: SentItem[];
   dailyOffset: number;
   dailyDate: string;
@@ -52,6 +63,8 @@ export const EMPTY_CLOUD: CloudPayload = {
   savedMessages: [],
   displayName: "",
   notify: false,
+  notifyHour: 8,
+  recipients: [],
   sent: [],
   dailyOffset: 0,
   dailyDate: "",
@@ -79,6 +92,9 @@ type AppState = CloudPayload & {
   removeMessage: (id: string) => void;
   setDisplayName: (displayName: string) => void;
   setNotify: (notify: boolean) => void;
+  setNotifyHour: (hour: number) => void;
+  upsertRecipient: (item: { name: string; phone: string; id?: string }) => Recipient | null;
+  removeRecipient: (id: string) => void;
   addSent: (item: SentItem) => void;
   bumpOffset: () => void;
   ensureToday: () => void;
@@ -88,6 +104,10 @@ type AppState = CloudPayload & {
   hydrateFromCloud: (payload: CloudPayload) => void;
   snapshotCloud: () => CloudPayload;
 };
+
+function normalizePhone(phone: string) {
+  return phone.replace(/\D/g, "");
+}
 
 export const useAppStore = create<AppState>()((set, get) => ({
   ...EMPTY_CLOUD,
@@ -147,6 +167,40 @@ export const useAppStore = create<AppState>()((set, get) => ({
     })),
   setDisplayName: (displayName) => set({ displayName }),
   setNotify: (notify) => set({ notify }),
+  setNotifyHour: (hour) =>
+    set({ notifyHour: Math.min(23, Math.max(0, Math.round(hour) || 8)) }),
+  upsertRecipient: (item) => {
+    const name = item.name.trim();
+    const phone = normalizePhone(item.phone);
+    if (!name || phone.length < 7) return null;
+    const existing = get().recipients.find(
+      (row) => row.id === item.id || normalizePhone(row.phone) === phone,
+    );
+    if (existing) {
+      const next: Recipient = { ...existing, name, phone, at: Date.now() };
+      set((state) => ({
+        recipients: [
+          next,
+          ...state.recipients.filter((row) => row.id !== existing.id),
+        ],
+      }));
+      return next;
+    }
+    const created: Recipient = {
+      id: item.id ?? newId(),
+      name,
+      phone,
+      at: Date.now(),
+    };
+    set((state) => ({
+      recipients: [created, ...state.recipients].slice(0, 80),
+    }));
+    return created;
+  },
+  removeRecipient: (id) =>
+    set((state) => ({
+      recipients: state.recipients.filter((row) => row.id !== id),
+    })),
   addSent: (item) =>
     set((state) => ({ sent: [item, ...state.sent].slice(0, 30) })),
   bumpOffset: () => {
@@ -183,7 +237,13 @@ export const useAppStore = create<AppState>()((set, get) => ({
     const locale = payload.locale ?? get().locale;
     persistLocale(locale);
     set({
+      ...EMPTY_CLOUD,
       ...payload,
+      notifyHour:
+        typeof payload.notifyHour === "number" && Number.isFinite(payload.notifyHour)
+          ? Math.min(23, Math.max(0, Math.round(payload.notifyHour)))
+          : 8,
+      recipients: Array.isArray(payload.recipients) ? payload.recipients : [],
       locale,
     });
   },
@@ -196,6 +256,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
       savedMessages: state.savedMessages,
       displayName: state.displayName,
       notify: state.notify,
+      notifyHour: state.notifyHour,
+      recipients: state.recipients,
       sent: state.sent,
       dailyOffset: state.dailyOffset,
       dailyDate: state.dailyDate,

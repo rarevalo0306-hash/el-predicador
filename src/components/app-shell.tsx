@@ -64,26 +64,53 @@ function PreacherApp({
   const [profileMode, setProfileMode] = useState<"entrar" | "crear">("entrar");
   const ready = useCloudSync(userId, sessionReady);
   const notify = useAppStore((s) => s.notify);
+  const notifyHour = useAppStore((s) => s.notifyHour);
 
   useEffect(() => {
     if (!ready || !notify) return;
     if (typeof Notification === "undefined") return;
     if (Notification.permission !== "granted") return;
-    const key = `pv-notified-${todayKey()}`;
-    try {
-      if (sessionStorage.getItem(key)) return;
-      void hydrateVerse(getDailyVerse(), locale)
-        .then((verse) => {
-          new Notification(t("notifyBodyTitle"), {
-            body: `${verse.ref}: ${verse.text.slice(0, 140)}`,
-          });
-          sessionStorage.setItem(key, "1");
-        })
-        .catch(() => undefined);
-    } catch {
-      /* preview iframes may block notifications */
+
+    let cancelled = false;
+    let timer: number | undefined;
+
+    async function fireDaily() {
+      const key = `pv-notified-${todayKey()}`;
+      try {
+        if (localStorage.getItem(key)) return;
+        const verse = await hydrateVerse(getDailyVerse(), locale);
+        if (cancelled) return;
+        const { showDailyNotification } = await import("@/lib/notify");
+        await showDailyNotification({
+          title: t("notifyBodyTitle"),
+          body: `${verse.ref}: ${verse.text.slice(0, 140)}`,
+          tag: key,
+        });
+        localStorage.setItem(key, "1");
+      } catch {
+        /* preview iframes may block notifications */
+      }
     }
-  }, [ready, notify, locale, t]);
+
+    void import("@/lib/notify").then(async ({ ensurePreacherServiceWorker, msUntilNotifyHour }) => {
+      await ensurePreacherServiceWorker();
+      if (cancelled) return;
+      const delay = msUntilNotifyHour(notifyHour);
+      // Also show once today if the preferred hour already passed and we haven't notified.
+      const now = new Date();
+      if (now.getHours() >= notifyHour) {
+        void fireDaily();
+      }
+      timer = window.setTimeout(() => {
+        void fireDaily();
+      }, Math.min(delay, 24 * 60 * 60 * 1000));
+    });
+
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [ready, notify, notifyHour, locale, t]);
 
   function openSend(verse: Verse, draft?: SendDraft) {
     setSending(verse);

@@ -9,6 +9,25 @@ function parsePayload(raw: string | null | undefined): CloudPayload | null {
   try {
     const value = JSON.parse(raw) as CloudPayload;
     if (!value || typeof value !== "object") return null;
+    const recipients = Array.isArray(value.recipients)
+      ? value.recipients
+          .filter(
+            (row) =>
+              row &&
+              typeof row === "object" &&
+              typeof row.id === "string" &&
+              typeof row.name === "string" &&
+              typeof row.phone === "string",
+          )
+          .map((row) => ({
+            id: row.id,
+            name: row.name,
+            phone: String(row.phone).replace(/\D/g, ""),
+            at: Number(row.at) || Date.now(),
+          }))
+          .filter((row) => row.phone.length >= 7)
+      : [];
+    const hour = Number(value.notifyHour);
     return {
       favorites: Array.isArray(value.favorites) ? value.favorites : [],
       favoriteKinds:
@@ -22,6 +41,8 @@ function parsePayload(raw: string | null | undefined): CloudPayload | null {
       savedMessages: Array.isArray(value.savedMessages) ? value.savedMessages : [],
       displayName: typeof value.displayName === "string" ? value.displayName : "",
       notify: Boolean(value.notify),
+      notifyHour: Number.isFinite(hour) ? Math.min(23, Math.max(0, Math.round(hour))) : 8,
+      recipients,
       sent: Array.isArray(value.sent) ? value.sent : [],
       dailyOffset: Number(value.dailyOffset) || 0,
       dailyDate: typeof value.dailyDate === "string" ? value.dailyDate : "",
