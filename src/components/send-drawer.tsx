@@ -306,37 +306,6 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                   {shown.ref}
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {templates.map((template) => (
-                  <button
-                    key={template.id}
-                    type="button"
-                    onClick={() => pickTemplate(template.id, template.text)}
-                    className={cn(
-                      "h-9 rounded-full border px-3 text-sm font-medium transition-colors duration-150",
-                      activeTemplate === template.id
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-card text-foreground hover:bg-secondary",
-                    )}
-                  >
-                    {template.label}
-                  </button>
-                ))}
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="note">{t("personalNote")}</Label>
-                <Textarea
-                  id="note"
-                  value={note}
-                  onChange={(event) => {
-                    setNote(event.target.value);
-                    setActiveTemplate(null);
-                  }}
-                  placeholder={t("notePlaceholder")}
-                  className="min-h-20"
-                />
-              </div>
-
               <div className="grid gap-2 rounded-lg border border-border bg-card px-3 py-3">
                 <div className="flex items-center gap-2">
                   <Users className="size-4 text-primary" />
@@ -406,6 +375,37 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                   <UserPlus className="size-4" />
                   {t("recipientSave")}
                 </Button>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {templates.map((template) => (
+                  <button
+                    key={template.id}
+                    type="button"
+                    onClick={() => pickTemplate(template.id, template.text)}
+                    className={cn(
+                      "h-9 rounded-full border px-3 text-sm font-medium transition-colors duration-150",
+                      activeTemplate === template.id
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card text-foreground hover:bg-secondary",
+                    )}
+                  >
+                    {template.label}
+                  </button>
+                ))}
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="note">{t("personalNote")}</Label>
+                <Textarea
+                  id="note"
+                  value={note}
+                  onChange={(event) => {
+                    setNote(event.target.value);
+                    setActiveTemplate(null);
+                  }}
+                  placeholder={t("notePlaceholder")}
+                  className="min-h-20"
+                />
               </div>
 
               <Button
