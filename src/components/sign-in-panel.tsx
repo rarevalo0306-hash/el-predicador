@@ -10,6 +10,8 @@ import { submitContact } from "@/lib/contacts";
 
 type SignInPanelProps = {
   collectDetails?: boolean;
+  /** Default auth mode. Guests looking for sign-in should land on "entrar". */
+  initialMode?: "entrar" | "crear";
   onSuccess?: () => void;
 };
 
@@ -38,10 +40,14 @@ function GoogleMark() {
   );
 }
 
-export function SignInPanel({ collectDetails = false, onSuccess }: SignInPanelProps) {
+export function SignInPanel({
+  collectDetails = false,
+  initialMode = "entrar",
+  onSuccess,
+}: SignInPanelProps) {
   const { locale, t } = useI18n();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"entrar" | "crear">("crear");
+  const [mode, setMode] = useState<"entrar" | "crear">(initialMode);
   const [step, setStep] = useState<"correo" | "clave">("correo");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

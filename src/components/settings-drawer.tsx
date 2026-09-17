@@ -107,7 +107,7 @@ export function SettingsDrawer({
                 }}
               >
                 <UserRound className="size-4" />
-                {t("signupLink")}
+                {t("logIn")}
               </Button>
             </SignedOut>
           </div>

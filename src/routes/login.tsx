@@ -11,11 +11,11 @@ function Login() {
     <main className="mx-auto flex min-h-dvh w-full max-w-lg flex-col items-center justify-center gap-8 px-5 py-10">
       <Logo />
       <div className="w-full max-w-sm text-center">
-        <h1 className="font-serif text-3xl tracking-tight">{t("signupTitle")}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{t("profileDesc")}</p>
+        <h1 className="font-serif text-3xl tracking-tight">{t("logIn")}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{t("loginSub")}</p>
       </div>
       <LanguageSwitch />
-      <SignInPanel collectDetails />
+      <SignInPanel collectDetails initialMode="entrar" />
       <Link
         to="/"
         className="h-11 text-sm text-muted-foreground hover:text-foreground"
