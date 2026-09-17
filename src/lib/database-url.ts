@@ -5,9 +5,10 @@
  * Vercel often fails with `getaddrinfo ENOTFOUND` (no A record). Rewrite to
  * the Shared Pooler (Supavisor) which is IPv4.
  *
- * Override region with `SUPABASE_REGION` (e.g. `us-east-1`). Default `us-east-1`.
- * Skip rewrite with `SUPABASE_USE_DIRECT=1` or if the URL already points at
- * `pooler.supabase.com`.
+ * Default: session pooler port **5432** (matches Supabase Connect UI).
+ * Use `SUPABASE_POOLER_PORT=6543` for transaction mode.
+ * Override region with `SUPABASE_REGION` (default `us-east-1`).
+ * Skip rewrite with `SUPABASE_USE_DIRECT=1`.
  */
 export function normalizeDatabaseUrl(raw: string | undefined): string | undefined {
   if (!raw?.trim()) return undefined;
@@ -37,17 +38,22 @@ export function normalizeDatabaseUrl(raw: string | undefined): string | undefine
   const nextUser = user.includes(".") ? user : `postgres.${projectRef}`;
 
   parsed.hostname = poolerHost;
-  parsed.port = "6543";
+  const preferPort = process.env.SUPABASE_POOLER_PORT?.trim() || "5432";
+  parsed.port = preferPort;
   parsed.username = nextUser;
 
-  if (!parsed.searchParams.has("pgbouncer")) {
-    parsed.searchParams.set("pgbouncer", "true");
+  if (preferPort === "6543") {
+    if (!parsed.searchParams.has("pgbouncer")) {
+      parsed.searchParams.set("pgbouncer", "true");
+    }
+  } else {
+    parsed.searchParams.delete("pgbouncer");
   }
 
   const normalized = parsed.toString();
   if (typeof console !== "undefined" && normalized !== url) {
     console.info(
-      `[db] rewrote Supabase direct host → pooler (${poolerHost}) for IPv4`,
+      `[db] rewrote Supabase direct host → pooler (${poolerHost}:${preferPort}) for IPv4`,
     );
   }
   return normalized;
