@@ -43,10 +43,12 @@ function normalizeDatabaseUrl(raw) {
   const poolerHost = `aws-0-${region}.pooler.supabase.com`;
   const user = decodeURIComponent(parsed.username || "postgres");
   parsed.hostname = poolerHost;
-  parsed.port = "6543";
+  parsed.port = process.env.SUPABASE_POOLER_PORT?.trim() || "5432";
   parsed.username = user.includes(".") ? user : `postgres.${projectRef}`;
-  if (!parsed.searchParams.has("pgbouncer")) {
+  if (parsed.port === "6543" && !parsed.searchParams.has("pgbouncer")) {
     parsed.searchParams.set("pgbouncer", "true");
+  } else {
+    parsed.searchParams.delete("pgbouncer");
   }
   const normalized = parsed.toString();
   if (normalized !== url) {
