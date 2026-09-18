@@ -7,7 +7,7 @@ import {
   type MessageSchedule,
   type MessageChannel,
 } from "../message-schedule.ts";
-import { messagingStatus } from "./provider.server.ts";
+import { messagingRequirements, messagingStatus } from "./provider.server.ts";
 
 export type ScheduleRow = {
   id: string;
@@ -60,6 +60,9 @@ export async function listSchedules(userId: string, providedSql?: Sql) {
     schedules: rows.map(scheduleFromRow),
     channels: messagingStatus(userId),
     channelsByLocale: { es: messagingStatus(userId), en: messagingStatus(userId, undefined, "en") },
+    // Booleans only, so the panel can name what is missing instead of just
+    // saying "not connected". See messagingRequirements for why it is shown.
+    requirements: messagingRequirements(userId),
   };
 }
 export async function saveSchedule(userId: string, raw: ScheduleInput, providedSql?: Sql) {

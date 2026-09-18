@@ -27,6 +27,7 @@ import {
   setMessageScheduleEnabled,
 } from "@/lib/message-schedules";
 import { scheduleCopy } from "@/lib/schedule-copy";
+import { missingRequirements } from "@/lib/messaging-requirements";
 import { cn } from "@/lib/utils";
 
 const selectClass =
@@ -258,12 +259,33 @@ function MessageScheduleForm({
         </div>
       ) : null}
       {query.data ? (
-        <p
+        <div
           role="status"
           className="rounded-lg border border-border bg-secondary p-3 text-sm leading-relaxed"
         >
-          {connected ? copy.ready : copy.notConnected}
-        </p>
+          <p>{connected ? copy.ready : copy.notConnected}</p>
+          {!connected && query.data.requirements ? (
+            <>
+              <p className="mt-3 font-medium">{copy.missingTitle}</p>
+              <ul className="mt-1.5 space-y-1.5">
+                {missingRequirements(query.data.requirements, form, copy).map((item) => (
+                  <li key={item.key} className="flex gap-2">
+                    <span aria-hidden="true">{item.done ? "\u2713" : "\u2022"}</span>
+                    <span className={cn("min-w-0", item.done && "text-muted-foreground")}>
+                      {item.label}
+                      {item.done ? (
+                        <span className="ml-1">({copy.missingDone})</span>
+                      ) : (
+                        <span className="block break-words font-mono text-xs">{item.how}</span>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs text-muted-foreground">{copy.missingHint}</p>
+            </>
+          ) : null}
+        </div>
       ) : null}
       <form
         ref={formRef}
