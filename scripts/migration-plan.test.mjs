@@ -57,8 +57,14 @@ test("non-.sql entries are dropped (readdir also yields the auth/ directory)", (
 });
 
 test("the auth schema ships outside the globbed directory", () => {
+  // This app ships its own migrations/*.sql, so the plan is not empty. What
+  // must hold is that migrations/auth/ stays out of it: the directory entry is
+  // not a migration, and its copy is applied from the top level instead.
   const migrationsDir = join(projectRoot(), "migrations");
-  assert.deepEqual(pendingMigrations(readdirSync(migrationsDir), []), []);
+  const planned = pendingMigrations(readdirSync(migrationsDir), []).map((m) => m.name);
+  assert.ok(readdirSync(migrationsDir).includes("auth"), "migrations/auth/ is the schema source");
+  assert.equal(planned.includes("auth"), false);
+  assert.deepEqual([...planned].sort(), planned, "the plan is applied in name order");
   assert.ok(readdirSync(join(migrationsDir, "auth")).includes("0001_auth.sql"));
 });
 

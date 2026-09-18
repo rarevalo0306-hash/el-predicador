@@ -11,10 +11,14 @@ export function messagingStatus(
   config: Config = process.env,
   locale: "es" | "en" = "es",
 ) {
-  const allowed = (config.MESSAGING_ALLOWED_USER_IDS ?? "")
-    .split(",")
-    .map((v) => v.trim())
-    .includes(userId);
+  // An unset list splits to [""], so an empty caller id must never match it.
+  const allowed =
+    Boolean(userId) &&
+    (config.MESSAGING_ALLOWED_USER_IDS ?? "")
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean)
+      .includes(userId);
   const credentials = Boolean(config.TWILIO_ACCOUNT_SID && config.TWILIO_AUTH_TOKEN);
   const scheduler = Boolean(config.CRON_SECRET && config.MESSAGING_ENABLED === "true");
   return {

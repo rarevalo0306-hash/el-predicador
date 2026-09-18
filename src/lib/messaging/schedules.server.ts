@@ -85,6 +85,15 @@ export async function saveSchedule(userId: string, raw: ScheduleInput, providedS
     ${JSON.stringify(data.days)}::jsonb, ${data.time}, ${data.timeZone}, ${data.consent})`;
   return { id };
 }
+/** Deleting frees a slot against the per-account limit; deliveries cascade. */
+export async function deleteSchedule(userId: string, id: string, providedSql?: Sql) {
+  const sql = providedSql ?? (await (await import("../db")).getSql());
+  if (!/^[a-zA-Z0-9-]{1,64}$/.test(id)) throw new Error("scheduleInvalid");
+  const rows = await sql`delete from message_schedules
+    where id = ${id} and user_id = ${userId} and (lease_until is null or lease_until < now()) returning id`;
+  if (!rows.length) throw new Error("scheduleBusy");
+  return { ok: true };
+}
 export async function setScheduleEnabled(
   userId: string,
   id: string,

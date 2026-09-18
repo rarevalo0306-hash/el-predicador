@@ -78,8 +78,10 @@ const es = {
   profile: "Perfil",
   enterButton: "Entrar",
   profileTitle: "Perfil",
-  profileDesc: "La app se usa sin cuenta. Si te registras, guardamos tus datos para enviarte la palabra.",
-  profileGuest: "Puedes leer y enviar versos ahora. Crea un perfil si quieres que te recordemos y no perder lo guardado.",
+  profileDesc:
+    "La app se usa sin cuenta. Si te registras, guardamos tus datos para enviarte la palabra.",
+  profileGuest:
+    "Puedes leer y enviar versos ahora. Crea un perfil si quieres que te recordemos y no perder lo guardado.",
   profileHello: "Hola, {name}",
   useWithoutAccount: "Seguir sin cuenta",
   settingsTitle: "Ajustes",
@@ -196,8 +198,7 @@ const es = {
     "Un asistente para el predicador: según a quién hablas, y el camino del evangelio.",
   cases: "Casos",
   doctrine: "Doctrina",
-  doctrineIntro:
-    "Las enseñanzas, el porqué, y qué tiene base en la Biblia y qué no.",
+  doctrineIntro: "Las enseñanzas, el porqué, y qué tiene base en la Biblia y qué no.",
   theSchools: "Las escuelas",
   myTeaching: "Esta enseñanza",
   otherTeachings: "Otras enseñanzas",
@@ -215,8 +216,7 @@ const es = {
   forYouPreacher: "Para ti, predicador",
   forYouSub: "La comisión. Para cuando te falte valor.",
   nwtTitle: "Lo que le cambian a la Biblia",
-  nwtSub:
-    "Texto original, lo que transmite, Reina-Valera y Traducción del Nuevo Mundo.",
+  nwtSub: "Texto original, lo que transmite, Reina-Valera y Traducción del Nuevo Mundo.",
   howWritten: "Cómo está escrito",
   sendAllComparisons: "Enviar todas las comparaciones",
   conveys: "Transmite",
@@ -226,17 +226,14 @@ const es = {
   sendThisComparison: "Enviar esta comparación",
   nviTitle: "Recobro y NVI",
   nviCardLine: "Cuando alguien lee NVI, estas son las palabras que Recobro recupera del original.",
-  nviSub:
-    "Texto original, lo que transmite, Versión Recobro y Nueva Versión Internacional.",
+  nviSub: "Texto original, lo que transmite, Versión Recobro y Nueva Versión Internacional.",
   sourceNvi: "NVI",
   theDifference: "La diferencia",
   nviFooter:
     "Citas breves de la NVI © Biblica, y de la Versión Recobro © Living Stream Ministry, para enseñanza.",
   bibleTitle: "Biblia",
-  bibleSub:
-    "Santa Biblia Versión Recobro. Busca una cita o entra por un libro.",
-  bibleSubEn:
-    "Holy Bible Recovery Version. Search a reference or open a book.",
+  bibleSub: "Santa Biblia Versión Recobro. Busca una cita o entra por un libro.",
+  bibleSubEn: "Holy Bible Recovery Version. Search a reference or open a book.",
   searchRef: "Juan 3:16, Salmos 23…",
   searchRefEn: "John 3:16, Psalms 23…",
   searchRefAria: "Buscar cita o libro",
@@ -299,8 +296,7 @@ const es = {
   tplAnimo: "Pensé en ti y quise compartirte esta palabra. Que te dé ánimo hoy.",
   tplOracion: "Estoy orando por ti. Recibe esta palabra con cariño.",
   tplPaz: "Que esta palabra te traiga paz en este momento.",
-  tplEvangelio:
-    "Quiero compartirte la mejor noticia: Dios te ama y hay salvación en Jesús.",
+  tplEvangelio: "Quiero compartirte la mejor noticia: Dios te ama y hay salvación en Jesús.",
   tplBendicion: "Que Dios te bendiga. Un verso para tu día.",
   themeJovenes: "Jóvenes",
   themeJovenesLine: "Fe y propósito en cada etapa",
@@ -366,11 +362,9 @@ const es = {
   contactCardLine: "Deja tu nombre, correo, teléfono y dirección.",
   contactCardCta: "Dejar mis datos",
   peopleTitle: "Personas registradas",
-  peopleLead:
-    "Solo para ti: introduce la clave de administrador configurada en el servidor.",
+  peopleLead: "Solo para ti: introduce la clave de administrador configurada en el servidor.",
   peopleNeedSignIn: "Entra en tu cuenta para ver los registros.",
-  peopleUnavailable:
-    "La lista de contactos no está configurada en este entorno.",
+  peopleUnavailable: "La lista de contactos no está configurada en este entorno.",
   peoplePin: "Clave de administrador",
   peopleOpen: "Ver lista",
   peopleBadPin: "Clave incorrecta.",
@@ -381,8 +375,7 @@ const es = {
   peopleSms: "SMS",
   peopleNoPhone: "Sin teléfono",
   preachTitle: "Personas",
-  preachSub:
-    "Guarda tus contactos, prepara mensajes y elige los días y la hora de tus envíos.",
+  preachSub: "Guarda tus contactos, prepara mensajes y elige los días y la hora de tus envíos.",
   preachPeople: "Contactos",
   preachChurch: "Iglesia",
   preachDueTitle: "Para enviar ahora",
@@ -396,6 +389,14 @@ const es = {
   preachRemindTitle: "El Predicador · recordatorios",
   preachRemindBody: "Hay personas pendientes de un mensaje o invitación al culto.",
   personAdd: "Nueva persona",
+  personFromPhone: "Agregar desde mis contactos",
+  personFromPhoneHint: "Toma el nombre y el teléfono de tu agenda. Solo tú los ves.",
+  personImported: "{n} agregadas desde tu agenda",
+  personImportedOne: "1 agregada desde tu agenda",
+  personImportSkipped: "{n} se omitieron: repetidas o sin teléfono completo.",
+  personImportNone: "Ninguna se pudo agregar: revisa que tengan teléfono completo.",
+  personImportFull: "Llegaste al límite de 80 personas. Elimina alguna para agregar más.",
+  personImportError: "No se pudo abrir tu agenda. Inténtalo de nuevo.",
   personEdit: "Editar",
   personSave: "Guardar persona",
   personUpdate: "Actualizar",
@@ -479,8 +480,10 @@ const en: Record<keyof typeof es, string> = {
   profile: "Profile",
   enterButton: "Sign in",
   profileTitle: "Profile",
-  profileDesc: "You can use the app without an account. If you register, we keep your details to send you the word.",
-  profileGuest: "You can read and send verses now. Create a profile if you want us to remember you and keep what you save.",
+  profileDesc:
+    "You can use the app without an account. If you register, we keep your details to send you the word.",
+  profileGuest:
+    "You can read and send verses now. Create a profile if you want us to remember you and keep what you save.",
   profileHello: "Hello, {name}",
   useWithoutAccount: "Continue without an account",
   settingsTitle: "Settings",
@@ -512,8 +515,7 @@ const en: Record<keyof typeof es, string> = {
   moodEsperanza: "Hope",
   moodConsuelo: "Comfort",
   sendTitle: "Send a message",
-  sendDesc:
-    "Add a note, pick people, then send via WhatsApp, messages, mail, image, or more apps.",
+  sendDesc: "Add a note, pick people, then send via WhatsApp, messages, mail, image, or more apps.",
   personalNote: "Personal note",
   notePlaceholder: "Write a few words for the person who will receive it…",
   phoneOptional: "Number (optional)",
@@ -597,8 +599,7 @@ const en: Record<keyof typeof es, string> = {
     "An assistant for the preacher: according to whom you speak to, and the gospel path.",
   cases: "Cases",
   doctrine: "Doctrine",
-  doctrineIntro:
-    "The teachings, the reason, and what has a basis in the Bible and what does not.",
+  doctrineIntro: "The teachings, the reason, and what has a basis in the Bible and what does not.",
   theSchools: "The schools",
   myTeaching: "This teaching",
   otherTeachings: "Other teachings",
@@ -616,8 +617,7 @@ const en: Record<keyof typeof es, string> = {
   forYouPreacher: "For you, preacher",
   forYouSub: "The commission. For when courage runs low.",
   nwtTitle: "What they change in the Bible",
-  nwtSub:
-    "Original text, what it conveys, King James, and the New World Translation.",
+  nwtSub: "Original text, what it conveys, King James, and the New World Translation.",
   howWritten: "How it is written",
   sendAllComparisons: "Send every comparison",
   conveys: "Conveys",
@@ -628,17 +628,14 @@ const en: Record<keyof typeof es, string> = {
   nviTitle: "Recovery and NIV",
   nviCardLine:
     "When someone reads the NIV, these are the words Recovery restores from the original.",
-  nviSub:
-    "Original text, what it conveys, Recovery Version and the NIV.",
+  nviSub: "Original text, what it conveys, Recovery Version and the NIV.",
   sourceNvi: "NIV",
   theDifference: "The difference",
   nviFooter:
     "Brief quotations from the NIV © Biblica, and the Recovery Version © Living Stream Ministry, for teaching.",
   bibleTitle: "Bible",
-  bibleSub:
-    "Holy Bible Recovery Version. Search a reference or open a book.",
-  bibleSubEn:
-    "Holy Bible Recovery Version. Search a reference or open a book.",
+  bibleSub: "Holy Bible Recovery Version. Search a reference or open a book.",
+  bibleSubEn: "Holy Bible Recovery Version. Search a reference or open a book.",
   searchRef: "John 3:16, Psalms 23…",
   searchRefEn: "John 3:16, Psalms 23…",
   searchRefAria: "Search a reference or book",
@@ -701,8 +698,7 @@ const en: Record<keyof typeof es, string> = {
   tplAnimo: "I thought of you and wanted to share this word. May it give you courage today.",
   tplOracion: "I am praying for you. Receive this word with love.",
   tplPaz: "May this word bring you peace in this moment.",
-  tplEvangelio:
-    "I want to share the best news: God loves you, and there is salvation in Jesus.",
+  tplEvangelio: "I want to share the best news: God loves you, and there is salvation in Jesus.",
   tplBendicion: "May God bless you. A verse for your day.",
   themeJovenes: "Young people",
   themeJovenesLine: "Faith and purpose as you grow",
@@ -781,8 +777,7 @@ const en: Record<keyof typeof es, string> = {
   peopleSms: "SMS",
   peopleNoPhone: "No phone",
   preachTitle: "People",
-  preachSub:
-    "Save your contacts, prepare messages, and choose the days and times to send them.",
+  preachSub: "Save your contacts, prepare messages, and choose the days and times to send them.",
   preachPeople: "Contacts",
   preachChurch: "Church",
   preachDueTitle: "Ready to send",
@@ -796,6 +791,14 @@ const en: Record<keyof typeof es, string> = {
   preachRemindTitle: "The Preacher · reminders",
   preachRemindBody: "People are waiting for a message or a service invite.",
   personAdd: "New person",
+  personFromPhone: "Add from my contacts",
+  personFromPhoneHint: "Takes the name and number from your phone book. Only you see them.",
+  personImported: "{n} added from your phone book",
+  personImportedOne: "1 added from your phone book",
+  personImportSkipped: "{n} were left out: repeated, or without a complete number.",
+  personImportNone: "None could be added: check that they have a complete number.",
+  personImportFull: "You reached the limit of 80 people. Remove one to add more.",
+  personImportError: "Could not open your phone book. Try again.",
   personEdit: "Edit",
   personSave: "Save person",
   personUpdate: "Update",
@@ -839,11 +842,7 @@ export const STRINGS = { es, en };
 
 export type StringKey = keyof typeof es;
 
-export function t(
-  locale: Locale,
-  key: StringKey,
-  vars?: Record<string, string | number>,
-) {
+export function t(locale: Locale, key: StringKey, vars?: Record<string, string | number>) {
   let value = STRINGS[locale][key] ?? STRINGS.es[key];
   if (vars) {
     for (const [name, item] of Object.entries(vars)) {

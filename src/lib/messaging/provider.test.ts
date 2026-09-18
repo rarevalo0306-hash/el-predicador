@@ -32,6 +32,21 @@ test("English WhatsApp uses its own approved template and never falls back to Sp
   );
   assert.equal(result.status, "accepted");
 });
+test("an empty caller id never matches an unset or padded allow list", () => {
+  // "".split(",") is [""], so an empty id would otherwise match an unset list.
+  assert.deepEqual(messagingStatus("", { ...config, MESSAGING_ALLOWED_USER_IDS: "" }), {
+    whatsapp: false,
+    sms: false,
+  });
+  assert.deepEqual(messagingStatus("", { ...config, MESSAGING_ALLOWED_USER_IDS: "owner, " }), {
+    whatsapp: false,
+    sms: false,
+  });
+  assert.equal(
+    messagingStatus("owner", { ...config, MESSAGING_ALLOWED_USER_IDS: "owner, " }).whatsapp,
+    true,
+  );
+});
 test("sending is closed until channel, scheduler and owner access are configured", async () => {
   assert.deepEqual(messagingStatus("owner", {}), { whatsapp: false, sms: false });
   assert.deepEqual(messagingStatus("other", config), { whatsapp: false, sms: false });

@@ -190,7 +190,7 @@
     } else if (kind === "sms") {
       window.location.href = "sms:?&body=" + encoded;
     } else if (kind === "share" && navigator.share) {
-      try { await navigator.share({ text }); } catch {}
+      try { await navigator.share({ text }); } catch { /* el usuario cerró el diálogo de compartir */ }
     } else {
       await navigator.clipboard.writeText(text);
       toast(t("copied"));

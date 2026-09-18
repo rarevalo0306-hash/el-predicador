@@ -17,6 +17,17 @@ export const saveMessageSchedule = createServerFn({ method: "POST" })
     return saveSchedule(context.userId, data);
   });
 
+export const deleteMessageSchedule = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((data: { id: string }) => {
+    if (!data || typeof data.id !== "string") throw new Error("scheduleInvalid");
+    return data;
+  })
+  .handler(async ({ data, context }) => {
+    const { deleteSchedule } = await import("./messaging/schedules.server");
+    return deleteSchedule(context.userId, data.id);
+  });
+
 export const setMessageScheduleEnabled = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator((data: { id: string; enabled: boolean }) => {

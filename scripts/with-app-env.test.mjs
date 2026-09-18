@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -59,9 +59,30 @@ test("an explicit process-env override wins over the file", () => {
   assert.equal(merged.PATH, "/usr/bin");
 });
 
-test("the template ships auth off", () => {
-  assert.deepEqual(readAppEnv(projectRoot()), { VITE_AUTH_ENABLED: "false" });
-});
+// .grok/app-env.json is sandbox state and gitignored, so it is absent in a
+// clone. The cases below read it through the real workspace; each one says what
+// it does when there is nothing to read rather than pinning the sandbox value.
+const SHIPPED_AUTH_FLAG = readAppEnv(projectRoot()).VITE_AUTH_ENABLED;
+
+test(
+  "the workspace app-env is read as VITE_ string entries",
+  {
+    skip:
+      !existsSync(join(projectRoot(), APP_ENV_REL_PATH)) &&
+      "no .grok/app-env.json in this workspace",
+  },
+  () => {
+    const shipped = readAppEnv(projectRoot());
+    assert.deepEqual(
+      Object.keys(shipped).filter((key) => !key.startsWith("VITE_")),
+      [],
+    );
+    assert.deepEqual(
+      Object.values(shipped).filter((value) => typeof value !== "string"),
+      [],
+    );
+  },
+);
 
 test("vite loadEnv resolves the wrapped value", () => {
   // What `import.meta.env.VITE_AUTH_ENABLED` becomes: loadEnv prefix-matches
@@ -80,7 +101,7 @@ test("the wrapped command runs with the app env applied", async () => {
     "-e",
     PRINT_FLAG,
   ]);
-  assert.equal(stdout, "false");
+  assert.equal(stdout, String(SHIPPED_AUTH_FLAG));
 });
 
 test("the wrapped command sees an explicit override, not the file value", async () => {
@@ -124,5 +145,5 @@ test("the CLI still runs when invoked through a symlinked path", async () => {
     "-e",
     PRINT_FLAG,
   ]);
-  assert.equal(stdout, "false");
+  assert.equal(stdout, String(SHIPPED_AUTH_FLAG));
 });

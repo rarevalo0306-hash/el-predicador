@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { isEmptyCloud } from "@/lib/cloud-state";
 import { EMPTY_CLOUD, useAppStore, type CloudPayload } from "@/lib/store";
 import { getMyState, saveMyState } from "@/lib/user-state";
 
@@ -20,14 +21,6 @@ function writeGuest(payload: CloudPayload) {
   } catch {
     /* private mode */
   }
-}
-
-function isEmptyCloud(payload: CloudPayload) {
-  return (
-    payload.favorites.length === 0 &&
-    payload.savedMessages.length === 0 &&
-    !payload.displayName
-  );
 }
 
 export function useCloudSync(userId: string | undefined, sessionReady: boolean) {
@@ -54,13 +47,24 @@ export function useCloudSync(userId: string | undefined, sessionReady: boolean) 
     }
 
     setReady(false);
+    // Hydrating replaces the whole store, so anything typed while this request
+    // is in flight would be thrown away. Watch for that, but only trust it when
+    // the store started out empty — otherwise the leftovers of whoever was
+    // signed in before would ride into this account.
+    const startedEmpty = isEmptyCloud(useAppStore.getState().snapshotCloud());
+    let touched = false;
+    const stopWatching = useAppStore.subscribe(() => {
+      touched = true;
+    });
     void getMyState()
       .then((payload) => {
+        stopWatching();
         if (cancelled) return;
-        const guest = readGuest();
+        const typed = startedEmpty && touched ? useAppStore.getState().snapshotCloud() : null;
+        const local = typed && !isEmptyCloud(typed) ? typed : readGuest();
         const cloud = payload ?? EMPTY_CLOUD;
-        if (isEmptyCloud(cloud) && guest && !isEmptyCloud(guest)) {
-          useAppStore.getState().hydrateFromCloud(guest);
+        if (isEmptyCloud(cloud) && local && !isEmptyCloud(local)) {
+          useAppStore.getState().hydrateFromCloud(local);
           useAppStore.getState().ensureToday();
           void saveMyState({ data: useAppStore.getState().snapshotCloud() }).catch(
             () => {},
@@ -73,12 +77,14 @@ export function useCloudSync(userId: string | undefined, sessionReady: boolean) 
         setReady(true);
       })
       .catch(() => {
+        stopWatching();
         if (cancelled) return;
         skip.current = false;
         setReady(true);
       });
     return () => {
       cancelled = true;
+      stopWatching();
     };
   }, [userId, sessionReady]);
 

@@ -89,6 +89,9 @@ export type CloudPayload = {
   locale?: Locale;
 };
 
+/** Contacts kept per account; the oldest fall off once it is reached. */
+export const MAX_RECIPIENTS = 80;
+
 export const EMPTY_CLOUD: CloudPayload = {
   favorites: [],
   favoriteKinds: {},
@@ -163,20 +166,19 @@ export const useAppStore = create<AppState>()((set, get) => ({
       const nextKinds = { ...state.favoriteKinds };
       if (saved) delete nextKinds[id];
       return {
-        favorites: saved
-          ? state.favorites.filter((item) => item !== id)
-          : [...state.favorites, id],
+        favorites: saved ? state.favorites.filter((item) => item !== id) : [...state.favorites, id],
         favoriteKinds: nextKinds,
         verseMemory:
-          verse && !saved
-            ? { ...state.verseMemory, [verse.id]: verse }
-            : state.verseMemory,
+          verse && !saved ? { ...state.verseMemory, [verse.id]: verse } : state.verseMemory,
       };
     }),
   saveMessage: (item) => {
     const note = item.note?.trim() || undefined;
     const existing = get().savedMessages.find(
-      (entry) => entry.verseId === item.verseId && (entry.note || "") === (note || "") && entry.messageLocale === item.messageLocale,
+      (entry) =>
+        entry.verseId === item.verseId &&
+        (entry.note || "") === (note || "") &&
+        entry.messageLocale === item.messageLocale,
     );
     if (existing) return null;
     const saved: SavedMessage = {
@@ -205,8 +207,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     })),
   setDisplayName: (displayName) => set({ displayName }),
   setNotify: (notify) => set({ notify }),
-  setNotifyHour: (hour) =>
-    set({ notifyHour: Math.min(23, Math.max(0, Math.round(hour) || 8)) }),
+  setNotifyHour: (hour) => set({ notifyHour: Math.min(23, Math.max(0, Math.round(hour) || 8)) }),
   upsertRecipient: (item) => {
     const name = item.name.trim();
     const phone = normalizePhone(item.phone);
@@ -227,27 +228,23 @@ export const useAppStore = create<AppState>()((set, get) => ({
       at: Date.now(),
       themeId,
       messageLocale: item.messageLocale ?? existing?.messageLocale ?? get().locale,
-      notes:
-        item.notes !== undefined
-          ? item.notes.trim() || undefined
-          : existing?.notes,
+      notes: item.notes !== undefined ? item.notes.trim() || undefined : existing?.notes,
       dailyEnabled:
-        item.dailyEnabled !== undefined
-          ? item.dailyEnabled
-          : (existing?.dailyEnabled ?? false),
+        item.dailyEnabled !== undefined ? item.dailyEnabled : (existing?.dailyEnabled ?? false),
       dailyHour:
         item.dailyHour !== undefined
           ? Math.min(23, Math.max(0, Math.round(item.dailyHour)))
           : (existing?.dailyHour ?? 9),
       lastDailySentDate: existing?.lastDailySentDate,
       cultoEnabled:
-        item.cultoEnabled !== undefined
-          ? item.cultoEnabled
-          : (existing?.cultoEnabled ?? false),
+        item.cultoEnabled !== undefined ? item.cultoEnabled : (existing?.cultoEnabled ?? false),
       lastCultoSentDate: existing?.lastCultoSentDate,
     };
     set((state) => ({
-      recipients: [base, ...state.recipients.filter((row) => row.id !== base.id)].slice(0, 80),
+      recipients: [base, ...state.recipients.filter((row) => row.id !== base.id)].slice(
+        0,
+        MAX_RECIPIENTS,
+      ),
     }));
     return base;
   },
@@ -258,25 +255,20 @@ export const useAppStore = create<AppState>()((set, get) => ({
   markRecipientDailySent: (id, date) =>
     set((state) => ({
       recipients: state.recipients.map((row) =>
-        row.id === id
-          ? { ...row, lastDailySentDate: date ?? todayKey() }
-          : row,
+        row.id === id ? { ...row, lastDailySentDate: date ?? todayKey() } : row,
       ),
     })),
   markRecipientCultoSent: (id, date) =>
     set((state) => ({
       recipients: state.recipients.map((row) =>
-        row.id === id
-          ? { ...row, lastCultoSentDate: date ?? todayKey() }
-          : row,
+        row.id === id ? { ...row, lastCultoSentDate: date ?? todayKey() } : row,
       ),
     })),
   setChurch: (partial) =>
     set((state) => ({
       church: normalizeChurch({ ...state.church, ...partial }),
     })),
-  addSent: (item) =>
-    set((state) => ({ sent: [item, ...state.sent].slice(0, 30) })),
+  addSent: (item) => set((state) => ({ sent: [item, ...state.sent].slice(0, 30) })),
   bumpOffset: () => {
     const today = todayKey();
     const state = get();
@@ -310,10 +302,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
         highlights: on
           ? state.highlights.filter((id) => id !== verseId)
           : [verseId, ...state.highlights].slice(0, 200),
-        verseMemory:
-          verse && !on
-            ? { ...state.verseMemory, [verse.id]: verse }
-            : state.verseMemory,
+        verseMemory: verse && !on ? { ...state.verseMemory, [verse.id]: verse } : state.verseMemory,
       };
     }),
   setFontScale: (fontScale) => set({ fontScale }),
@@ -377,4 +366,3 @@ export function isSamePlace(
 ) {
   return placeKey(a) === placeKey(b);
 }
-
