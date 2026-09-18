@@ -4,7 +4,7 @@ import type { Locale } from "@/lib/i18n";
 import { THEMES, getVerseById, versesForTheme, localizedTheme, type ThemeId } from "@/lib/verses";
 import { hydrateVerse } from "@/lib/recobro";
 import { formatVerseMessage } from "@/lib/share";
-import { useId, useState, useRef } from "react";
+import { useEffect, useId, useState, useRef } from "react";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { CalendarClock } from "lucide-react";
@@ -106,6 +106,11 @@ function MessageScheduleForm({
   const [preparing, setPreparing] = useState(false);
   const requestVersion = useRef(0);
   const [busy, setBusy] = useState(false);
+  // The form sits above the list, so editing a schedule further down filled it
+  // off screen and looked like nothing happened. A counter, not the edited id,
+  // so re-editing the same row scrolls back to it too.
+  const formRef = useRef<HTMLFormElement>(null);
+  const [editRequest, setEditRequest] = useState(0);
   const [zones] = useState(() => [
     ...new Set([
       localZone(),
@@ -113,6 +118,9 @@ function MessageScheduleForm({
       ...(typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : []),
     ]),
   ]);
+  useEffect(() => {
+    if (editRequest) formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [editRequest]);
   const query = useQuery({
     queryKey: ["message-schedules", user?.id],
     queryFn: () => getMessageSchedules(),
@@ -157,6 +165,7 @@ function MessageScheduleForm({
     setPreparing(false);
     setPickerTheme(getVerseById(row.verseId ?? "")?.themes[0] ?? "");
     setForm({ ...row });
+    setEditRequest((n) => n + 1);
   }
   function resetForm() {
     requestVersion.current++;
@@ -257,7 +266,8 @@ function MessageScheduleForm({
         </p>
       ) : null}
       <form
-        className="min-w-0 space-y-4 rounded-xl border border-border bg-card p-4 shadow-paper"
+        ref={formRef}
+        className="min-w-0 scroll-mt-4 space-y-4 rounded-xl border border-border bg-card p-4 shadow-paper"
         onSubmit={(event) => void save(event)}
       >
         <h3 className="font-medium">{form.id ? copy.edit : copy.new}</h3>
