@@ -71,6 +71,29 @@ export type DeliveryOutcome = {
   status: "accepted" | "failed" | "unknown";
   providerId?: string;
   errorCode?: string;
+  /** The provider's own sentence, redacted and capped. See providerReason. */
+  errorMessage?: string;
+};
+
+/**
+ * What the provider said, in a form that is safe to store and show.
+ *
+ * A rejection can carry a code that is in no public dictionary, which leaves
+ * the owner with a number and nowhere to look it up. The sentence beside it is
+ * the only explanation there is, so it is kept — minus the account identifier
+ * Twilio echoes back in several of its messages, which belongs to the
+ * deployment rather than to the reader.
+ */
+export function providerReason(message: unknown): string | undefined {
+  if (typeof message !== "string") return undefined;
+  const text = message.replace(/\b[A-Z]{2}[0-9a-f]{32}\b/g, "…").trim();
+  return text ? text.slice(0, 300) : undefined;
+}
+
+/** Absent rather than undefined, so an outcome without a reason has no key. */
+const reason = (message: unknown) => {
+  const text = providerReason(message);
+  return text ? { errorMessage: text } : {};
 };
 
 /** Templates: {{1}} is the recipient's name; {{2}} is the scheduled message. */
@@ -119,12 +142,15 @@ export async function deliverMessage(
       sid?: string;
       code?: number;
       error_code?: number;
+      error_message?: string;
+      message?: string;
       status?: string;
     };
     if (!response.ok)
       return {
         status: response.status >= 500 ? "unknown" : "failed",
         errorCode: String(result.code ?? response.status),
+        ...reason(result.message),
       };
     if (!result.sid) return { status: "unknown", errorCode: "missing_receipt" };
     if (result.status === "failed" || result.status === "undelivered")
@@ -132,6 +158,7 @@ export async function deliverMessage(
         status: "failed",
         providerId: result.sid,
         errorCode: String(result.error_code ?? result.status),
+        ...reason(result.error_message),
       };
     return { status: "accepted", providerId: result.sid };
   } catch {

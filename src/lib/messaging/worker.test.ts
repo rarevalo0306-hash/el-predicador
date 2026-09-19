@@ -1,6 +1,6 @@
 import { before, after, beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "../db.ts";
 import { runScheduledMessages, validCronAuthorization } from "./worker.server.ts";
@@ -34,21 +34,12 @@ const schedule: ScheduleInput = {
 const now = new Date("2026-09-17T13:15:30Z");
 const ready = () => ({ whatsapp: true, sms: true });
 before(async () => {
-  await db.exec(
-    await readFile(new URL("../../../migrations/0001_auth.sql", import.meta.url), "utf8"),
-  );
-  await db.exec(
-    await readFile(
-      new URL("../../../migrations/20260917153827_scheduled_messages.sql", import.meta.url),
-      "utf8",
-    ),
-  );
-  await db.exec(
-    await readFile(
-      new URL("../../../migrations/20260917160138_message_languages.sql", import.meta.url),
-      "utf8",
-    ),
-  );
+  // Apply every migration, in name order, the way the app does. Naming them one
+  // by one here meant a new column existed in production and not in this test.
+  const dir = new URL("../../../migrations/", import.meta.url);
+  for (const name of (await readdir(dir)).filter((f) => f.endsWith(".sql")).sort()) {
+    await db.exec(await readFile(new URL(name, dir), "utf8"));
+  }
   await db.exec(
     `insert into "user" (id,name,email,"emailVerified","createdAt","updatedAt") values ('owner','Owner','owner@example.com',true,now(),now()),('other','Other','other@example.com',true,now(),now())`,
   );

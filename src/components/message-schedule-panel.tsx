@@ -560,6 +560,16 @@ function MessageScheduleForm({
                   {row.lastRunAt ? ` · ${dateLabel(row.lastRunAt, row.timeZone)}` : ""}
                 </p>
               ) : null}
+              {/* A bare provider code sends the owner searching; show its words.
+                  Our own codes (not_configured, missed_time) already have copy
+                  above, so only a numeric one from the provider is printed. */}
+              {row.lastError || /^\d+$/.test(row.lastErrorCode ?? "") ? (
+                <p className="break-words text-xs text-muted-foreground">
+                  {row.lastError
+                    ? `${copy.reason}: ${row.lastError}`
+                    : `${copy.reasonCode}: ${row.lastErrorCode}`}
+                </p>
+              ) : null}
               {!query.data.channelsByLocale[row.messageLocale ?? "es"][row.channel] &&
               !row.enabled ? (
                 <p className="text-xs text-muted-foreground">{copy.scheduleNotConnected}</p>
