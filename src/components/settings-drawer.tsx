@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { Link } from "@tanstack/react-router";
 import { Share2, Smartphone, UserRound } from "lucide-react";
 import {
   Drawer,
@@ -282,6 +283,14 @@ export function SettingsDrawer({
               </div>
             </div>
           </SignedIn>
+          <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <Link to="/privacy" className="underline underline-offset-4 hover:text-foreground">
+              {t("privacyLink")}
+            </Link>
+            <Link to="/terms" className="underline underline-offset-4 hover:text-foreground">
+              {t("termsLink")}
+            </Link>
+          </p>
         </div>
       </DrawerContent>
     </Drawer>
