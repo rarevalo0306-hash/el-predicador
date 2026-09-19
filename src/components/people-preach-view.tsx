@@ -3,7 +3,16 @@ import { messageLanguageName } from "@/lib/message-language";
 import { MessageSchedulePanel } from "@/components/message-schedule-panel";
 import { scheduleCopy } from "@/lib/schedule-copy";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bell, Church, ContactRound, MessageCircle, Plus, Trash2, Users } from "lucide-react";
+import {
+  Bell,
+  CalendarClock,
+  Church,
+  ContactRound,
+  MessageCircle,
+  Plus,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,6 +75,9 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   const [section, setSection] = useState<"people" | "church" | "schedules">("people");
   // Settled after mount: the server has no navigator, and deciding during the
   // first render would make the markup disagree with what the phone supports.
+  // Who the schedule form opens for. Set from a contact's card so their name,
+  // number and channel are already filled in instead of typed again.
+  const [schedulePerson, setSchedulePerson] = useState<Recipient | null>(null);
   const [canPickContacts, setCanPickContacts] = useState(false);
   const [importing, setImporting] = useState(false);
   // The form sits above the list, so editing someone further down filled it
@@ -258,7 +270,10 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       <Button
         type="button"
         className="h-12 w-full"
-        onClick={() => setSection("schedules")}
+        onClick={() => {
+          setSchedulePerson(null);
+          setSection("schedules");
+        }}
         aria-pressed={section === "schedules"}
       >
         {scheduleCopy(locale).title}
@@ -345,7 +360,19 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       ) : null}
 
       {section === "schedules" ? (
-        <MessageSchedulePanel />
+        <MessageSchedulePanel
+          key={schedulePerson?.id ?? "nuevo"}
+          initialPerson={
+            schedulePerson
+              ? {
+                  name: schedulePerson.name,
+                  phone: schedulePerson.phone,
+                  channel: schedulePerson.channel ?? "whatsapp",
+                }
+              : undefined
+          }
+          initialLocale={schedulePerson?.messageLocale}
+        />
       ) : section === "church" ? (
         <div className="flex flex-col gap-4 rounded-xl bg-card px-4 py-5 shadow-paper">
           <p className="text-sm text-muted-foreground">{t("churchHint")}</p>
@@ -629,6 +656,18 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                       onClick={() => startEdit(row)}
                     >
                       {t("personEdit")}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setSchedulePerson(row);
+                        setSection("schedules");
+                      }}
+                    >
+                      <CalendarClock className="size-4" />
+                      {t("personSchedule")}
                     </Button>
                     <Button type="button" size="sm" onClick={() => void sendDaily(row)}>
                       <MessageCircle className="size-4" />
