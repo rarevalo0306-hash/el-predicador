@@ -3,7 +3,16 @@ import { messageLanguageName } from "@/lib/message-language";
 import { MessageSchedulePanel } from "@/components/message-schedule-panel";
 import { scheduleCopy } from "@/lib/schedule-copy";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bell, Church, ContactRound, MessageCircle, Plus, Trash2, Users } from "lucide-react";
+import {
+  Bell,
+  CalendarClock,
+  Church,
+  ContactRound,
+  MessageCircle,
+  Plus,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,7 +41,7 @@ import {
   type Verse,
 } from "@/lib/verses";
 import { hydrateVerse } from "@/lib/recobro";
-import { formatVerseMessage, openWhatsApp } from "@/lib/share";
+import { formatVerseMessage, openSms, openWhatsApp } from "@/lib/share";
 import { showDailyNotification } from "@/lib/notify";
 
 type PeoplePreachViewProps = {
@@ -43,6 +52,7 @@ const emptyForm: RecipientInput = {
   name: "",
   phone: "",
   themeId: "amor",
+  channel: "whatsapp",
   notes: "",
   dailyEnabled: true,
   dailyHour: 9,
@@ -65,6 +75,9 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   const [section, setSection] = useState<"people" | "church" | "schedules">("people");
   // Settled after mount: the server has no navigator, and deciding during the
   // first render would make the markup disagree with what the phone supports.
+  // Who the schedule form opens for. Set from a contact's card so their name,
+  // number and channel are already filled in instead of typed again.
+  const [schedulePerson, setSchedulePerson] = useState<Recipient | null>(null);
   const [canPickContacts, setCanPickContacts] = useState(false);
   const [importing, setImporting] = useState(false);
   // The form sits above the list, so editing someone further down filled it
@@ -92,6 +105,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       phone: normalizePhone(row.phone) ?? row.phone,
       themeId: row.themeId ?? "amor",
       messageLocale: row.messageLocale ?? locale,
+      channel: row.channel ?? "whatsapp",
       notes: row.notes ?? "",
       dailyEnabled: row.dailyEnabled ?? false,
       dailyHour: row.dailyHour ?? 9,
@@ -104,6 +118,18 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   function resetForm() {
     setEditingId(null);
     setForm({ ...emptyForm, messageLocale: locale });
+  }
+
+  /** Send by the channel this person chose; contacts saved before it exist
+   *  carry none and keep WhatsApp, which is what the app always did. */
+  function sendTo(row: Recipient, text: string) {
+    if ((row.channel ?? "whatsapp") === "sms") {
+      openSms(text, row.phone);
+      toast(t("openingSms"));
+      return;
+    }
+    openWhatsApp(text, row.phone);
+    toast(t("openingWhatsApp"));
   }
 
   async function importFromPhone() {
@@ -186,9 +212,8 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
           ? `Thinking of you with a word about ${theme.name}.`
           : `Pensando en ti con una palabra sobre ${theme.name}.`;
       const text = formatVerseMessage(verse, note, displayName, messageLocale);
-      openWhatsApp(text, row.phone);
+      sendTo(row, text);
       markRecipientDailySent(row.id);
-      toast(t("openingWhatsApp"));
     } catch {
       onSend(base, {
         messageLocale,
@@ -203,10 +228,9 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       return;
     }
     const text = cultoInviteText(church, row.messageLocale ?? locale, row.name);
-    openWhatsApp(text, row.phone);
+    sendTo(row, text);
     const stamp = new Date().toISOString().slice(0, 10);
     markRecipientCultoSent(row.id, stamp);
-    toast(t("openingWhatsApp"));
   }
 
   async function enableReminders() {
@@ -246,7 +270,10 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       <Button
         type="button"
         className="h-12 w-full"
-        onClick={() => setSection("schedules")}
+        onClick={() => {
+          setSchedulePerson(null);
+          setSection("schedules");
+        }}
         aria-pressed={section === "schedules"}
       >
         {scheduleCopy(locale).title}
@@ -333,7 +360,19 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       ) : null}
 
       {section === "schedules" ? (
-        <MessageSchedulePanel />
+        <MessageSchedulePanel
+          key={schedulePerson?.id ?? "nuevo"}
+          initialPerson={
+            schedulePerson
+              ? {
+                  name: schedulePerson.name,
+                  phone: schedulePerson.phone,
+                  channel: schedulePerson.channel ?? "whatsapp",
+                }
+              : undefined
+          }
+          initialLocale={schedulePerson?.messageLocale}
+        />
       ) : section === "church" ? (
         <div className="flex flex-col gap-4 rounded-xl bg-card px-4 py-5 shadow-paper">
           <p className="text-sm text-muted-foreground">{t("churchHint")}</p>
@@ -468,6 +507,28 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
               onChange={(messageLocale) => setForm((f) => ({ ...f, messageLocale }))}
             />
             <div className="grid gap-1.5">
+              <Label>{t("personChannel")}</Label>
+              <div className="flex gap-2">
+                {(["whatsapp", "sms"] as const).map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    aria-pressed={(form.channel ?? "whatsapp") === option}
+                    onClick={() => setForm((f) => ({ ...f, channel: option }))}
+                    className={cn(
+                      "h-11 flex-1 rounded-md border text-sm font-medium",
+                      (form.channel ?? "whatsapp") === option
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background",
+                    )}
+                  >
+                    {option === "sms" ? t("personChannelSms") : t("personChannelWhatsApp")}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">{t("personChannelHint")}</p>
+            </div>
+            <div className="grid gap-1.5">
               <Label>{t("personTheme")}</Label>
               <div className="flex flex-wrap gap-2">
                 {THEMES.map((theme) => {
@@ -566,7 +627,10 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                       <p className="text-xs text-muted-foreground">{formatPhone(row.phone)}</p>
                       <p className="mt-1 text-xs text-primary">
                         {localizedTheme(row.themeId ?? "amor", locale).name} ·{" "}
-                        {messageLanguageName(row.messageLocale ?? locale)}
+                        {messageLanguageName(row.messageLocale ?? locale)} ·{" "}
+                        {(row.channel ?? "whatsapp") === "sms"
+                          ? t("personChannelSms")
+                          : t("personChannelWhatsApp")}
                         {row.dailyEnabled ? ` · ${t("personDailyOn")}` : ""}
                         {row.cultoEnabled ? ` · ${t("personCultoOn")}` : ""}
                       </p>
@@ -592,6 +656,18 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                       onClick={() => startEdit(row)}
                     >
                       {t("personEdit")}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setSchedulePerson(row);
+                        setSection("schedules");
+                      }}
+                    >
+                      <CalendarClock className="size-4" />
+                      {t("personSchedule")}
                     </Button>
                     <Button type="button" size="sm" onClick={() => void sendDaily(row)}>
                       <MessageCircle className="size-4" />

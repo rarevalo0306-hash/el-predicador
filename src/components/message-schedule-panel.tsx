@@ -19,7 +19,12 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAppStore } from "@/lib/store";
 import { WEEKDAY_KEYS } from "@/lib/church";
 import { formatPhone } from "@/lib/phone";
-import { validateSchedule, type ScheduleInput, type MessageSchedule } from "@/lib/message-schedule";
+import {
+  validateSchedule,
+  type ScheduleInput,
+  type MessageSchedule,
+  type MessageChannel,
+} from "@/lib/message-schedule";
 import {
   deleteMessageSchedule,
   getMessageSchedules,
@@ -37,7 +42,7 @@ function localZone() {
 }
 function newForm(
   message = "",
-  person?: { name: string; phone: string },
+  person?: { name: string; phone: string; channel?: MessageChannel },
   messageLocale: Locale = "es",
   verseId?: string,
 ): ScheduleInput {
@@ -47,7 +52,8 @@ function newForm(
     message,
     messageLocale,
     verseId,
-    channel: "whatsapp",
+    // The person's own preference when we came from their card.
+    channel: person?.channel ?? "whatsapp",
     days: [1, 2, 3, 4, 5],
     time: "09:00",
     timeZone: localZone(),
@@ -76,7 +82,7 @@ type MessageSchedulePanelProps = {
   initialMessage?: string;
   initialLocale?: Locale;
   initialVerseId?: string;
-  initialPerson?: { name: string; phone: string };
+  initialPerson?: { name: string; phone: string; channel?: MessageChannel };
 };
 export function MessageSchedulePanel(props: MessageSchedulePanelProps) {
   const [client] = useState(() => new QueryClient());
@@ -306,6 +312,8 @@ function MessageScheduleForm({
                   changeLanguage(person.messageLocale ?? form.messageLocale ?? locale, {
                     recipientName: person.name,
                     phone: person.phone,
+                    // Their saved preference, so the channel is not chosen twice.
+                    channel: person.channel ?? "whatsapp",
                     consent: false,
                   });
               }}
