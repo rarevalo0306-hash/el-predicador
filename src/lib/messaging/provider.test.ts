@@ -1,6 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { messagingStatus, messagingRequirements, deliverMessage } from "./provider.server.ts";
+import {
+  messagingStatus,
+  messagingRequirements,
+  deliverMessage,
+  providerReason,
+} from "./provider.server.ts";
 const config = {
   MESSAGING_ALLOWED_USER_IDS: "owner",
   MESSAGING_ENABLED: "true",
@@ -122,14 +127,20 @@ test("uses approved WhatsApp template with international recipient and encoded v
   });
   assert.deepEqual(result, { status: "accepted", providerId: "SMtest" });
 });
-test("SMS keeps its plus and provider failures never leak response details or retry", async () => {
+test("SMS keeps its plus, and a rejection is reported once with its reason", async () => {
   let calls = 0;
   const rejected = await deliverMessage({ ...data, channel: "sms" }, config, async (_url, init) => {
     calls++;
     assert.equal(new URLSearchParams(String(init?.body)).get("To"), "+34612345678");
-    return Response.json({ code: 21610, message: "Private contact details" }, { status: 400 });
+    return Response.json({ code: 21610, message: "Unsubscribed recipient" }, { status: 400 });
   });
-  assert.deepEqual(rejected, { status: "failed", errorCode: "21610" });
+  // The code alone is not always in the public dictionary, so the sentence
+  // beside it is what tells the owner what to change.
+  assert.deepEqual(rejected, {
+    status: "failed",
+    errorCode: "21610",
+    errorMessage: "Unsubscribed recipient",
+  });
   assert.equal(calls, 1);
   const unknown = await deliverMessage(data, config, async () => {
     calls++;
@@ -141,4 +152,18 @@ test("SMS keeps its plus and provider failures never leak response details or re
     Response.json({ sid: "SMfailed", status: "failed", error_code: 30003 }),
   );
   assert.deepEqual(failed, { status: "failed", providerId: "SMfailed", errorCode: "30003" });
+});
+test("the stored reason drops the account identifier and stays short", () => {
+  const sid = `AC${"0123456789abcdef".repeat(2)}`;
+  const hidden = providerReason(
+    `The requested resource /2010-04-01/Accounts/${sid}/Messages.json was not found`,
+  );
+  assert.ok(hidden);
+  assert.equal(hidden.includes(sid), false, "the account id belongs to the deployment");
+  assert.match(hidden, /was not found/);
+  // A provider could answer with anything; the column is not a log file.
+  assert.equal(providerReason("x".repeat(900))?.length, 300);
+  for (const empty of [undefined, null, 572002, "", "   "]) {
+    assert.equal(providerReason(empty), undefined, String(empty));
+  }
 });

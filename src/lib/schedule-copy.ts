@@ -73,6 +73,8 @@ const es = {
   missingDone: "Listo",
   missingHint: "Se configuran en el hosting, no en la app. Después hay que volver a desplegar.",
   scheduleThis: "Programar este mensaje",
+  reason: "Motivo del proveedor",
+  reasonCode: "Código del proveedor",
 };
 const en: Record<keyof typeof es, string> = {
   title: "Schedule messages",
@@ -148,6 +150,8 @@ const en: Record<keyof typeof es, string> = {
   missingDone: "Done",
   missingHint: "These are set in the hosting, not in the app. A redeploy is needed afterwards.",
   scheduleThis: "Schedule this message",
+  reason: "Reason from the provider",
+  reasonCode: "Provider code",
 };
 export type ScheduleCopy = typeof es;
 export const scheduleCopy = (locale: "es" | "en"): ScheduleCopy => (locale === "es" ? es : en);

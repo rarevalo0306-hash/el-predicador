@@ -67,7 +67,8 @@ export async function runScheduledMessages(
         }
       }
       await sql`update message_deliveries set status = ${result.status}, provider_id = ${"providerId" in result ? (result.providerId ?? null) : null},
-        error_code = ${"errorCode" in result ? (result.errorCode ?? null) : null} where id = ${deliveryId}`;
+        error_code = ${"errorCode" in result ? (result.errorCode ?? null) : null},
+        error_message = ${"errorMessage" in result ? (result.errorMessage ?? null) : null} where id = ${deliveryId}`;
       results.push(result.status);
     }
     await sql`update message_schedules set lease_until = null, lease_token = null where id = ${row.id} and lease_token = ${token}`;

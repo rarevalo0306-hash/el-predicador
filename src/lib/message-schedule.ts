@@ -21,6 +21,9 @@ export type MessageSchedule = ScheduleInput & {
   nextRunAt: string | null;
   lastStatus: "accepted" | "failed" | "unknown" | "skipped" | "sending" | null;
   lastRunAt: string | null;
+  /** The provider's code for the last attempt, and its sentence when it sent one. */
+  lastErrorCode?: string | null;
+  lastError?: string | null;
 };
 
 export function validTimeZone(zone: string): boolean {
