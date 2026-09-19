@@ -22,9 +22,10 @@ const en: LegalText = {
   effective: `Effective ${SITE.effective}`,
   intro: (
     <p>
-      {SITE.name} ({SITE.altName}) is a personal app for sending Bible verses and short words of
-      encouragement to people you know, by WhatsApp or SMS. This policy explains what we keep, why,
-      and who can see it. The app is published at {SITE.url}. Questions go to <Contact />.
+      {SITE.name} ({SITE.altName}) is a personal app for sending Bible verses, short words of
+      encouragement and church invitations to people you know, by WhatsApp or SMS. This policy
+      explains what we keep, why, and who can see it. The app is published at {SITE.url}. Questions
+      go to <Contact />.
     </p>
   ),
   sections: [
@@ -194,10 +195,10 @@ const es: LegalText = {
   effective: `Vigente desde el ${SITE.effective}`,
   intro: (
     <p>
-      {SITE.name} ({SITE.altName}) es una app personal para enviar versículos de la Biblia y
-      palabras de ánimo a personas que conoces, por WhatsApp o SMS. Esta política explica qué
-      guardamos, para qué y quién puede verlo. La app se publica en {SITE.url}. Las preguntas van a{" "}
-      <Contact />.
+      {SITE.name} ({SITE.altName}) es una app personal para enviar versículos de la Biblia, palabras
+      de ánimo e invitaciones de la iglesia a personas que conoces, por WhatsApp o SMS. Esta
+      política explica qué guardamos, para qué y quién puede verlo. La app se publica en {SITE.url}.
+      Las preguntas van a <Contact />.
     </p>
   ),
   sections: [

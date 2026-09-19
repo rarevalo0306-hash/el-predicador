@@ -22,10 +22,11 @@ const en: LegalText = {
   effective: `Effective ${SITE.effective}`,
   intro: (
     <p>
-      These terms cover the <strong>{SITE.name} verse messages</strong> program: Bible verses and
-      short words of encouragement that a user of {SITE.name} ({SITE.altName}) sends to people they
-      know, by SMS or WhatsApp, either right away or on a schedule they set. The program is operated
-      from {SITE.url}. Questions go to <Contact />.
+      These terms cover the <strong>{SITE.name} verse messages</strong> program: Bible verses, short
+      words of encouragement and invitations to church services and events that a user of{" "}
+      {SITE.name} ({SITE.altName}) sends to people they know, by SMS or WhatsApp, either right away
+      or on a schedule they set. The program is operated from {SITE.url}. Questions go to{" "}
+      <Contact />.
     </p>
   ),
   sections: [
@@ -47,12 +48,32 @@ const en: LegalText = {
       ),
     },
     {
+      heading: "Consent script",
+      body: (
+        <>
+          <p>
+            When consent is given in person, the sender asks this, in the person's preferred
+            language, and enrols only someone who answers yes. Giving a phone number on its own is
+            not consent.
+          </p>
+          <blockquote className="border-l-2 border-border pl-4 italic">
+            "Do you authorize {SITE.name} to send recurring text messages to your mobile number with
+            Bible verses, Christian encouragement, and invitations to church services and events?
+            Message frequency varies. Message and data rates may apply. Participation is voluntary.
+            Reply STOP to unsubscribe or HELP for assistance. Do you agree to receive these
+            messages?"
+          </blockquote>
+        </>
+      ),
+    },
+    {
       heading: "What you will receive",
       body: (
         <p>
-          A Bible verse or a short message of encouragement, chosen by the person who added you.
-          Message frequency varies with what that person set up; a schedule sends at most one
-          message per day. <strong>Message and data rates may apply.</strong>
+          A Bible verse, a short message of encouragement, or an invitation to a church service or
+          event, chosen by the person who added you. Message frequency varies with what that person
+          set up; a schedule sends at most one message per day.{" "}
+          <strong>Message and data rates may apply.</strong>
         </p>
       ),
     },
@@ -81,8 +102,8 @@ const en: LegalText = {
           <li>Add only people who have told you they want these messages.</li>
           <li>Stop at once if someone asks you to, in any form.</li>
           <li>
-            Use the program for Bible verses and encouragement only — no advertising, no
-            solicitation, nothing unlawful.
+            Use the program for Bible verses, encouragement and church invitations only — no
+            advertising, no solicitation, nothing unlawful.
           </li>
           <li>Keep your account to yourself; you are responsible for what is sent from it.</li>
         </ul>
@@ -127,9 +148,10 @@ const es: LegalText = {
   intro: (
     <p>
       Estos términos cubren el programa <strong>mensajes con versículos de {SITE.name}</strong>:
-      versículos de la Biblia y palabras de ánimo que un usuario de {SITE.name} ({SITE.altName})
-      envía a personas que conoce, por SMS o WhatsApp, en el momento o en un horario que él mismo
-      fija. El programa se opera desde {SITE.url}. Las preguntas van a <Contact />.
+      versículos de la Biblia, palabras de ánimo e invitaciones a cultos y eventos de la iglesia que
+      un usuario de {SITE.name} ({SITE.altName}) envía a personas que conoce, por SMS o WhatsApp, en
+      el momento o en un horario que él mismo fija. El programa se opera desde {SITE.url}. Las
+      preguntas van a <Contact />.
     </p>
   ),
   sections: [
@@ -151,12 +173,31 @@ const es: LegalText = {
       ),
     },
     {
+      heading: "Guion de consentimiento",
+      body: (
+        <>
+          <p>
+            Cuando el consentimiento se da en persona, quien envía pregunta esto, en el idioma que
+            la persona prefiera, y solo inscribe a quien responde que sí. Dar el número de teléfono
+            por sí solo no es consentimiento.
+          </p>
+          <blockquote className="border-l-2 border-border pl-4 italic">
+            "¿Autorizas a {SITE.name} a enviarte mensajes de texto recurrentes a tu número móvil con
+            versículos de la Biblia, ánimo cristiano e invitaciones a cultos y eventos de la
+            iglesia? La frecuencia de los mensajes varía. Pueden aplicar tarifas de mensajes y
+            datos. La participación es voluntaria. Responde STOP para cancelar o HELP para ayuda.
+            ¿Aceptas recibir estos mensajes?"
+          </blockquote>
+        </>
+      ),
+    },
+    {
       heading: "Qué vas a recibir",
       body: (
         <p>
-          Un versículo de la Biblia o un mensaje corto de ánimo, elegido por la persona que te
-          agregó. La frecuencia depende de lo que esa persona programó; una programación envía como
-          máximo un mensaje al día.{" "}
+          Un versículo de la Biblia, un mensaje corto de ánimo o una invitación a un culto o evento
+          de la iglesia, elegido por la persona que te agregó. La frecuencia depende de lo que esa
+          persona programó; una programación envía como máximo un mensaje al día.{" "}
           <strong>Pueden aplicar tarifas de mensajes y datos de tu operador.</strong>
         </p>
       ),
@@ -187,8 +228,8 @@ const es: LegalText = {
           <li>Agrega solo a personas que te dijeron que quieren estos mensajes.</li>
           <li>Detente de inmediato si alguien te lo pide, de cualquier forma.</li>
           <li>
-            Usa el programa solo para versículos y ánimo — nada de publicidad, ventas ni contenido
-            ilegal.
+            Usa el programa solo para versículos, ánimo e invitaciones de la iglesia — nada de
+            publicidad, ventas ni contenido ilegal.
           </li>
           <li>No prestes tu cuenta; eres responsable de lo que se envíe desde ella.</li>
         </ul>
