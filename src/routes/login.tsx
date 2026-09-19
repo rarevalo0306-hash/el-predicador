@@ -22,6 +22,14 @@ function Login() {
       >
         {t("useWithoutAccount")}
       </Link>
+      <p className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <Link to="/privacy" className="underline underline-offset-4 hover:text-foreground">
+          {t("privacyLink")}
+        </Link>
+        <Link to="/terms" className="underline underline-offset-4 hover:text-foreground">
+          {t("termsLink")}
+        </Link>
+      </p>
     </main>
   );
 }

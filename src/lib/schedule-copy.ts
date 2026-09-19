@@ -75,6 +75,7 @@ const es = {
   scheduleThis: "Programar este mensaje",
   reason: "Motivo del proveedor",
   reasonCode: "Código del proveedor",
+  consentTerms: "Ver los términos del servicio de mensajes",
 };
 const en: Record<keyof typeof es, string> = {
   title: "Schedule messages",
@@ -152,6 +153,7 @@ const en: Record<keyof typeof es, string> = {
   scheduleThis: "Schedule this message",
   reason: "Reason from the provider",
   reasonCode: "Provider code",
+  consentTerms: "See the messaging terms",
 };
 export type ScheduleCopy = typeof es;
 export const scheduleCopy = (locale: "es" | "en"): ScheduleCopy => (locale === "es" ? es : en);

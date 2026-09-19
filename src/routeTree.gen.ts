@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ApiAuthStatusRouteImport } from './routes/api/auth-status'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiCronMessagesRouteImport } from './routes/api/cron/messages'
@@ -23,6 +25,16 @@ const IndexRoute = IndexRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthStatusRoute = ApiAuthStatusRouteImport.update({
@@ -44,6 +56,8 @@ const ApiCronMessagesRoute = ApiCronMessagesRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/messages': typeof ApiCronMessagesRoute
@@ -51,6 +65,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/messages': typeof ApiCronMessagesRoute
@@ -59,6 +75,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/messages': typeof ApiCronMessagesRoute
@@ -66,13 +84,28 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/login' | '/api/auth-status' | '/api/auth/$' | '/api/cron/messages'
+    | '/'
+    | '/login'
+    | '/privacy'
+    | '/terms'
+    | '/api/auth-status'
+    | '/api/auth/$'
+    | '/api/cron/messages'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/api/auth-status' | '/api/auth/$' | '/api/cron/messages'
+  to:
+    | '/'
+    | '/login'
+    | '/privacy'
+    | '/terms'
+    | '/api/auth-status'
+    | '/api/auth/$'
+    | '/api/cron/messages'
   id:
     | '__root__'
     | '/'
     | '/login'
+    | '/privacy'
+    | '/terms'
     | '/api/auth-status'
     | '/api/auth/$'
     | '/api/cron/messages'
@@ -81,6 +114,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  PrivacyRoute: typeof PrivacyRoute
+  TermsRoute: typeof TermsRoute
   ApiAuthStatusRoute: typeof ApiAuthStatusRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronMessagesRoute: typeof ApiCronMessagesRoute
@@ -100,6 +135,20 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth-status': {
@@ -129,6 +178,8 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
   ApiAuthStatusRoute: ApiAuthStatusRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronMessagesRoute: ApiCronMessagesRoute,

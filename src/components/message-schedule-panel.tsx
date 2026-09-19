@@ -505,7 +505,12 @@ function MessageScheduleForm({
             checked={form.consent}
             onChange={(e) => update({ consent: e.target.checked })}
           />
-          <span>{copy.consent}</span>
+          <span>
+            {copy.consent}{" "}
+            <Link to="/terms" className="underline underline-offset-4">
+              {copy.consentTerms}
+            </Link>
+          </span>
         </label>
         <p className="text-xs text-muted-foreground">{copy.saveFirst}</p>
         <div className="flex flex-wrap gap-2">
