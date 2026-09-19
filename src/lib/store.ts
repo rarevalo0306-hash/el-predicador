@@ -4,6 +4,7 @@ import type { MessageKind } from "@/lib/messages";
 import { persistLocale, type Locale } from "@/lib/i18n";
 import { todayKey, type ThemeId, type Verse } from "@/lib/verses";
 import { EMPTY_CHURCH, isThemeId, normalizeChurch, type ChurchInfo } from "@/lib/church";
+import type { MessageChannel } from "@/lib/message-schedule";
 
 export type SentItem = {
   verseId: string;
@@ -44,6 +45,10 @@ export type Recipient = {
   /** Theme that interests them most. */
   themeId?: ThemeId;
   messageLocale?: Locale;
+  /** How this person prefers to be reached. Older contacts have none: they
+   *  predate the choice and are treated as WhatsApp, which is what the app
+   *  did for everyone before. */
+  channel?: MessageChannel;
   notes?: string;
   /** Remind preacher to send a daily verse on their theme. */
   dailyEnabled?: boolean;
@@ -60,6 +65,7 @@ export type RecipientInput = {
   id?: string;
   themeId?: ThemeId | null;
   messageLocale?: Locale;
+  channel?: MessageChannel;
   notes?: string;
   dailyEnabled?: boolean;
   dailyHour?: number;
@@ -228,6 +234,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       at: Date.now(),
       themeId,
       messageLocale: item.messageLocale ?? existing?.messageLocale ?? get().locale,
+      channel: item.channel ?? existing?.channel ?? "whatsapp",
       notes: item.notes !== undefined ? item.notes.trim() || undefined : existing?.notes,
       dailyEnabled:
         item.dailyEnabled !== undefined ? item.dailyEnabled : (existing?.dailyEnabled ?? false),

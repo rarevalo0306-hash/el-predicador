@@ -306,6 +306,8 @@ function MessageScheduleForm({
                   changeLanguage(person.messageLocale ?? form.messageLocale ?? locale, {
                     recipientName: person.name,
                     phone: person.phone,
+                    // Their saved preference, so the channel is not chosen twice.
+                    channel: person.channel ?? "whatsapp",
                     consent: false,
                   });
               }}
