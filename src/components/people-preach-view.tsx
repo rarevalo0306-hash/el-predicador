@@ -2,7 +2,7 @@ import { MessageLanguageSelect } from "@/components/message-language-select";
 import { messageLanguageName } from "@/lib/message-language";
 import { MessageSchedulePanel } from "@/components/message-schedule-panel";
 import { scheduleCopy } from "@/lib/schedule-copy";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Bell, Church, ContactRound, MessageCircle, Plus, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -67,8 +67,17 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   // first render would make the markup disagree with what the phone supports.
   const [canPickContacts, setCanPickContacts] = useState(false);
   const [importing, setImporting] = useState(false);
+  // The form sits above the list, so editing someone further down filled it
+  // off screen and looked like the button had done nothing. A counter, not
+  // editingId, so re-editing the same person scrolls back to it too.
+  const formRef = useRef<HTMLDivElement>(null);
+  const [editRequest, setEditRequest] = useState(0);
 
   useEffect(() => setCanPickContacts(canPickDeviceContacts()), []);
+
+  useEffect(() => {
+    if (editRequest) formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [editRequest]);
 
   const due = useMemo(
     () => allDueItems(recipients, church, notifyHour),
@@ -89,6 +98,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       cultoEnabled: row.cultoEnabled ?? false,
     });
     setSection("people");
+    setEditRequest((n) => n + 1);
   }
 
   function resetForm() {
@@ -414,7 +424,10 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
         </div>
       ) : (
         <>
-          <div className="flex flex-col gap-3 rounded-xl bg-card px-4 py-5 shadow-paper">
+          <div
+            ref={formRef}
+            className="flex flex-col gap-3 scroll-mt-4 rounded-xl bg-card px-4 py-5 shadow-paper"
+          >
             <p className="text-sm font-medium">{editingId ? t("personEdit") : t("personAdd")}</p>
             {canPickContacts && !editingId ? (
               <div className="grid gap-1.5">

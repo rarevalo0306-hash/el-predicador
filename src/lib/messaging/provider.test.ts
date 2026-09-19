@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { messagingStatus, deliverMessage } from "./provider.server.ts";
+import { messagingStatus, messagingRequirements, deliverMessage } from "./provider.server.ts";
 const config = {
   MESSAGING_ALLOWED_USER_IDS: "owner",
   MESSAGING_ENABLED: "true",
@@ -44,6 +44,53 @@ test("an empty caller id never matches an unset or padded allow list", () => {
   });
   assert.equal(
     messagingStatus("owner", { ...config, MESSAGING_ALLOWED_USER_IDS: "owner, " }).whatsapp,
+    true,
+  );
+});
+test("the requirements breakdown names each missing condition, and no values", () => {
+  const none = messagingRequirements("owner", {});
+  assert.deepEqual(none, {
+    allowed: false,
+    credentials: false,
+    scheduler: false,
+    senders: { es: { whatsapp: false, sms: false }, en: { whatsapp: false, sms: false } },
+  });
+  // Nothing that could carry a secret: every leaf is a boolean.
+  const leaves = [
+    none.allowed,
+    none.credentials,
+    none.scheduler,
+    ...Object.values(none.senders).flatMap((byChannel) => Object.values(byChannel)),
+  ];
+  assert.ok(leaves.every((value) => typeof value === "boolean"));
+
+  const full = messagingRequirements("owner", config);
+  assert.equal(full.allowed, true);
+  assert.equal(full.credentials, true);
+  assert.equal(full.scheduler, true);
+  // Spanish falls back to the legacy template; English never does.
+  assert.equal(full.senders.es.whatsapp, true);
+  assert.equal(full.senders.en.whatsapp, false);
+  assert.equal(full.senders.es.sms, true);
+});
+test("each condition fails on its own, without dragging the others down", () => {
+  assert.equal(messagingRequirements("other", config).allowed, false);
+  assert.equal(messagingRequirements("other", config).credentials, true);
+  assert.equal(
+    messagingRequirements("owner", { ...config, TWILIO_AUTH_TOKEN: "" }).credentials,
+    false,
+  );
+  assert.equal(
+    messagingRequirements("owner", { ...config, MESSAGING_ENABLED: "yes" }).scheduler,
+    false,
+  );
+  assert.equal(messagingRequirements("owner", { ...config, CRON_SECRET: "" }).scheduler, false);
+  assert.equal(
+    messagingRequirements("owner", { ...config, TWILIO_SMS_FROM: "" }).senders.es.sms,
+    false,
+  );
+  assert.equal(
+    messagingRequirements("owner", { ...config, TWILIO_SMS_FROM: "" }).senders.es.whatsapp,
     true,
   );
 });

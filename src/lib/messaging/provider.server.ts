@@ -6,11 +6,34 @@ function whatsappTemplate(config: Config, locale: "es" | "en" = "es") {
     ? config.TWILIO_WHATSAPP_CONTENT_SID_EN
     : (config.TWILIO_WHATSAPP_CONTENT_SID_ES ?? config.TWILIO_WHATSAPP_CONTENT_SID);
 }
-export function messagingStatus(
+export type MessagingRequirements = {
+  /** This account is listed in MESSAGING_ALLOWED_USER_IDS. */
+  allowed: boolean;
+  /** TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN are both set. */
+  credentials: boolean;
+  /** CRON_SECRET is set and MESSAGING_ENABLED is exactly "true". */
+  scheduler: boolean;
+  /** A usable sender exists for each channel, per message language. */
+  senders: Record<"es" | "en", Record<MessageChannel, boolean>>;
+};
+
+/**
+ * Which of the four conditions for automatic sending hold right now.
+ *
+ * "Not connected" on its own leaves the owner guessing among six environment
+ * variables, so the panel shows this breakdown instead. Every field is a
+ * boolean: whether a setting is present, never what it contains. A credential
+ * must not reach the browser even in part.
+ *
+ * The breakdown goes to any signed-in visitor, because the owner cannot be
+ * told apart from anyone else until `allowed` is true — and `allowed` being
+ * false is exactly what they need to see to fix it. What that reveals is
+ * whether this deployment has messaging configured, which is not a secret.
+ */
+export function messagingRequirements(
   userId: string,
   config: Config = process.env,
-  locale: "es" | "en" = "es",
-) {
+): MessagingRequirements {
   // An unset list splits to [""], so an empty caller id must never match it.
   const allowed =
     Boolean(userId) &&
@@ -19,15 +42,28 @@ export function messagingStatus(
       .map((v) => v.trim())
       .filter(Boolean)
       .includes(userId);
-  const credentials = Boolean(config.TWILIO_ACCOUNT_SID && config.TWILIO_AUTH_TOKEN);
-  const scheduler = Boolean(config.CRON_SECRET && config.MESSAGING_ENABLED === "true");
+  const sender = (locale: "es" | "en"): Record<MessageChannel, boolean> => ({
+    whatsapp: Boolean(config.TWILIO_WHATSAPP_FROM && whatsappTemplate(config, locale)),
+    sms: Boolean(config.TWILIO_SMS_FROM),
+  });
   return {
-    whatsapp:
-      allowed &&
-      credentials &&
-      scheduler &&
-      Boolean(config.TWILIO_WHATSAPP_FROM && whatsappTemplate(config, locale)),
-    sms: allowed && credentials && scheduler && Boolean(config.TWILIO_SMS_FROM),
+    allowed,
+    credentials: Boolean(config.TWILIO_ACCOUNT_SID && config.TWILIO_AUTH_TOKEN),
+    scheduler: Boolean(config.CRON_SECRET && config.MESSAGING_ENABLED === "true"),
+    senders: { es: sender("es"), en: sender("en") },
+  };
+}
+
+export function messagingStatus(
+  userId: string,
+  config: Config = process.env,
+  locale: "es" | "en" = "es",
+) {
+  const { allowed, credentials, scheduler, senders } = messagingRequirements(userId, config);
+  const ready = allowed && credentials && scheduler;
+  return {
+    whatsapp: ready && senders[locale].whatsapp,
+    sms: ready && senders[locale].sms,
   };
 }
 

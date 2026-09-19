@@ -59,6 +59,19 @@ const es = {
   activated: "Envío automático activado.",
   pausedToast: "Envío automático pausado.",
   back: "Volver al mensaje",
+  missingTitle: "Para que los mensajes salgan solos, falta:",
+  missingAllowed: "Autorizar tu cuenta para usar el remitente",
+  missingAllowedHow: "MESSAGING_ALLOWED_USER_IDS con tu ID de usuario",
+  missingCredentials: "Las credenciales del proveedor",
+  missingCredentialsHow: "TWILIO_ACCOUNT_SID y TWILIO_AUTH_TOKEN",
+  missingScheduler: "Encender el procesador de envíos",
+  missingSchedulerHow: "CRON_SECRET y MESSAGING_ENABLED=true",
+  missingSenderSms: "Un número de SMS del proveedor",
+  missingSenderSmsHow: "TWILIO_SMS_FROM",
+  missingSenderWhatsApp: "Un remitente y una plantilla de WhatsApp aprobados",
+  missingSenderWhatsAppHow: "TWILIO_WHATSAPP_FROM y TWILIO_WHATSAPP_CONTENT_SID_ES / _EN",
+  missingDone: "Listo",
+  missingHint: "Se configuran en el hosting, no en la app. Después hay que volver a desplegar.",
   scheduleThis: "Programar este mensaje",
 };
 const en: Record<keyof typeof es, string> = {
@@ -121,6 +134,20 @@ const en: Record<keyof typeof es, string> = {
   activated: "Automatic sending activated.",
   pausedToast: "Automatic sending paused.",
   back: "Back to message",
+  missingTitle: "For messages to send on their own, this is missing:",
+  missingAllowed: "Authorize your account to use the sender",
+  missingAllowedHow: "MESSAGING_ALLOWED_USER_IDS with your user ID",
+  missingCredentials: "The provider credentials",
+  missingCredentialsHow: "TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN",
+  missingScheduler: "Turn the delivery processor on",
+  missingSchedulerHow: "CRON_SECRET and MESSAGING_ENABLED=true",
+  missingSenderSms: "An SMS number from the provider",
+  missingSenderSmsHow: "TWILIO_SMS_FROM",
+  missingSenderWhatsApp: "An approved WhatsApp sender and template",
+  missingSenderWhatsAppHow: "TWILIO_WHATSAPP_FROM and TWILIO_WHATSAPP_CONTENT_SID_ES / _EN",
+  missingDone: "Done",
+  missingHint: "These are set in the hosting, not in the app. A redeploy is needed afterwards.",
   scheduleThis: "Schedule this message",
 };
-export const scheduleCopy = (locale: "es" | "en") => (locale === "es" ? es : en);
+export type ScheduleCopy = typeof es;
+export const scheduleCopy = (locale: "es" | "en"): ScheduleCopy => (locale === "es" ? es : en);
