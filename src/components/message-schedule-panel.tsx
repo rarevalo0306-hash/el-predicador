@@ -1,5 +1,6 @@
 import { MessageLanguageSelect } from "@/components/message-language-select";
 import { messageLanguageCopy, messageLanguageName } from "@/lib/message-language";
+import { SMS_FOOTER } from "@/lib/messaging/sms-footer";
 import type { Locale } from "@/lib/i18n";
 import { THEMES, getVerseById, versesForTheme, localizedTheme, type ThemeId } from "@/lib/verses";
 import { hydrateVerse } from "@/lib/recobro";
@@ -429,6 +430,9 @@ function MessageScheduleForm({
           />
           <p id={`${id}-message-hint`} className="text-xs text-muted-foreground">
             {copy.messageHint}
+            {form.channel === "sms"
+              ? ` ${copy.smsFooterHint.replace("{footer}", SMS_FOOTER[form.messageLocale ?? "es"])}`
+              : null}
           </p>
         </div>
         <fieldset className="space-y-2">
