@@ -1,5 +1,17 @@
 import { useEffect, useState } from "react";
-import { BookOpen, Flame, Heart, Layers, Settings, Sun, UserRound, Users } from "lucide-react";
+import {
+  BookOpen,
+  Flame,
+  Heart,
+  Layers,
+  Settings,
+  ShieldCheck,
+  Sun,
+  UserRound,
+  Users,
+} from "lucide-react";
+import { AdminView } from "@/components/admin-view";
+import { useIsAdmin } from "@/lib/use-is-admin";
 import { Logo } from "@/components/mark";
 import { TodayView } from "@/components/today-view";
 import { ThemesView } from "@/components/themes-view";
@@ -21,7 +33,7 @@ import { allDueItems } from "@/lib/preach-schedule";
 import { showDailyNotification } from "@/lib/notify";
 import { cn } from "@/lib/utils";
 
-type Tab = "hoy" | "biblia" | "evangelio" | "temas" | "personas" | "guardados";
+type Tab = "hoy" | "biblia" | "evangelio" | "temas" | "personas" | "guardados" | "admin";
 
 const TAB_ICONS: { id: Tab; icon: typeof Sun }[] = [
   { id: "hoy", icon: Sun },
@@ -30,6 +42,8 @@ const TAB_ICONS: { id: Tab; icon: typeof Sun }[] = [
   { id: "temas", icon: Layers },
   { id: "personas", icon: Users },
   { id: "guardados", icon: Heart },
+  // Shown to the owner only; the server decides who that is (useIsAdmin).
+  { id: "admin", icon: ShieldCheck },
 ];
 
 export function AppShell() {
@@ -67,6 +81,8 @@ function PreacherApp({
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileMode, setProfileMode] = useState<"entrar" | "crear">("entrar");
   const ready = useCloudSync(userId, sessionReady);
+  const admin = useIsAdmin(userId);
+  const tabs = admin ? TAB_ICONS : TAB_ICONS.filter((item) => item.id !== "admin");
   const notify = useAppStore((s) => s.notify);
   const notifyHour = useAppStore((s) => s.notifyHour);
   const fontScale = useAppStore((s) => s.fontScale);
@@ -241,13 +257,14 @@ function PreacherApp({
             }}
           />
         ) : null}
+        {ready && tab === "admin" && admin ? <AdminView /> : null}
       </main>
       <nav
         className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background pb-[env(safe-area-inset-bottom)]"
         aria-label={t("sections")}
       >
-        <div className="mx-auto grid max-w-lg grid-cols-6">
-          {TAB_ICONS.map((item) => {
+        <div className={cn("mx-auto grid max-w-lg", admin ? "grid-cols-7" : "grid-cols-6")}>
+          {tabs.map((item) => {
             const active = tab === item.id;
             const Icon = item.icon;
             const labels = {
@@ -257,6 +274,7 @@ function PreacherApp({
               temas: t("tabTemas"),
               personas: t("tabPersonas"),
               guardados: t("tabGuardados"),
+              admin: t("tabAdmin"),
             } as const;
             return (
               <button
