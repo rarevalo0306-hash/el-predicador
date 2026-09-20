@@ -136,7 +136,7 @@ test("SMS keeps its plus, and a rejection is reported once with its reason", asy
     // Carriers want the sender named and a way out in the text itself.
     assert.equal(
       body.get("Body"),
-      "Primera línea\nSegunda línea\n\nThe Preacher APP · Responde STOP para cancelar",
+      "Primera línea\nSegunda línea\n\nThe Preacher App · Responde STOP para cancelar",
     );
     return Response.json({ code: 21610, message: "Unsubscribed recipient" }, { status: 400 });
   });
@@ -166,7 +166,7 @@ test("the SMS footer follows the message language, and WhatsApp keeps its templa
     async (_url, init) => {
       assert.equal(
         new URLSearchParams(String(init?.body)).get("Body"),
-        "Thinking of you.\n\nThe Preacher APP · Reply STOP to opt out",
+        "Thinking of you.\n\nThe Preacher App · Reply STOP to opt out",
       );
       return Response.json({ sid: "SMen", status: "queued" });
     },

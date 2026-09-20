@@ -3,7 +3,7 @@
  * contact is one edit, not a search through two languages of prose.
  */
 export const SITE = {
-  name: "The Preacher APP",
+  name: "The Preacher App",
   altName: "El Predicador",
   url: "https://www.thepreacher.app",
   contactEmail: "rarevalo0306@gmail.com",
