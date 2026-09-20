@@ -131,7 +131,13 @@ test("SMS keeps its plus, and a rejection is reported once with its reason", asy
   let calls = 0;
   const rejected = await deliverMessage({ ...data, channel: "sms" }, config, async (_url, init) => {
     calls++;
-    assert.equal(new URLSearchParams(String(init?.body)).get("To"), "+34612345678");
+    const body = new URLSearchParams(String(init?.body));
+    assert.equal(body.get("To"), "+34612345678");
+    // Carriers want the sender named and a way out in the text itself.
+    assert.equal(
+      body.get("Body"),
+      "Primera línea\nSegunda línea\n\nThe Preacher APP · Responde STOP para cancelar",
+    );
     return Response.json({ code: 21610, message: "Unsubscribed recipient" }, { status: 400 });
   });
   // The code alone is not always in the public dictionary, so the sentence
@@ -152,6 +158,26 @@ test("SMS keeps its plus, and a rejection is reported once with its reason", asy
     Response.json({ sid: "SMfailed", status: "failed", error_code: 30003 }),
   );
   assert.deepEqual(failed, { status: "failed", providerId: "SMfailed", errorCode: "30003" });
+});
+test("the SMS footer follows the message language, and WhatsApp keeps its template text", async () => {
+  await deliverMessage(
+    { ...data, channel: "sms", messageLocale: "en", message: "Thinking of you.  " },
+    config,
+    async (_url, init) => {
+      assert.equal(
+        new URLSearchParams(String(init?.body)).get("Body"),
+        "Thinking of you.\n\nThe Preacher APP · Reply STOP to opt out",
+      );
+      return Response.json({ sid: "SMen", status: "queued" });
+    },
+  );
+  // The WhatsApp wording is an approved template; the variable must stay the
+  // message alone, or the template no longer matches what was approved.
+  await deliverMessage(data, config, async (_url, init) => {
+    const vars = JSON.parse(new URLSearchParams(String(init?.body)).get("ContentVariables")!);
+    assert.equal(vars["2"], "Primera línea Segunda línea");
+    return Response.json({ sid: "SMwa", status: "queued" });
+  });
 });
 test("the stored reason drops the account identifier and stays short", () => {
   const sid = `AC${"0123456789abcdef".repeat(2)}`;

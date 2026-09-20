@@ -1,4 +1,5 @@
 import type { MessageChannel } from "../message-schedule.ts";
+import { withSmsFooter } from "./sms-footer.ts";
 
 type Config = Record<string, string | undefined>;
 function whatsappTemplate(config: Config, locale: "es" | "en" = "es") {
@@ -123,7 +124,7 @@ export async function deliverMessage(
   } else {
     body.set("To", data.phone);
     body.set("From", config.TWILIO_SMS_FROM!);
-    body.set("Body", data.message);
+    body.set("Body", withSmsFooter(data.message, data.messageLocale));
   }
   try {
     const response = await request(

@@ -76,6 +76,7 @@ const es = {
   reason: "Motivo del proveedor",
   reasonCode: "Código del proveedor",
   consentTerms: "Ver los términos del servicio de mensajes",
+  smsFooterHint: "Cada SMS lleva al final: «{footer}»",
 };
 const en: Record<keyof typeof es, string> = {
   title: "Schedule messages",
@@ -154,6 +155,7 @@ const en: Record<keyof typeof es, string> = {
   reason: "Reason from the provider",
   reasonCode: "Provider code",
   consentTerms: "See the messaging terms",
+  smsFooterHint: "Each SMS ends with: “{footer}”",
 };
 export type ScheduleCopy = typeof es;
 export const scheduleCopy = (locale: "es" | "en"): ScheduleCopy => (locale === "es" ? es : en);
