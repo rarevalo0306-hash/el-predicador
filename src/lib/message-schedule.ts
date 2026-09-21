@@ -24,6 +24,9 @@ export type MessageSchedule = ScheduleInput & {
   /** The provider's code for the last attempt, and its sentence when it sent one. */
   lastErrorCode?: string | null;
   lastError?: string | null;
+  /** The carrier's final word, reported by the provider after acceptance. */
+  lastProviderStatus?: string | null;
+  lastProviderErrorCode?: string | null;
 };
 
 export function validTimeZone(zone: string): boolean {

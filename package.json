@@ -20,7 +20,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test:phone": "node --experimental-strip-types --test src/lib/phone.test.ts",
-    "test:schedules": "node --experimental-strip-types --test src/lib/message-schedule.test.ts src/lib/messaging/provider.test.ts src/lib/messaging/worker.test.ts"
+    "test:schedules": "node --experimental-strip-types --test src/lib/message-schedule.test.ts src/lib/messaging/provider.test.ts src/lib/messaging/worker.test.ts src/lib/messaging/twilio-signature.test.ts src/lib/provider-status.test.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.4",

@@ -1,6 +1,7 @@
 import { MessageLanguageSelect } from "@/components/message-language-select";
 import { messageLanguageCopy, messageLanguageName } from "@/lib/message-language";
 import { SMS_FOOTER } from "@/lib/messaging/sms-footer";
+import { providerStatusLine } from "@/lib/provider-status";
 import type { Locale } from "@/lib/i18n";
 import { THEMES, getVerseById, versesForTheme, localizedTheme, type ThemeId } from "@/lib/verses";
 import { hydrateVerse } from "@/lib/recobro";
@@ -567,6 +568,18 @@ function MessageScheduleForm({
                 <p className="text-xs text-muted-foreground">
                   {copy[row.lastStatus]}
                   {row.lastRunAt ? ` · ${dateLabel(row.lastRunAt, row.timeZone)}` : ""}
+                </p>
+              ) : null}
+              {row.lastProviderStatus ? (
+                <p
+                  className={cn(
+                    "text-xs",
+                    row.lastProviderStatus === "delivered"
+                      ? "text-primary"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {providerStatusLine(copy, row.lastProviderStatus, row.lastProviderErrorCode)}
                 </p>
               ) : null}
               {/* A bare provider code sends the owner searching; show its words.

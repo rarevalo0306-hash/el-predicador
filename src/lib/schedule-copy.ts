@@ -77,6 +77,17 @@ const es = {
   reasonCode: "Código del proveedor",
   consentTerms: "Ver los términos del servicio de mensajes",
   smsFooterHint: "Cada SMS lleva al final: «{footer}»",
+  providerDelivered: "Entregado al teléfono",
+  providerSent: "Enviado a la operadora; entrega sin confirmar todavía",
+  providerQueued: "En camino",
+  providerUndelivered: "No entregado",
+  providerErr30003: "el teléfono está apagado o fuera de cobertura",
+  providerErr30004: "el número bloquea mensajes de este tipo",
+  providerErr30005: "el número no existe o está dado de baja",
+  providerErr30006: "es un teléfono fijo o no recibe SMS",
+  providerErr30007: "la operadora lo filtró como spam",
+  providerErr30034: "el número remitente aún no está vinculado a la campaña aprobada",
+  providerErr21610: "esta persona respondió STOP; no recibirá más mensajes",
 };
 const en: Record<keyof typeof es, string> = {
   title: "Schedule messages",
@@ -156,6 +167,17 @@ const en: Record<keyof typeof es, string> = {
   reasonCode: "Provider code",
   consentTerms: "See the messaging terms",
   smsFooterHint: "Each SMS ends with: “{footer}”",
+  providerDelivered: "Delivered to the phone",
+  providerSent: "Handed to the carrier; delivery not confirmed yet",
+  providerQueued: "On its way",
+  providerUndelivered: "Not delivered",
+  providerErr30003: "the phone is off or out of coverage",
+  providerErr30004: "the number blocks messages of this kind",
+  providerErr30005: "the number does not exist or was disconnected",
+  providerErr30006: "it is a landline or cannot receive SMS",
+  providerErr30007: "the carrier filtered it as spam",
+  providerErr30034: "the sender number is not yet linked to the approved campaign",
+  providerErr21610: "this person replied STOP; they will get no more messages",
 };
 export type ScheduleCopy = typeof es;
 export const scheduleCopy = (locale: "es" | "en"): ScheduleCopy => (locale === "es" ? es : en);

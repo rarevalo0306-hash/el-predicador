@@ -29,6 +29,8 @@ export type ScheduleRow = {
   last_run_at?: string | Date | null;
   last_error_code?: string | null;
   last_error_message?: string | null;
+  last_provider_status?: string | null;
+  last_provider_error_code?: string | null;
 };
 const iso = (value: string | Date | null | undefined) =>
   value ? new Date(value).toISOString() : null;
@@ -51,15 +53,18 @@ export function scheduleFromRow(row: ScheduleRow): MessageSchedule {
     lastRunAt: iso(row.last_run_at),
     lastErrorCode: row.last_error_code ?? null,
     lastError: row.last_error_message ?? null,
+    lastProviderStatus: row.last_provider_status ?? null,
+    lastProviderErrorCode: row.last_provider_error_code ?? null,
   };
 }
 export async function listSchedules(userId: string, providedSql?: Sql) {
   const sql = providedSql ?? (await (await import("../db")).getSql());
   const rows =
     await sql<ScheduleRow>`select s.*, d.status as last_status, d.created_at as last_run_at,
-      d.error_code as last_error_code, d.error_message as last_error_message
+      d.error_code as last_error_code, d.error_message as last_error_message,
+      d.provider_status as last_provider_status, d.provider_error_code as last_provider_error_code
     from message_schedules s left join lateral (
-      select status, created_at, error_code, error_message from message_deliveries where schedule_id = s.id order by scheduled_for desc limit 1
+      select status, created_at, error_code, error_message, provider_status, provider_error_code from message_deliveries where schedule_id = s.id order by scheduled_for desc limit 1
     ) d on true where s.user_id = ${userId} order by s.created_at desc limit 20`;
   return {
     schedules: rows.map(scheduleFromRow),

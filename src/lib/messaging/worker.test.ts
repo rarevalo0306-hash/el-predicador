@@ -4,6 +4,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "../db.ts";
 import { runScheduledMessages, validCronAuthorization } from "./worker.server.ts";
+import { parseStatusCallback, recordProviderStatus } from "./delivery-status.ts";
 import {
   saveSchedule,
   listSchedules,
@@ -222,6 +223,48 @@ test("editing pauses a schedule and refuses changes while a send is in progress"
   assert.equal(saved.time, "15:45");
   await sql`update message_schedules set lease_until=now()+interval '3 minutes' where id=${id}`;
   await assert.rejects(() => saveSchedule("owner", { ...schedule, id }, sql), /scheduleBusy/);
+});
+test("the carrier's final word is recorded on the accepted message, and never moves backwards", async () => {
+  await due();
+  await runScheduledMessages(
+    sql,
+    now,
+    async () => ({ status: "accepted" as const, providerId: "SMfinal" }),
+    ready,
+  );
+  const cb = (fields: Record<string, string>) =>
+    recordProviderStatus(sql, parseStatusCallback({ MessageSid: "SMfinal", ...fields })!);
+  // Reports can arrive out of order: "delivered" first, then a late "sent".
+  assert.deepEqual(await cb({ MessageStatus: "delivered" }), { recorded: true });
+  assert.deepEqual(await cb({ MessageStatus: "sent" }), { recorded: false, reason: "older" });
+  let [{ schedules }] = [await listSchedules("owner", sql)];
+  assert.equal(schedules[0].lastProviderStatus, "delivered");
+  assert.equal(schedules[0].lastProviderErrorCode, null);
+  // A sid the app never sent is nobody's message.
+  assert.deepEqual(
+    await recordProviderStatus(
+      sql,
+      parseStatusCallback({ MessageSid: "SMnotours", MessageStatus: "failed" })!,
+    ),
+    { recorded: false, reason: "unknown_sid" },
+  );
+  // A failure carries the carrier's code; garbage in the fields is dropped.
+  assert.equal(parseStatusCallback({ MessageSid: "bad sid", MessageStatus: "sent" }), null);
+  assert.equal(parseStatusCallback({ MessageSid: "SMx", MessageStatus: "exploded" }), null);
+  assert.deepEqual(
+    parseStatusCallback({ MessageSid: "SMx", MessageStatus: "Undelivered", ErrorCode: "30007" }),
+    {
+      sid: "SMx",
+      status: "undelivered",
+      errorCode: "30007",
+    },
+  );
+  assert.equal(
+    parseStatusCallback({ MessageSid: "SMx", MessageStatus: "failed", ErrorCode: "x" })!.errorCode,
+    null,
+  );
+  [{ schedules }] = [await listSchedules("owner", sql)];
+  assert.equal(schedules[0].lastProviderStatus, "delivered");
 });
 test("private scheduling tables have row level security enabled", async () => {
   const rows = await sql<{

@@ -138,6 +138,8 @@ test("SMS keeps its plus, and a rejection is reported once with its reason", asy
       body.get("Body"),
       "Primera línea\nSegunda línea\n\nThe Preacher App · Responde STOP para cancelar",
     );
+    // Without this the app never learns whether the carrier delivered it.
+    assert.equal(body.get("StatusCallback"), "https://www.thepreacher.app/api/twilio/status");
     return Response.json({ code: 21610, message: "Unsubscribed recipient" }, { status: 400 });
   });
   // The code alone is not always in the public dictionary, so the sentence
