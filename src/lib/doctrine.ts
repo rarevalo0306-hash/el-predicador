@@ -57,25 +57,6 @@ export const DOCTRINE_TOPICS: DoctrineTopic[] = [
         name: "Nuestra visión",
         mine: true,
         line: "Hay un solo Dios, y ese único Dios se reveló plenamente en Jesucristo.",
-        why: "Dios es uno de manera absoluta. No hay tres personas divinas eternas y distintas dentro de la Deidad, sino un solo Dios, eterno, invisible y Espíritu, que se manifestó en carne para nuestra redención y que hoy obra en su pueblo por medio de su Espíritu.",
-        sections: [
-          {
-            title: "El Padre",
-            body: "Dios en su eternidad, trascendencia y paternidad. Es Espíritu e invisible (Juan 4:24; 1 Timoteo 1:17).",
-          },
-          {
-            title: "El Hijo",
-            body: "La verdadera humanidad en la cual ese único Dios se manifestó para nuestra salvación. Dios no comenzó en Belén; la humanidad del Mesías sí (Lucas 1:35; 1 Timoteo 3:16).",
-          },
-          {
-            title: "El Espíritu Santo",
-            body: "El mismo Dios obrando y habitando en su pueblo: Espíritu de Dios, Espíritu de Cristo, Cristo en vosotros (Romanos 8:9-10; 2 Corintios 3:17).",
-          },
-          {
-            title: "Verdadero hombre y verdadero Dios",
-            body: "Como hombre, Jesús oraba, obedecía, sufría y murió. Como Dios, perdonó pecados, recibió adoración y fue llamado Dios. Por eso podía decir «El Padre mayor es que yo» desde su humanidad, y «Yo y el Padre uno somos».",
-          },
-        ],
         biblical: [
           "Jehová nuestro Dios, Jehová uno es (Deuteronomio 6:4).",
           "Fuera de mí no hay quien salve; no hay Dios fuera de mí (Isaías 43:11; 45:5).",
@@ -716,25 +697,6 @@ const DOCTRINE_EN: Record<string, Pick<DoctrineTopic, "title" | "who" | "issue" 
         name: "Our vision",
         mine: true,
         line: "There is one God, and that one God was fully revealed in Jesus Christ.",
-        why: "God is one in an absolute sense. There are not three eternal, distinct divine persons within the Godhead, but one God, eternal, invisible and Spirit, who was manifested in the flesh for our redemption and who today works in His people through His Spirit.",
-        sections: [
-          {
-            title: "The Father",
-            body: "God in His eternity, transcendence and fatherhood. He is Spirit and invisible (John 4:24; 1 Timothy 1:17).",
-          },
-          {
-            title: "The Son",
-            body: "The true humanity in which that one God was manifested for our salvation. God did not begin in Bethlehem; the humanity of the Messiah did (Luke 1:35; 1 Timothy 3:16).",
-          },
-          {
-            title: "The Holy Spirit",
-            body: "The same God working and dwelling in His people: the Spirit of God, the Spirit of Christ, Christ in you (Romans 8:9-10; 2 Corinthians 3:17).",
-          },
-          {
-            title: "Truly man and truly God",
-            body: "As man, Jesus prayed, obeyed, suffered and died. As God, He forgave sins, received worship and was called God. That is why He could say “My Father is greater than I” from His humanity, and “I and My Father are one.”",
-          },
-        ],
         biblical: [
           "The LORD our God, the LORD is one (Deuteronomy 6:4).",
           "Besides Me there is no savior; there is no God besides Me (Isaiah 43:11; 45:5).",
