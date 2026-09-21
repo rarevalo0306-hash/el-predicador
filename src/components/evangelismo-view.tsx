@@ -237,8 +237,7 @@ function DoctrineDetail({
         <p className="mt-2 text-sm text-muted-foreground">{copy.who}</p>
         <p className="mt-3 font-serif text-xl leading-snug">{copy.issue}</p>
       </header>
-      <LetterArticle text={copy.letter} />
-      {mine ? <SideCard side={mine} featured t={t} /> : null}
+      {mine ? <SideCard side={mine} featured letter={copy.letter} t={t} /> : null}
       {others.length > 0 ? (
         <section className="flex flex-col gap-3">
           <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
@@ -264,11 +263,11 @@ function DoctrineDetail({
 }
 
 /** The topic's letter, laid out to read on screen: headings, quotations, paragraphs. */
-function LetterArticle({ text }: { text: string }) {
+function LetterBody({ text }: { text: string }) {
   const blocks = letterBlocks(text);
   if (blocks.length === 0) return null;
   return (
-    <article className="rounded-xl bg-card px-4 py-5 shadow-paper">
+    <div className="mt-4 border-t border-border pt-4">
       <div className="flex flex-col gap-3">
         {blocks.map((block, index) => {
           if (block.kind === "heading") {
@@ -277,7 +276,7 @@ function LetterArticle({ text }: { text: string }) {
                 key={index}
                 className={
                   index === 0
-                    ? "font-serif text-2xl tracking-tight"
+                    ? "font-serif text-xl tracking-tight"
                     : "mt-3 font-serif text-lg leading-snug"
                 }
               >
@@ -304,17 +303,20 @@ function LetterArticle({ text }: { text: string }) {
           );
         })}
       </div>
-    </article>
+    </div>
   );
 }
 
 function SideCard({
   side,
   featured,
+  letter,
   t,
 }: {
   side: DoctrineSide;
   featured?: boolean;
+  /** The full letter, shown inside the featured card under its summary. */
+  letter?: string;
   t: (key: "myTeaching" | "whyThis" | "hasBasis" | "noBasis") => string;
 }) {
   return (
@@ -332,6 +334,7 @@ function SideCard({
           {side.why}
         </p>
       ) : null}
+      {letter ? <LetterBody text={letter} /> : null}
       {side.sections?.length ? (
         <div className="mt-4 flex flex-col gap-3">
           {side.sections.map((section) => (
