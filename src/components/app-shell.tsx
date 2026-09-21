@@ -4,6 +4,7 @@ import {
   Flame,
   Heart,
   Layers,
+  MessageCircleQuestion,
   Settings,
   ShieldCheck,
   Sun,
@@ -22,6 +23,7 @@ import { PeoplePreachView } from "@/components/people-preach-view";
 import { SendDrawer } from "@/components/send-drawer";
 import { SettingsDrawer } from "@/components/settings-drawer";
 import { ProfileDrawer } from "@/components/profile-drawer";
+import { AskDrawer } from "@/components/ask-drawer";
 import { LanguageSwitch, useI18n } from "@/components/language-switch";
 import { useCloudSync } from "@/components/cloud-sync";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -80,6 +82,7 @@ function PreacherApp({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileMode, setProfileMode] = useState<"entrar" | "crear">("entrar");
+  const [askOpen, setAskOpen] = useState(false);
   const ready = useCloudSync(userId, sessionReady);
   const admin = useIsAdmin(userId);
   const tabs = admin ? TAB_ICONS : TAB_ICONS.filter((item) => item.id !== "admin");
@@ -259,6 +262,18 @@ function PreacherApp({
         ) : null}
         {ready && tab === "admin" && admin ? <AdminView /> : null}
       </main>
+      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom)+0.75rem)] z-40">
+        <div className="mx-auto flex max-w-lg justify-end px-4">
+          <button
+            type="button"
+            onClick={() => setAskOpen(true)}
+            className="pointer-events-auto inline-flex h-11 items-center gap-2 rounded-full bg-primary pr-4 pl-3.5 text-sm font-medium text-primary-foreground shadow-lg transition-transform duration-150 active:scale-95"
+          >
+            <MessageCircleQuestion className="size-5" />
+            {t("askButton")}
+          </button>
+        </div>
+      </div>
       <nav
         className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background pb-[env(safe-area-inset-bottom)]"
         aria-label={t("sections")}
@@ -318,6 +333,16 @@ function PreacherApp({
         onOpenSignUp={() => {
           setSettingsOpen(false);
           setProfileMode("crear");
+          setProfileOpen(true);
+        }}
+      />
+      <AskDrawer
+        open={askOpen}
+        onOpenChange={setAskOpen}
+        userId={sessionReady ? (userId ?? "") : undefined}
+        onSignIn={() => {
+          setAskOpen(false);
+          setProfileMode("entrar");
           setProfileOpen(true);
         }}
       />

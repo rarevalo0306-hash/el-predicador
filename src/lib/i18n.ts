@@ -35,6 +35,21 @@ export function persistLocale(locale: Locale) {
 }
 
 const es = {
+  askButton: "Pregunta",
+  askTitle: "Pregunta a la Palabra",
+  askIntro:
+    "Haz una pregunta sobre la Biblia, la fe o la vida cristiana. La respuesta cita versículos para que la compares con la Escritura.",
+  askPlaceholder: "Escribe tu pregunta…",
+  askSend: "Enviar",
+  askThinking: "Buscando en la Palabra…",
+  askSignIn: "Inicia sesión para hacer preguntas. Así cada persona tiene su propio límite diario.",
+  askSignInButton: "Iniciar sesión",
+  askQuota: "Llegaste al límite de hoy ({n} preguntas). Mañana puedes seguir.",
+  askRemaining: "Te quedan {n} preguntas hoy.",
+  askUnavailable: "Las respuestas no están disponibles por ahora. Intenta más tarde.",
+  askError: "No se pudo responder. Intenta de nuevo.",
+  askClear: "Borrar conversación",
+  askDisclaimer: "Respuesta generada automáticamente. Compárala siempre con la Biblia.",
   tagline: "Mensajes de la Biblia",
   loadingAccount: "Cargando tu cuenta…",
   enterPreacher: "Entra, predicador",
@@ -470,6 +485,21 @@ const es = {
 } as const;
 
 const en: Record<keyof typeof es, string> = {
+  askButton: "Ask",
+  askTitle: "Ask the Word",
+  askIntro:
+    "Ask a question about the Bible, the faith or the Christian life. The answer cites verses so you can check it against Scripture.",
+  askPlaceholder: "Write your question…",
+  askSend: "Send",
+  askThinking: "Searching the Word…",
+  askSignIn: "Sign in to ask questions. That way each person has their own daily limit.",
+  askSignInButton: "Sign in",
+  askQuota: "You reached today's limit ({n} questions). You can continue tomorrow.",
+  askRemaining: "You have {n} questions left today.",
+  askUnavailable: "Answers are not available right now. Try again later.",
+  askError: "Could not answer. Please try again.",
+  askClear: "Clear conversation",
+  askDisclaimer: "Automatically generated answer. Always compare it with the Bible.",
   tagline: "Bible messages",
   loadingAccount: "Loading your account…",
   enterPreacher: "Come in, preacher",
