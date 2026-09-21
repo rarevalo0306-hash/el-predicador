@@ -4,6 +4,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "../db.ts";
 import { runScheduledMessages, validCronAuthorization } from "./worker.server.ts";
+import { parseStatusCallback, recordProviderStatus } from "./delivery-status.ts";
 import {
   saveSchedule,
   listSchedules,
@@ -222,6 +223,90 @@ test("editing pauses a schedule and refuses changes while a send is in progress"
   assert.equal(saved.time, "15:45");
   await sql`update message_schedules set lease_until=now()+interval '3 minutes' where id=${id}`;
   await assert.rejects(() => saveSchedule("owner", { ...schedule, id }, sql), /scheduleBusy/);
+});
+test("the carrier's final word is recorded on the accepted message, and never moves backwards", async () => {
+  await due();
+  await runScheduledMessages(
+    sql,
+    now,
+    async () => ({ status: "accepted" as const, providerId: "SMfinal" }),
+    ready,
+  );
+  const cb = (fields: Record<string, string>) =>
+    recordProviderStatus(sql, parseStatusCallback({ MessageSid: "SMfinal", ...fields })!);
+  // Reports can arrive out of order: "delivered" first, then a late "sent".
+  assert.deepEqual(await cb({ MessageStatus: "delivered" }), { recorded: true });
+  assert.deepEqual(await cb({ MessageStatus: "sent" }), { recorded: false, reason: "older" });
+  let [{ schedules }] = [await listSchedules("owner", sql)];
+  assert.equal(schedules[0].lastProviderStatus, "delivered");
+  assert.equal(schedules[0].lastProviderErrorCode, null);
+  // A sid the app never sent is nobody's message.
+  assert.deepEqual(
+    await recordProviderStatus(
+      sql,
+      parseStatusCallback({ MessageSid: "SMnotours", MessageStatus: "failed" })!,
+    ),
+    { recorded: false, reason: "unknown_sid" },
+  );
+  // A failure carries the carrier's code; garbage in the fields is dropped.
+  assert.equal(parseStatusCallback({ MessageSid: "bad sid", MessageStatus: "sent" }), null);
+  assert.equal(parseStatusCallback({ MessageSid: "SMx", MessageStatus: "exploded" }), null);
+  assert.deepEqual(
+    parseStatusCallback({ MessageSid: "SMx", MessageStatus: "Undelivered", ErrorCode: "30007" }),
+    {
+      sid: "SMx",
+      status: "undelivered",
+      errorCode: "30007",
+    },
+  );
+  assert.equal(
+    parseStatusCallback({ MessageSid: "SMx", MessageStatus: "failed", ErrorCode: "x" })!.errorCode,
+    null,
+  );
+  [{ schedules }] = [await listSchedules("owner", sql)];
+  assert.equal(schedules[0].lastProviderStatus, "delivered");
+});
+test("a theme schedule walks its verses in order and varies the line, without repeating", async () => {
+  const { id } = await saveSchedule(
+    "owner",
+    { ...schedule, message: "", themeId: "fe", senderName: "Ricardo" },
+    sql,
+  );
+  await sql`insert into verse_texts (verse_id, locale, ref, text, source) values ('a','es','Ref A','Texto A','RV')`;
+  await sql`insert into verse_notes (verse_id, locale, position, text) values ('a','es',0,'Nota uno'),('a','es',1,'Nota dos')`;
+  const verses = async () => [
+    { id: "a", ref: "Ref A", text: "" },
+    { id: "b", ref: "Ref B", text: "Texto B en catálogo" },
+  ];
+  const sent: string[] = [];
+  const send = async (data: { message: string }) => {
+    sent.push(data.message);
+    return { status: "accepted" as const, providerId: `SM${sent.length}` };
+  };
+  for (let i = 0; i < 3; i++) {
+    const at = new Date(now.getTime() + i * 86_400_000);
+    await sql`update message_schedules set enabled=true,next_run_at=${at.toISOString()} where id=${id}`;
+    await runScheduledMessages(sql, at, send, ready, verses);
+  }
+  assert.equal(sent.length, 3);
+  assert.match(sent[0], /^Nota uno\n\n«Texto A»\n— Ref A\nRV\n\nCon cariño, Ricardo$/);
+  // The catalog's own Spanish text serves a verse that was never prepared.
+  assert.match(sent[1], /«Texto B en catálogo»\n— Ref B/);
+  // Back to the first verse with its other line, not the same one again.
+  assert.match(sent[2], /^Nota dos\n\n«Texto A»/);
+  // A verse without any text anywhere fails visibly rather than sending "«»".
+  const { id: bare } = await saveSchedule(
+    "owner",
+    { ...schedule, phone: "+12015550124", message: "", themeId: "paz" },
+    sql,
+  );
+  await sql`update message_schedules set enabled=true,next_run_at=${now.toISOString()} where id=${bare}`;
+  const before = sent.length;
+  await runScheduledMessages(sql, now, send, ready, async () => [{ id: "z", ref: "Z", text: "" }]);
+  assert.equal(sent.length, before);
+  const [row] = await sql<{ status: string; error_code: string }>`
+    select status, error_code from message_deliveries where schedule_id = ${bare}`;
+  assert.deepEqual(row, { status: "failed", error_code: "verse_unavailable" });
 });
 test("private scheduling tables have row level security enabled", async () => {
   const rows = await sql<{

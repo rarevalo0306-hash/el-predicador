@@ -1,13 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/components/language-switch";
 import { getAdminOverview, type AdminOverview } from "@/lib/admin";
+import {
+  getVerseNotesStatus,
+  prepareVerseNotes,
+  type NotesStatus,
+  type PrepareResult,
+} from "@/lib/admin-notes";
 import { useAppStore } from "@/lib/store";
 import { normalizePhone, formatPhone } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 
-type Pane = "registrations" | "accounts";
+type Pane = "registrations" | "accounts" | "notes";
 
 function csvOf(header: string[], rows: (string | number)[][]) {
   const line = (cells: (string | number)[]) =>
@@ -32,6 +38,42 @@ export function AdminView() {
   const [error, setError] = useState(false);
   const recipients = useAppStore((s) => s.recipients);
   const upsertRecipient = useAppStore((s) => s.upsertRecipient);
+  const [notes, setNotes] = useState<NotesStatus | null>(null);
+  const [working, setWorking] = useState<"es" | "en" | null>(null);
+  const [sample, setSample] = useState<PrepareResult["sample"]>([]);
+  const [noteErrors, setNoteErrors] = useState<string[]>([]);
+  const [noteFailure, setNoteFailure] = useState<string | null>(null);
+  const cancelled = useRef(false);
+  useEffect(() => {
+    getVerseNotesStatus()
+      .then(setNotes)
+      .catch(() => setNotes(null));
+    return () => {
+      cancelled.current = true;
+    };
+  }, []);
+  // Runs one batch at a time until nothing remains, so no single request has
+  // to outlive a serverless timeout; a failure stops here and says why.
+  async function prepare(locale: "es" | "en") {
+    setWorking(locale);
+    setNoteFailure(null);
+    setNoteErrors([]);
+    try {
+      let remaining = Infinity;
+      while (remaining > 0 && !cancelled.current) {
+        const result = await prepareVerseNotes({ data: { locale } });
+        remaining = result.remaining;
+        if (result.sample.length) setSample(result.sample);
+        if (result.errors.length) setNoteErrors((e) => [...e, ...result.errors]);
+        setNotes(await getVerseNotesStatus());
+        if (!result.processed) break;
+      }
+    } catch (error) {
+      setNoteFailure(error instanceof Error ? error.message : String(error));
+    } finally {
+      setWorking(null);
+    }
+  }
 
   const load = () => {
     setError(false);
@@ -62,7 +104,7 @@ export function AdminView() {
         className="inline-flex w-full rounded-full border border-border bg-card p-0.5"
         role="tablist"
       >
-        {(["registrations", "accounts"] as const).map((id) => (
+        {(["registrations", "accounts", "notes"] as const).map((id) => (
           <button
             key={id}
             type="button"
@@ -76,8 +118,12 @@ export function AdminView() {
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
-            {id === "registrations" ? t("adminRegistrations") : t("adminAccounts")}
-            {data
+            {id === "registrations"
+              ? t("adminRegistrations")
+              : id === "accounts"
+                ? t("adminAccounts")
+                : t("adminNotes")}
+            {data && id !== "notes"
               ? ` · ${id === "registrations" ? data.registrations.length : data.accounts.length}`
               : ""}
           </button>
@@ -201,6 +247,80 @@ export function AdminView() {
               </p>
             </article>
           ))}
+        </div>
+      ) : null}
+
+      {pane === "notes" ? (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">{t("adminNotesSub")}</p>
+          {notes && !notes.configured ? (
+            <p className="rounded-lg border border-border bg-secondary p-3 text-sm">
+              {t("adminNotesKeyMissing")}
+            </p>
+          ) : null}
+          {(["es", "en"] as const).map((lang) => {
+            const done = notes?.prepared[lang] ?? 0;
+            const total = notes?.total ?? 0;
+            const complete = total > 0 && done >= total;
+            return (
+              <article
+                key={lang}
+                className="space-y-2 rounded-xl border border-border bg-card p-4 shadow-paper"
+              >
+                <p className="text-sm font-medium">
+                  {lang === "es" ? "Español" : "English"} ·{" "}
+                  {t("adminNotesProgress", { done, total })}
+                </p>
+                {complete ? (
+                  <p className="text-sm text-primary">
+                    {t("adminNotesDone", { lang: lang === "es" ? "español" : "English" })}
+                  </p>
+                ) : (
+                  <Button
+                    type="button"
+                    disabled={working !== null || !notes?.configured}
+                    onClick={() => void prepare(lang)}
+                  >
+                    {working === lang
+                      ? t("adminNotesWorking", { done, total })
+                      : t("adminNotesPrepare", { lang: lang === "es" ? "español" : "English" })}
+                  </Button>
+                )}
+              </article>
+            );
+          })}
+          {noteFailure ? (
+            <p role="alert" className="text-sm text-destructive">
+              {t("adminNotesFail", { error: noteFailure })}
+            </p>
+          ) : null}
+          {sample.length ? (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">{t("adminNotesSample")}</p>
+              {sample.map((item) => (
+                <article key={item.ref} className="rounded-xl border border-border bg-card p-4">
+                  <p className="text-sm font-medium">{item.ref}</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
+                    {item.notes.map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          ) : null}
+          {noteErrors.length ? (
+            <details className="text-sm">
+              <summary className="cursor-pointer text-muted-foreground">
+                {t("adminNotesErrors")} · {noteErrors.length}
+              </summary>
+              <ul className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">
+                {noteErrors.map((e, i) => (
+                  <li key={i}>{e}</li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
         </div>
       ) : null}
     </section>

@@ -1,23 +1,9 @@
 import { findBook, recobroSource, SOURCE_RECOBRO, SOURCE_RECOBRO_EN, type BibleBook } from "@/lib/bible";
 import { t, type Locale, type StringKey } from "@/lib/i18n";
 import { VERSE_EN } from "@/lib/verses-en";
+import type { ScheduleThemeId } from "@/lib/message-schedule";
 
-export type ThemeId =
-  | "amor"
-  | "fe"
-  | "esperanza"
-  | "paz"
-  | "fortaleza"
-  | "consuelo"
-  | "gratitud"
-  | "sabiduria"
-  | "familia"
-  | "perdon"
-  | "evangelio"
-  | "jovenes"
-  | "matrimonios"
-  | "amistad"
-  | "oracion";
+export type ThemeId = ScheduleThemeId;
 
 export type Verse = {
   id: string;

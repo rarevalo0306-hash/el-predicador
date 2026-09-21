@@ -1,5 +1,6 @@
 import type { MessageChannel } from "../message-schedule.ts";
 import { withSmsFooter } from "./sms-footer.ts";
+import { SITE } from "../legal/site.ts";
 
 type Config = Record<string, string | undefined>;
 function whatsappTemplate(config: Config, locale: "es" | "en" = "es") {
@@ -113,6 +114,8 @@ export async function deliverMessage(
   if (!messagingStatus(data.userId, config, data.messageLocale)[data.channel])
     return { status: "failed", errorCode: "not_configured" };
   const body = new URLSearchParams();
+  // Where the provider reports the carrier's final word (delivered, failed…).
+  body.set("StatusCallback", `${SITE.url}/api/twilio/status`);
   if (data.channel === "whatsapp") {
     body.set("To", `whatsapp:${data.phone}`);
     body.set("From", `whatsapp:${config.TWILIO_WHATSAPP_FROM!.replace(/^whatsapp:/, "")}`);

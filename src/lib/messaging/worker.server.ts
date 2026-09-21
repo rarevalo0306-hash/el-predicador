@@ -2,6 +2,7 @@ import { randomUUID, timingSafeEqual } from "node:crypto";
 import type { Sql } from "../db";
 import { nextMessageOccurrence } from "../message-schedule.ts";
 import { deliverMessage, messagingStatus, type DeliveryOutcome } from "./provider.server.ts";
+import { resolveThemeMessage, type VerseSource } from "./theme-delivery.server.ts";
 import type { ScheduleRow } from "./schedules.server";
 
 export function validCronAuthorization(header: string | null, secret: string | undefined): boolean {
@@ -17,6 +18,7 @@ export async function runScheduledMessages(
   now = new Date(),
   send = deliverMessage,
   ready = messagingStatus,
+  verses?: VerseSource,
 ) {
   const token = randomUUID();
   const rows = await sql<ScheduleRow>`with due as (
@@ -48,22 +50,38 @@ export async function runScheduledMessages(
     await sql`update message_schedules set next_run_at = ${next}, enabled = ${Boolean(next)}
       where id = ${row.id} and lease_token = ${token}`;
     if (reserved.length) {
-      let result: DeliveryOutcome | { status: "skipped"; errorCode: string };
+      let result: DeliveryOutcome | { status: "skipped"; errorCode: string } | undefined;
       if (!configured) result = { status: "failed", errorCode: "not_configured" };
       else if (now.getTime() - new Date(scheduledFor).getTime() > 15 * 60_000)
         result = { status: "skipped", errorCode: "missed_time" };
       else {
-        try {
-          result = await send({
-            userId: row.user_id,
-            channel: row.channel,
-            phone: row.phone,
-            recipientName: row.recipient_name,
-            message: row.message,
-            messageLocale: row.message_locale,
-          });
-        } catch {
-          result = { status: "unknown", errorCode: "unconfirmed_request" };
+        // A theme schedule takes its next verse and line now; the receipt
+        // row already exists, so the rotation counts this attempt.
+        let message: string | null = row.message;
+        if (row.theme_id) {
+          const composed = await resolveThemeMessage(
+            sql,
+            { ...row, theme_id: row.theme_id },
+            verses,
+          );
+          message = "message" in composed ? composed.message : null;
+          if ("error" in composed) result = { status: "failed", errorCode: composed.error };
+        }
+        if (message === null) {
+          result = result ?? { status: "failed", errorCode: "verse_unavailable" };
+        } else {
+          try {
+            result = await send({
+              userId: row.user_id,
+              channel: row.channel,
+              phone: row.phone,
+              recipientName: row.recipient_name,
+              message,
+              messageLocale: row.message_locale,
+            });
+          } catch {
+            result = { status: "unknown", errorCode: "unconfirmed_request" };
+          }
         }
       }
       await sql`update message_deliveries set status = ${result.status}, provider_id = ${"providerId" in result ? (result.providerId ?? null) : null},
