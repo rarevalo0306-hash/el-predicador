@@ -26,6 +26,7 @@ import {
   type DoctrineTopic,
 } from "@/lib/doctrine";
 import { NwtCompare } from "@/components/nwt-compare";
+import { letterBlocks } from "@/lib/letter-format";
 import { prefetchVerses } from "@/lib/recobro";
 import { getVerseById, type Verse } from "@/lib/verses";
 import { cn } from "@/lib/utils";
@@ -236,6 +237,7 @@ function DoctrineDetail({
         <p className="mt-2 text-sm text-muted-foreground">{copy.who}</p>
         <p className="mt-3 font-serif text-xl leading-snug">{copy.issue}</p>
       </header>
+      <LetterArticle text={copy.letter} />
       {mine ? <SideCard side={mine} featured t={t} /> : null}
       {others.length > 0 ? (
         <section className="flex flex-col gap-3">
@@ -258,6 +260,51 @@ function DoctrineDetail({
         ))}
       </section>
     </div>
+  );
+}
+
+/** The topic's letter, laid out to read on screen: headings, quotations, paragraphs. */
+function LetterArticle({ text }: { text: string }) {
+  const blocks = letterBlocks(text);
+  if (blocks.length === 0) return null;
+  return (
+    <article className="rounded-xl bg-card px-4 py-5 shadow-paper">
+      <div className="flex flex-col gap-3">
+        {blocks.map((block, index) => {
+          if (block.kind === "heading") {
+            return (
+              <h3
+                key={index}
+                className={
+                  index === 0
+                    ? "font-serif text-2xl tracking-tight"
+                    : "mt-3 font-serif text-lg leading-snug"
+                }
+              >
+                {block.text}
+              </h3>
+            );
+          }
+          if (block.kind === "quote") {
+            return (
+              <blockquote key={index} className="border-l-2 border-primary/40 pl-3">
+                <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
+                  {block.ref}
+                </p>
+                <p className="mt-1 font-serif text-base leading-relaxed whitespace-pre-line">
+                  {block.lines.join("\n")}
+                </p>
+              </blockquote>
+            );
+          }
+          return (
+            <p key={index} className="text-sm leading-relaxed whitespace-pre-line">
+              {block.lines.join("\n")}
+            </p>
+          );
+        })}
+      </div>
+    </article>
   );
 }
 
