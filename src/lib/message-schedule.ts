@@ -2,6 +2,26 @@ import { Temporal } from "@js-temporal/polyfill";
 import { normalizePhone } from "./phone.ts";
 
 export type MessageChannel = "whatsapp" | "sms";
+
+/** The themes a schedule can follow. verses.ts derives its ThemeId from this. */
+export const THEME_IDS = [
+  "amor",
+  "fe",
+  "esperanza",
+  "paz",
+  "fortaleza",
+  "consuelo",
+  "gratitud",
+  "sabiduria",
+  "familia",
+  "perdon",
+  "evangelio",
+  "jovenes",
+  "matrimonios",
+  "amistad",
+  "oracion",
+] as const;
+export type ScheduleThemeId = (typeof THEME_IDS)[number];
 export type ScheduleInput = {
   id?: string;
   recipientName: string;
@@ -9,6 +29,10 @@ export type ScheduleInput = {
   message: string;
   messageLocale?: "es" | "en";
   verseId?: string;
+  /** Set when the schedule follows a theme: a different verse each send. */
+  themeId?: ScheduleThemeId | null;
+  /** Signs the composed message of a theme schedule. */
+  senderName?: string;
   channel: MessageChannel;
   days: number[];
   time: string;
@@ -44,9 +68,15 @@ export function validateSchedule(raw: ScheduleInput): ScheduleInput {
   if (!phone) throw new Error("contactBadPhone");
   const recipientName = String(raw.recipientName ?? "").trim();
   const message = String(raw.message ?? "").trim();
-  if (!recipientName || recipientName.length > 80 || !message || message.length > 1000) {
+  const themeId = raw.themeId ? raw.themeId : null;
+  if (themeId && !(THEME_IDS as readonly string[]).includes(themeId))
+    throw new Error("scheduleInvalid");
+  const senderName = String(raw.senderName ?? "").trim();
+  if (senderName.length > 80) throw new Error("scheduleInvalid");
+  // A theme schedule composes its text at send time; a fixed one needs it now.
+  if (!recipientName || recipientName.length > 80 || message.length > 1000)
     throw new Error("scheduleBadMessage");
-  }
+  if (!themeId && !message) throw new Error("scheduleBadMessage");
   if (raw.messageLocale !== undefined && raw.messageLocale !== "es" && raw.messageLocale !== "en")
     throw new Error("scheduleInvalid");
   if (raw.verseId !== undefined && !/^[a-zA-Z0-9-]{1,64}$/.test(raw.verseId))
@@ -68,6 +98,8 @@ export function validateSchedule(raw: ScheduleInput): ScheduleInput {
     phone,
     recipientName,
     message,
+    themeId,
+    senderName: senderName || undefined,
     messageLocale: raw.messageLocale ?? "es",
     days: [...new Set(raw.days)].sort(),
     consent: raw.consent === true,

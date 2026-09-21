@@ -266,6 +266,48 @@ test("the carrier's final word is recorded on the accepted message, and never mo
   [{ schedules }] = [await listSchedules("owner", sql)];
   assert.equal(schedules[0].lastProviderStatus, "delivered");
 });
+test("a theme schedule walks its verses in order and varies the line, without repeating", async () => {
+  const { id } = await saveSchedule(
+    "owner",
+    { ...schedule, message: "", themeId: "fe", senderName: "Ricardo" },
+    sql,
+  );
+  await sql`insert into verse_texts (verse_id, locale, ref, text, source) values ('a','es','Ref A','Texto A','RV')`;
+  await sql`insert into verse_notes (verse_id, locale, position, text) values ('a','es',0,'Nota uno'),('a','es',1,'Nota dos')`;
+  const verses = async () => [
+    { id: "a", ref: "Ref A", text: "" },
+    { id: "b", ref: "Ref B", text: "Texto B en catálogo" },
+  ];
+  const sent: string[] = [];
+  const send = async (data: { message: string }) => {
+    sent.push(data.message);
+    return { status: "accepted" as const, providerId: `SM${sent.length}` };
+  };
+  for (let i = 0; i < 3; i++) {
+    const at = new Date(now.getTime() + i * 86_400_000);
+    await sql`update message_schedules set enabled=true,next_run_at=${at.toISOString()} where id=${id}`;
+    await runScheduledMessages(sql, at, send, ready, verses);
+  }
+  assert.equal(sent.length, 3);
+  assert.match(sent[0], /^Nota uno\n\n«Texto A»\n— Ref A\nRV\n\nCon cariño, Ricardo$/);
+  // The catalog's own Spanish text serves a verse that was never prepared.
+  assert.match(sent[1], /«Texto B en catálogo»\n— Ref B/);
+  // Back to the first verse with its other line, not the same one again.
+  assert.match(sent[2], /^Nota dos\n\n«Texto A»/);
+  // A verse without any text anywhere fails visibly rather than sending "«»".
+  const { id: bare } = await saveSchedule(
+    "owner",
+    { ...schedule, phone: "+12015550124", message: "", themeId: "paz" },
+    sql,
+  );
+  await sql`update message_schedules set enabled=true,next_run_at=${now.toISOString()} where id=${bare}`;
+  const before = sent.length;
+  await runScheduledMessages(sql, now, send, ready, async () => [{ id: "z", ref: "Z", text: "" }]);
+  assert.equal(sent.length, before);
+  const [row] = await sql<{ status: string; error_code: string }>`
+    select status, error_code from message_deliveries where schedule_id = ${bare}`;
+  assert.deepEqual(row, { status: "failed", error_code: "verse_unavailable" });
+});
 test("private scheduling tables have row level security enabled", async () => {
   const rows = await sql<{
     relrowsecurity: boolean;

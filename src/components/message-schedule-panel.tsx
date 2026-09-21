@@ -2,6 +2,7 @@ import { MessageLanguageSelect } from "@/components/message-language-select";
 import { messageLanguageCopy, messageLanguageName } from "@/lib/message-language";
 import { SMS_FOOTER } from "@/lib/messaging/sms-footer";
 import { providerStatusLine } from "@/lib/provider-status";
+import { fallbackNotes } from "@/lib/messaging/compose";
 import type { Locale } from "@/lib/i18n";
 import { THEMES, getVerseById, versesForTheme, localizedTheme, type ThemeId } from "@/lib/verses";
 import { hydrateVerse } from "@/lib/recobro";
@@ -104,6 +105,7 @@ function MessageScheduleForm({
   const copy = scheduleCopy(locale);
   const { user, isPending } = useCurrentUserState();
   const recipients = useAppStore((s) => s.recipients);
+  const displayName = useAppStore((s) => s.displayName);
   const id = useId();
   const [form, setForm] = useState(() =>
     newForm(initialMessage, initialPerson, initialLocale ?? locale, initialVerseId),
@@ -377,8 +379,9 @@ function MessageScheduleForm({
             value={pickerTheme}
             disabled={preparing}
             onChange={(e) => {
-              setPickerTheme(e.target.value as ThemeId | "");
-              update({ verseId: undefined });
+              const theme = e.target.value as ThemeId | "";
+              setPickerTheme(theme);
+              update({ verseId: undefined, themeId: form.themeId ? theme || null : null });
             }}
           >
             <option value="">{languageCopy.custom}</option>
@@ -389,7 +392,69 @@ function MessageScheduleForm({
             ))}
           </select>
         </div>
-        {pickerTheme ? (
+        <fieldset className="space-y-2">
+          <legend className="text-sm font-medium">{copy.modeTitle}</legend>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {(
+              [
+                { theme: false, label: copy.modeFixed },
+                { theme: true, label: copy.modeTheme },
+              ] as const
+            ).map((option) => {
+              const active = Boolean(form.themeId) === option.theme;
+              return (
+                <Button
+                  key={String(option.theme)}
+                  type="button"
+                  variant={active ? "default" : "outline"}
+                  aria-pressed={active}
+                  disabled={preparing}
+                  onClick={() => {
+                    requestVersion.current++;
+                    setPreparing(false);
+                    update(
+                      option.theme
+                        ? {
+                            themeId: pickerTheme || null,
+                            verseId: undefined,
+                            message: "",
+                            senderName: form.senderName ?? displayName.trim() ?? "",
+                          }
+                        : { themeId: null },
+                    );
+                  }}
+                >
+                  {option.label}
+                </Button>
+              );
+            })}
+          </div>
+          {form.themeId ? (
+            <p className="text-xs text-muted-foreground">
+              {copy.modeThemeHint.replaceAll("{n}", String(versesForTheme(form.themeId).length))}
+            </p>
+          ) : null}
+          {!form.themeId && !pickerTheme ? null : null}
+        </fieldset>
+        {form.themeId ? (
+          <div className="space-y-1.5">
+            <Label htmlFor={`${id}-sender`}>{copy.senderName}</Label>
+            <Input
+              id={`${id}-sender`}
+              value={form.senderName ?? ""}
+              maxLength={80}
+              onChange={(e) => update({ senderName: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground">{copy.senderNameHint}</p>
+            <p className="text-xs text-muted-foreground">{copy.themeExample}</p>
+            <pre className="rounded-md border border-border bg-secondary p-3 text-xs whitespace-pre-wrap break-words">
+              {`${fallbackNotes(form.messageLocale ?? "es")[0]}\n\n«…»\n— ${
+                versesForTheme(form.themeId)[0]?.ref ?? ""
+              }${form.senderName?.trim() ? `\n\n${t("signOff", { name: form.senderName.trim() })}` : ""}`}
+            </pre>
+          </div>
+        ) : null}
+        {pickerTheme && !form.themeId ? (
           <div className="space-y-1.5">
             <Label htmlFor={`${id}-verse`}>{languageCopy.verse}</Label>
             <select
@@ -413,29 +478,31 @@ function MessageScheduleForm({
             {languageCopy.loading}
           </p>
         ) : null}
-        <div className="space-y-1.5">
-          <Label htmlFor={`${id}-message`}>{copy.message}</Label>
-          <Textarea
-            id={`${id}-message`}
-            value={form.message}
-            onChange={(e) => {
-              requestVersion.current++;
-              setPreparing(false);
-              update({ message: e.target.value, verseId: undefined });
-            }}
-            lang={form.messageLocale ?? "es"}
-            required
-            maxLength={1000}
-            className="min-h-28"
-            aria-describedby={`${id}-message-hint`}
-          />
-          <p id={`${id}-message-hint`} className="text-xs text-muted-foreground">
-            {copy.messageHint}
-            {form.channel === "sms"
-              ? ` ${copy.smsFooterHint.replace("{footer}", SMS_FOOTER[form.messageLocale ?? "es"])}`
-              : null}
-          </p>
-        </div>
+        {form.themeId ? null : (
+          <div className="space-y-1.5">
+            <Label htmlFor={`${id}-message`}>{copy.message}</Label>
+            <Textarea
+              id={`${id}-message`}
+              value={form.message}
+              onChange={(e) => {
+                requestVersion.current++;
+                setPreparing(false);
+                update({ message: e.target.value, verseId: undefined });
+              }}
+              lang={form.messageLocale ?? "es"}
+              required
+              maxLength={1000}
+              className="min-h-28"
+              aria-describedby={`${id}-message-hint`}
+            />
+            <p id={`${id}-message-hint`} className="text-xs text-muted-foreground">
+              {copy.messageHint}
+              {form.channel === "sms"
+                ? ` ${copy.smsFooterHint.replace("{footer}", SMS_FOOTER[form.messageLocale ?? "es"])}`
+                : null}
+            </p>
+          </div>
+        )}
         <fieldset className="space-y-2">
           <legend className="text-sm font-medium">{copy.days}</legend>
           <div className="grid grid-cols-7 gap-1">
@@ -558,7 +625,13 @@ function MessageScheduleForm({
                 {row.days.map((d) => t(WEEKDAY_KEYS[d])).join(", ")} · {row.time}
               </p>
               <p className="text-xs text-muted-foreground">{row.timeZone.replaceAll("_", " ")}</p>
-              <p className="whitespace-pre-wrap break-words text-sm">{row.message}</p>
+              {row.themeId ? (
+                <p className="text-sm">
+                  {copy.cardTheme.replace("{theme}", localizedTheme(row.themeId, locale).name)}
+                </p>
+              ) : (
+                <p className="whitespace-pre-wrap break-words text-sm">{row.message}</p>
+              )}
               {row.nextRunAt ? (
                 <p className="text-sm">
                   {copy.next}: {dateLabel(row.nextRunAt, row.timeZone)}
@@ -585,11 +658,15 @@ function MessageScheduleForm({
               {/* A bare provider code sends the owner searching; show its words.
                   Our own codes (not_configured, missed_time) already have copy
                   above, so only a numeric one from the provider is printed. */}
-              {row.lastError || /^\d+$/.test(row.lastErrorCode ?? "") ? (
+              {row.lastError ||
+              /^\d+$/.test(row.lastErrorCode ?? "") ||
+              (row.lastErrorCode && row.lastErrorCode in copy) ? (
                 <p className="break-words text-xs text-muted-foreground">
                   {row.lastError
                     ? `${copy.reason}: ${row.lastError}`
-                    : `${copy.reasonCode}: ${row.lastErrorCode}`}
+                    : row.lastErrorCode && row.lastErrorCode in copy
+                      ? copy[row.lastErrorCode as keyof typeof copy]
+                      : `${copy.reasonCode}: ${row.lastErrorCode}`}
                 </p>
               ) : null}
               {!query.data.channelsByLocale[row.messageLocale ?? "es"][row.channel] &&

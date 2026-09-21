@@ -17,6 +17,8 @@ export type ScheduleRow = {
   message: string;
   message_locale: "es" | "en";
   verse_id: string | null;
+  theme_id: string | null;
+  sender_name: string | null;
   channel: MessageChannel;
   days: number[];
   send_time: string;
@@ -42,6 +44,8 @@ export function scheduleFromRow(row: ScheduleRow): MessageSchedule {
     message: row.message,
     messageLocale: row.message_locale ?? "es",
     verseId: row.verse_id ?? undefined,
+    themeId: (row.theme_id as MessageSchedule["themeId"]) ?? null,
+    senderName: row.sender_name ?? undefined,
     channel: row.channel,
     days: row.days,
     time: row.send_time,
@@ -81,7 +85,8 @@ export async function saveSchedule(userId: string, raw: ScheduleInput, providedS
   if (data.id) {
     const rows =
       await sql`update message_schedules set recipient_name = ${data.recipientName}, phone = ${data.phone},
-      message = ${data.message}, message_locale = ${data.messageLocale}, verse_id = ${data.verseId ?? null}, channel = ${data.channel}, days = ${JSON.stringify(data.days)}::jsonb,
+      message = ${data.message}, message_locale = ${data.messageLocale}, verse_id = ${data.verseId ?? null},
+      theme_id = ${data.themeId ?? null}, sender_name = ${data.senderName ?? null}, channel = ${data.channel}, days = ${JSON.stringify(data.days)}::jsonb,
       send_time = ${data.time}, time_zone = ${data.timeZone}, consent = ${data.consent},
       enabled = false, next_run_at = null, updated_at = now()
       where id = ${data.id} and user_id = ${userId} and (lease_until is null or lease_until < now()) returning id`;
@@ -93,8 +98,8 @@ export async function saveSchedule(userId: string, raw: ScheduleInput, providedS
   }>`select count(*)::int as count from message_schedules where user_id = ${userId}`;
   if (count >= 20) throw new Error("scheduleLimit");
   const id = randomUUID();
-  await sql`insert into message_schedules (id, user_id, recipient_name, phone, message, message_locale, verse_id, channel, days, send_time, time_zone, consent)
-    values (${id}, ${userId}, ${data.recipientName}, ${data.phone}, ${data.message}, ${data.messageLocale}, ${data.verseId ?? null}, ${data.channel},
+  await sql`insert into message_schedules (id, user_id, recipient_name, phone, message, message_locale, verse_id, theme_id, sender_name, channel, days, send_time, time_zone, consent)
+    values (${id}, ${userId}, ${data.recipientName}, ${data.phone}, ${data.message}, ${data.messageLocale}, ${data.verseId ?? null}, ${data.themeId ?? null}, ${data.senderName ?? null}, ${data.channel},
     ${JSON.stringify(data.days)}::jsonb, ${data.time}, ${data.timeZone}, ${data.consent})`;
   return { id };
 }

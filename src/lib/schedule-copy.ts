@@ -88,6 +88,18 @@ const es = {
   providerErr30007: "la operadora lo filtró como spam",
   providerErr30034: "el número remitente aún no está vinculado a la campaña aprobada",
   providerErr21610: "esta persona respondió STOP; no recibirá más mensajes",
+  modeTitle: "Qué enviar",
+  modeFixed: "Siempre el mismo mensaje",
+  modeTheme: "Un versículo distinto cada vez, por tema",
+  modeThemeHint:
+    "Cada envío toma el siguiente versículo del tema y lo acompaña con una frase de ánimo distinta, firmada por ti. Con {n} versículos en el tema, no se repite en {n} envíos.",
+  modeThemeNeedsTheme: "Elige un tema arriba.",
+  senderName: "Tu firma",
+  senderNameHint: "Cierra cada mensaje: «Con cariño, …». Déjalo vacío para no firmar.",
+  themeExample: "Ejemplo de lo que recibirá",
+  cardTheme: "Tema: {theme} · versículo distinto cada envío",
+  verse_unavailable: "No había texto para el versículo; se preparan en Admin → Frases.",
+  theme_empty: "El tema no tiene versículos.",
 };
 const en: Record<keyof typeof es, string> = {
   title: "Schedule messages",
@@ -178,6 +190,18 @@ const en: Record<keyof typeof es, string> = {
   providerErr30007: "the carrier filtered it as spam",
   providerErr30034: "the sender number is not yet linked to the approved campaign",
   providerErr21610: "this person replied STOP; they will get no more messages",
+  modeTitle: "What to send",
+  modeFixed: "Always the same message",
+  modeTheme: "A different verse each time, by theme",
+  modeThemeHint:
+    "Each send takes the next verse of the theme with a different line of encouragement, signed by you. With {n} verses in the theme, nothing repeats for {n} sends.",
+  modeThemeNeedsTheme: "Choose a theme above.",
+  senderName: "Your sign-off",
+  senderNameHint: "Closes every message: “With love, …”. Leave empty to send unsigned.",
+  themeExample: "Example of what they will receive",
+  cardTheme: "Theme: {theme} · a different verse each send",
+  verse_unavailable: "No text was ready for the verse; prepare them in Admin → Lines.",
+  theme_empty: "The theme has no verses.",
 };
 export type ScheduleCopy = typeof es;
 export const scheduleCopy = (locale: "es" | "en"): ScheduleCopy => (locale === "es" ? es : en);
