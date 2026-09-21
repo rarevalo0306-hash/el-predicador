@@ -60,6 +60,9 @@ test("the brief names the ministry, the one-God stance, and shows sample lines",
     const prompt = systemPrompt(locale, 3);
     assert.match(prompt, /Watchman Nee/);
     assert.match(prompt, /Witness Lee/);
+    assert.match(prompt, /sana doctrina|sound doctrine/);
+    assert.match(prompt, /prosperidad|prosperity/);
+    assert.match(prompt, /ap[oó]stoles|apostles/);
     assert.match(prompt, /manifest/i);
     assert.match(prompt, /\n- .{20,}/);
     assert.doesNotMatch(prompt, /\{n\}|\{examples\}/);
@@ -74,6 +77,11 @@ test("lines that use the labels the owner rejects are dropped whatever the model
     "Rest today in the Triune God who dispenses Himself into you as life.",
     "God is three persons who dwell in you today and hold you in peace.",
     "En toda la plenitud de la Deidad hay descanso para ti hoy, ve a Él.",
+    "Declaro que este mes llega tu bendición financiera; siembra con fe.",
+    "I decree a breakthrough over your finances this week; sow your seed.",
+    "El profeta tiene una palabra profética para ti; recibe la unción hoy.",
+    "The apostle said the Lord told me to tell you your miracle is here.",
+    "Hoy es tu día: Dios te va a prosperar en todo lo que emprendas.",
   ]) {
     assert.equal(cleanNote(line), null, line);
   }
