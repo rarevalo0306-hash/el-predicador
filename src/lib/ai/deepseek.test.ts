@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cleanNote, generateVerseNotes } from "./deepseek.server.ts";
+import { cleanNote, generateVerseNotes, systemPrompt } from "./deepseek.server.ts";
 
 const verses = [
   { id: "jn-3-16", ref: "Juan 3:16", text: "Porque de tal manera amó Dios al mundo…" },
@@ -31,6 +31,7 @@ test("asks for JSON, sends the key, and keeps only lines that fit the brief", as
   const body = JSON.parse(String(seen!.init.body));
   assert.equal(body.model, "deepseek-flash");
   assert.deepEqual(body.response_format, { type: "json_object" });
+  assert.equal(body.messages[0].content, systemPrompt("es", 3));
   assert.deepEqual(result, {
     "jn-3-16": [
       "Pensé en ti hoy y quise recordarte cuánto te ama Dios.",
@@ -51,6 +52,34 @@ test("a missing key, a failed call, or non-JSON each fail loudly, never silently
       Response.json({ choices: [{ message: { content: "not json" } }] }),
     ),
     /deepseek_bad_json/,
+  );
+});
+
+test("the brief names the ministry, the one-God stance, and shows sample lines", () => {
+  for (const locale of ["es", "en"] as const) {
+    const prompt = systemPrompt(locale, 3);
+    assert.match(prompt, /Watchman Nee/);
+    assert.match(prompt, /Witness Lee/);
+    assert.match(prompt, /manifest/i);
+    assert.match(prompt, /\n- .{20,}/);
+    assert.doesNotMatch(prompt, /\{n\}|\{examples\}/);
+    assert.match(prompt, / 3 /);
+  }
+});
+
+test("lines that use the labels the owner rejects are dropped whatever the model does", () => {
+  for (const line of [
+    "Descansa hoy en la Trinidad divina que te sostiene en todo momento.",
+    "El Dios Triuno se imparte en ti como vida y suministro cada mañana.",
+    "Rest today in the Triune God who dispenses Himself into you as life.",
+    "God is three persons who dwell in you today and hold you in peace.",
+    "En toda la plenitud de la Deidad hay descanso para ti hoy, ve a Él.",
+  ]) {
+    assert.equal(cleanNote(line), null, line);
+  }
+  assert.equal(
+    cleanNote("Vuélvete a tu espíritu un momento e invoca al Señor; ahí está tu paz hoy."),
+    "Vuélvete a tu espíritu un momento e invoca al Señor; ahí está tu paz hoy.",
   );
 });
 
