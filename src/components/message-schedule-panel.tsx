@@ -4,7 +4,14 @@ import { SMS_FOOTER } from "@/lib/messaging/sms-footer";
 import { providerStatusLine } from "@/lib/provider-status";
 import { fallbackNotes } from "@/lib/messaging/compose";
 import type { Locale } from "@/lib/i18n";
-import { THEMES, getVerseById, versesForTheme, localizedTheme, type ThemeId } from "@/lib/verses";
+import {
+  THEMES,
+  getVerseById,
+  versesForTheme,
+  localizedTheme,
+  localizeVerse,
+  type ThemeId,
+} from "@/lib/verses";
 import { hydrateVerse } from "@/lib/recobro";
 import { formatVerseMessage } from "@/lib/share";
 import { useEffect, useId, useState, useRef } from "react";
@@ -448,9 +455,10 @@ function MessageScheduleForm({
             <p className="text-xs text-muted-foreground">{copy.senderNameHint}</p>
             <p className="text-xs text-muted-foreground">{copy.themeExample}</p>
             <pre className="rounded-md border border-border bg-secondary p-3 text-xs whitespace-pre-wrap break-words">
-              {`${fallbackNotes(form.messageLocale ?? "es")[0]}\n\n«…»\n— ${
-                versesForTheme(form.themeId)[0]?.ref ?? ""
-              }${form.senderName?.trim() ? `\n\n${t("signOff", { name: form.senderName.trim() })}` : ""}`}
+              {`${fallbackNotes(form.messageLocale ?? "es")[0]}\n\n«…»\n— ${(() => {
+                const first = versesForTheme(form.themeId)[0];
+                return first ? localizeVerse(first, form.messageLocale ?? "es").ref : "";
+              })()}${form.senderName?.trim() ? `\n\n${t("signOff", { name: form.senderName.trim() })}` : ""}`}
             </pre>
           </div>
         ) : null}
