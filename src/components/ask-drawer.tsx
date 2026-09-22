@@ -79,6 +79,7 @@ export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerPro
   const [notice, setNotice] = useState<"quota" | "unavailable" | "error" | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const area = useVisibleArea(open);
 
@@ -159,6 +160,7 @@ export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerPro
     setTurns([]);
     setNotice(null);
     setFailure(null);
+    setConfirmClear(false);
     saveTurns([]);
   }
 
@@ -178,15 +180,49 @@ export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerPro
           <h2 className="font-serif text-2xl tracking-tight">{t("askTitle")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{t("askIntro")}</p>
         </div>
-        <button
-          type="button"
-          onClick={() => onOpenChange(false)}
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
-          aria-label={t("askClose")}
-        >
-          <X className="size-5" />
-        </button>
+        <div className="flex shrink-0 items-center">
+          {turns.length ? (
+            <button
+              type="button"
+              onClick={() => setConfirmClear(true)}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
+              aria-label={t("askClear")}
+            >
+              <Trash2 className="size-5" />
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
+            aria-label={t("askClose")}
+          >
+            <X className="size-5" />
+          </button>
+        </div>
       </header>
+      {confirmClear ? (
+        <div
+          role="alertdialog"
+          aria-label={t("askClearConfirm")}
+          className="mx-auto flex w-full max-w-lg shrink-0 items-center justify-between gap-3 border-y border-border bg-secondary px-4 py-3 text-sm"
+        >
+          <span>{t("askClearConfirm")}</span>
+          <div className="flex shrink-0 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmClear(false)}
+            >
+              {t("askClearNo")}
+            </Button>
+            <Button type="button" variant="destructive" size="sm" onClick={clear}>
+              {t("askClearYes")}
+            </Button>
+          </div>
+        </div>
+      ) : null}
       <div
         ref={listRef}
         className="mx-auto flex w-full max-w-lg min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-4 pb-2"
@@ -276,22 +312,10 @@ export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerPro
               <Send />
             </Button>
           </div>
-          <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-            <span>
-              {remaining !== null ? `${t("askRemaining", { n: remaining })} ` : ""}
-              {t("askDisclaimer")}
-            </span>
-            {turns.length ? (
-              <button
-                type="button"
-                onClick={clear}
-                className="inline-flex h-9 shrink-0 items-center gap-1 rounded-md px-2 hover:text-foreground"
-              >
-                <Trash2 className="size-3.5" />
-                {t("askClear")}
-              </button>
-            ) : null}
-          </div>
+          <p className="text-xs text-muted-foreground">
+            {remaining !== null ? `${t("askRemaining", { n: remaining })} ` : ""}
+            {t("askDisclaimer")}
+          </p>
         </form>
       ) : null}
     </section>
