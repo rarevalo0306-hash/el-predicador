@@ -58,6 +58,26 @@ export async function consumeAskQuota(
   return { allowed: true, used: rows[0].count };
 }
 
+/** Gives a question back when the answer never came, so a failure costs nothing. */
+export async function releaseAskQuota(
+  sql: Sql,
+  userId: string,
+  day = new Date().toISOString().slice(0, 10),
+): Promise<void> {
+  await sql`update ask_quota set count = greatest(count - 1, 0)
+    where user_id = ${userId} and day = ${day}`;
+}
+
+/** A short, stable code for what went wrong, safe to show on screen. */
+export function failureCode(error: unknown): string {
+  if (error instanceof Error) {
+    if (error.name === "TimeoutError" || error.name === "AbortError") return "timeout";
+    if (/^deepseek_/.test(error.message)) return error.message;
+    if (/fetch failed|ENOTFOUND|ECONN/i.test(error.message)) return "network";
+  }
+  return "unknown";
+}
+
 export async function answerQuestion(
   input: { question: string; history: AskTurn[]; locale: Locale },
   config: Config = process.env,
