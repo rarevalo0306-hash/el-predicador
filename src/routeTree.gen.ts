@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as ApiAskRouteImport } from './routes/api/ask'
 import { Route as ApiAuthStatusRouteImport } from './routes/api/auth-status'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiCronMessagesRouteImport } from './routes/api/cron/messages'
@@ -36,6 +37,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAskRoute = ApiAskRouteImport.update({
+  id: '/api/ask',
+  path: '/api/ask',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthStatusRoute = ApiAuthStatusRouteImport.update({
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/api/ask': typeof ApiAskRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/messages': typeof ApiCronMessagesRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/api/ask': typeof ApiAskRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/messages': typeof ApiCronMessagesRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/api/ask': typeof ApiAskRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/messages': typeof ApiCronMessagesRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/terms'
+    | '/api/ask'
     | '/api/auth-status'
     | '/api/auth/$'
     | '/api/cron/messages'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/terms'
+    | '/api/ask'
     | '/api/auth-status'
     | '/api/auth/$'
     | '/api/cron/messages'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/terms'
+    | '/api/ask'
     | '/api/auth-status'
     | '/api/auth/$'
     | '/api/cron/messages'
@@ -128,6 +140,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
+  ApiAskRoute: typeof ApiAskRoute
   ApiAuthStatusRoute: typeof ApiAuthStatusRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronMessagesRoute: typeof ApiCronMessagesRoute
@@ -162,6 +175,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ask': {
+      id: '/api/ask'
+      path: '/api/ask'
+      fullPath: '/api/ask'
+      preLoaderRoute: typeof ApiAskRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth-status': {
@@ -200,6 +220,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
+  ApiAskRoute: ApiAskRoute,
   ApiAuthStatusRoute: ApiAuthStatusRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronMessagesRoute: ApiCronMessagesRoute,
