@@ -66,7 +66,7 @@ export const VOICE = {
     who: "You are a Hispanic evangelical pastor of sound doctrine, Bible-centered, nourished by the ministry of Watchman Nee and Witness Lee.",
     tone: "Tone and language of the ministry, practical and experiential: calling on the name of the Lord, turning to the spirit, enjoying Christ as life and as the life supply, eating and praying the Word, the indwelling Spirit, Christ formed in us, the building up of the church. Speak of one God, eternal, invisible and Spirit, fully manifested in Jesus Christ and working today in His children by His Spirit; Jesus Christ is the center.",
     forbidden:
-      "Forbidden: the words Trinity, Triune, trinitarian, oneness, \"three persons\", \"Godhead\"; doctrinal debate; quoting books or authors; adding promises of your own; emojis, hashtags, stacked exclamation marks; naming the person. No language of religious institution.\n\nNo prosperity gospel: never promise money, success, guaranteed healing or \"your miracle\"; no \"I declare\", \"I decree\", \"sow\", \"harvest\", \"financial blessing\", \"today is your day\". Nothing from today's apostolic or prophetic movement: no present-day apostles or prophets, no \"anointing\", \"activate\", \"prophetic word\", \"the Lord told me to tell you\". The written Word is enough; comfort comes from Christ and His Word, not from a man.",
+      'Forbidden: the words Trinity, Triune, trinitarian, oneness, "three persons", "Godhead"; doctrinal debate; quoting books or authors; adding promises of your own; emojis, hashtags, stacked exclamation marks; naming the person. No language of religious institution.\n\nNo prosperity gospel: never promise money, success, guaranteed healing or "your miracle"; no "I declare", "I decree", "sow", "harvest", "financial blessing", "today is your day". Nothing from today\'s apostolic or prophetic movement: no present-day apostles or prophets, no "anointing", "activate", "prophetic word", "the Lord told me to tell you". The written Word is enough; comfort comes from Christ and His Word, not from a man.',
   },
 };
 
@@ -116,29 +116,32 @@ export async function generateVerseNotes(
   request: typeof fetch = fetch,
 ): Promise<Record<string, string[]>> {
   if (!config.DEEPSEEK_API_KEY) throw new Error("deepseek_not_configured");
-  const response = await request("https://api.deepseek.com/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${config.DEEPSEEK_API_KEY}`,
-      "Content-Type": "application/json",
+  const response = await request(
+    `${config.DEEPSEEK_BASE_URL || "https://api.deepseek.com"}/chat/completions`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.DEEPSEEK_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: config.DEEPSEEK_MODEL || "deepseek-flash",
+        temperature: 1.1,
+        max_tokens: 400 * verses.length + 200,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: systemPrompt(locale, perVerse) },
+          {
+            role: "user",
+            content: JSON.stringify(
+              verses.map((v) => ({ id: v.id, ref: v.ref, text: v.text.slice(0, 600) })),
+            ),
+          },
+        ],
+      }),
+      signal: AbortSignal.timeout(60_000),
     },
-    body: JSON.stringify({
-      model: config.DEEPSEEK_MODEL || "deepseek-flash",
-      temperature: 1.1,
-      max_tokens: 400 * verses.length + 200,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: systemPrompt(locale, perVerse) },
-        {
-          role: "user",
-          content: JSON.stringify(
-            verses.map((v) => ({ id: v.id, ref: v.ref, text: v.text.slice(0, 600) })),
-          ),
-        },
-      ],
-    }),
-    signal: AbortSignal.timeout(60_000),
-  });
+  );
   if (!response.ok) throw new Error(`deepseek_${response.status}`);
   const body = (await response.json()) as {
     choices?: { message?: { content?: string } }[];

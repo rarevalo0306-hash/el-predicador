@@ -10,6 +10,8 @@ import {
   consumeAskQuota,
   failureCode,
   releaseAskQuota,
+  sseText,
+  streamAnswer,
   trimHistory,
 } from "./ask.ts";
 
@@ -141,5 +143,56 @@ test("a missing key, a failed call or an empty answer fail loudly", async () => 
   await assert.rejects(
     answerQuestion(input, config, async () => reply("   ")),
     /deepseek_empty/,
+  );
+});
+
+function sse(events: (string | object)[]) {
+  const text = events
+    .map((e) => `data: ${typeof e === "string" ? e : JSON.stringify(e)}\n\n`)
+    .join("");
+  const bytes = new TextEncoder().encode(text);
+  // Deliver in odd-sized pieces so lines are split mid-way, as a network does.
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (let i = 0; i < bytes.length; i += 7) controller.enqueue(bytes.slice(i, i + 7));
+      controller.close();
+    },
+  });
+}
+const delta = (content: string) => ({ choices: [{ delta: { content } }] });
+
+test("streamed events come back as text, in order, and stop at [DONE]", async () => {
+  const pieces: string[] = [];
+  for await (const piece of sseText(
+    sse([delta("Nacer "), { choices: [{ delta: {} }] }, delta("de nuevo"), "[DONE]", delta("no")]),
+  )) {
+    pieces.push(piece);
+  }
+  assert.deepEqual(pieces, ["Nacer ", "de nuevo"]);
+});
+
+test("a streamed answer asks with stream on and fails before streaming when the call fails", async () => {
+  let body: Record<string, unknown> = {};
+  const gen = await streamAnswer(
+    { question: "¿Qué es la fe?", history: [], locale: "es" },
+    config,
+    async (_url, init) => {
+      body = JSON.parse(String(init!.body));
+      return new Response(sse([delta("La fe "), delta("es…"), "[DONE]"]), {
+        headers: { "Content-Type": "text/event-stream" },
+      });
+    },
+  );
+  assert.equal(body.stream, true);
+  let text = "";
+  for await (const piece of gen) text += piece;
+  assert.equal(text, "La fe es…");
+  await assert.rejects(
+    streamAnswer(
+      { question: "x", history: [], locale: "en" },
+      config,
+      async () => new Response("no", { status: 402 }),
+    ),
+    /deepseek_402/,
   );
 });

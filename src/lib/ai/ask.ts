@@ -78,6 +78,81 @@ export function failureCode(error: unknown): string {
   return "unknown";
 }
 
+/**
+ * The text pieces of a DeepSeek streamed reply (server-sent events, one JSON
+ * per `data:` line, `[DONE]` at the end), in the order they were written.
+ */
+export async function* sseText(body: ReadableStream<Uint8Array>): AsyncGenerator<string> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let pending = "";
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      pending += decoder.decode(value ?? new Uint8Array(), { stream: !done });
+      const lines = pending.split("\n");
+      pending = done ? "" : (lines.pop() ?? "");
+      for (const raw of lines) {
+        const line = raw.trim();
+        if (!line.startsWith("data:")) continue;
+        const payload = line.slice(5).trim();
+        if (payload === "[DONE]") return;
+        try {
+          const chunk = JSON.parse(payload) as {
+            choices?: { delta?: { content?: string } }[];
+          };
+          const text = chunk.choices?.[0]?.delta?.content;
+          if (text) yield text;
+        } catch {
+          /* a partial or foreign line; the next one carries on */
+        }
+      }
+      if (done) return;
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+/**
+ * Asks and hands back the answer as it is written. The request itself is
+ * awaited here, so a rejected key or a full queue fails before anything
+ * streams; only the words come later.
+ */
+export async function streamAnswer(
+  input: { question: string; history: AskTurn[]; locale: Locale },
+  config: Config = process.env,
+  request: typeof fetch = fetch,
+): Promise<AsyncGenerator<string>> {
+  if (!config.DEEPSEEK_API_KEY) throw new Error("deepseek_not_configured");
+  const question = input.question.trim().slice(0, QUESTION_MAX);
+  const response = await request(
+    `${config.DEEPSEEK_BASE_URL || "https://api.deepseek.com"}/chat/completions`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.DEEPSEEK_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: config.DEEPSEEK_MODEL || "deepseek-flash",
+        temperature: 0.7,
+        max_tokens: 700,
+        stream: true,
+        messages: [
+          { role: "system", content: askPrompt(input.locale) },
+          ...trimHistory(input.history),
+          { role: "user", content: question },
+        ],
+      }),
+      signal: AbortSignal.timeout(55_000),
+    },
+  );
+  if (!response.ok) throw new Error(`deepseek_${response.status}`);
+  if (!response.body) throw new Error("deepseek_empty");
+  return sseText(response.body);
+}
+
 export async function answerQuestion(
   input: { question: string; history: AskTurn[]; locale: Locale },
   config: Config = process.env,
@@ -85,24 +160,27 @@ export async function answerQuestion(
 ): Promise<string> {
   if (!config.DEEPSEEK_API_KEY) throw new Error("deepseek_not_configured");
   const question = input.question.trim().slice(0, QUESTION_MAX);
-  const response = await request("https://api.deepseek.com/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${config.DEEPSEEK_API_KEY}`,
-      "Content-Type": "application/json",
+  const response = await request(
+    `${config.DEEPSEEK_BASE_URL || "https://api.deepseek.com"}/chat/completions`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.DEEPSEEK_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: config.DEEPSEEK_MODEL || "deepseek-flash",
+        temperature: 0.7,
+        max_tokens: 700,
+        messages: [
+          { role: "system", content: askPrompt(input.locale) },
+          ...trimHistory(input.history),
+          { role: "user", content: question },
+        ],
+      }),
+      signal: AbortSignal.timeout(45_000),
     },
-    body: JSON.stringify({
-      model: config.DEEPSEEK_MODEL || "deepseek-flash",
-      temperature: 0.7,
-      max_tokens: 700,
-      messages: [
-        { role: "system", content: askPrompt(input.locale) },
-        ...trimHistory(input.history),
-        { role: "user", content: question },
-      ],
-    }),
-    signal: AbortSignal.timeout(45_000),
-  });
+  );
   if (!response.ok) throw new Error(`deepseek_${response.status}`);
   const body = (await response.json()) as {
     choices?: { message?: { content?: string } }[];

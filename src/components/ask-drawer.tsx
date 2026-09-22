@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/drawer";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/components/language-switch";
-import { askPreacher, type AskTurn } from "@/lib/ask";
+import { AskError, askStream, type AskTurn } from "@/lib/ask-client";
 import { cn } from "@/lib/utils";
 
 type AskDrawerProps = {
@@ -72,18 +72,22 @@ export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerPro
     const text = question.trim();
     if (!text || busy) return;
     const history = turns;
-    const next = [...turns, { role: "user" as const, content: text }];
-    setTurns(next);
+    const asked = [...turns, { role: "user" as const, content: text }];
+    setTurns(asked);
     setQuestion("");
     setNotice(null);
     setFailure(null);
     setBusy(true);
+    let answer = "";
     try {
-      const reply = await askPreacher({ data: { question: text, history, locale } });
-      const done = [...next, { role: "assistant" as const, content: reply.answer }];
-      setTurns(done);
-      saveTurns(done);
-      setRemaining(Math.max(0, reply.limit - reply.used));
+      const { remaining: left } = await askStream({ question: text, history, locale }, (piece) => {
+        // The answer grows on screen as it is written.
+        answer += piece;
+        setTurns([...asked, { role: "assistant", content: answer }]);
+      });
+      if (!answer.trim()) throw new AskError("ask_failed:empty", 502);
+      saveTurns([...asked, { role: "assistant", content: answer }]);
+      if (left !== null && Number.isFinite(left)) setRemaining(left);
     } catch (error) {
       const key = error instanceof Error ? error.message : "";
       const code = key.startsWith("ask_failed:") ? key.slice("ask_failed:".length) : null;
