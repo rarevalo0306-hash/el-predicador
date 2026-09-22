@@ -59,14 +59,18 @@ export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerPro
   const [notice, setNotice] = useState<"quota" | "unavailable" | "error" | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
-  const endRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (open) setTurns(loadTurns());
   }, [open]);
+  // Scroll the list itself, never the page: on iPhone `scrollIntoView` can
+  // drag the whole document and leave the drawer half off the screen.
+  const lastLength = turns[turns.length - 1]?.content.length ?? 0;
   useEffect(() => {
-    if (open) endRef.current?.scrollIntoView({ block: "end" });
-  }, [open, turns.length, busy]);
+    const list = listRef.current;
+    if (open && list) list.scrollTop = list.scrollHeight;
+  }, [open, turns.length, lastLength, busy]);
 
   async function send() {
     const text = question.trim();
@@ -121,13 +125,16 @@ export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerPro
   const signedOut = userId === "";
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[92dvh]">
+    <Drawer open={open} onOpenChange={onOpenChange} repositionInputs={false}>
+      <DrawerContent className="h-[88dvh] max-h-[88dvh]">
         <DrawerHeader className="text-left">
           <DrawerTitle className="font-serif text-2xl tracking-tight">{t("askTitle")}</DrawerTitle>
           <DrawerDescription>{t("askIntro")}</DrawerDescription>
         </DrawerHeader>
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-2">
+        <div
+          ref={listRef}
+          className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-4 pb-2"
+        >
           {signedOut ? (
             <div className="space-y-3 rounded-xl border border-border bg-secondary p-4 text-sm">
               <p>{t("askSignIn")}</p>
@@ -168,7 +175,6 @@ export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerPro
               ) : null}
             </p>
           ) : null}
-          <div ref={endRef} />
         </div>
         {!signedOut ? (
           <form
