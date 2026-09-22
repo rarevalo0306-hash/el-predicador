@@ -1,13 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Send, Trash2 } from "lucide-react";
+import { Send, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/components/language-switch";
 import { AskError, askStream, type AskTurn } from "@/lib/ask-client";
@@ -47,9 +40,35 @@ function saveTurns(turns: AskTurn[]) {
 }
 
 /**
+ * The part of the screen the visitor can actually see: on a phone the
+ * keyboard covers the bottom of the page, and `visualViewport` says how
+ * much is left and where it starts. The panel follows it, so the input
+ * always sits right above the keyboard and nothing is pushed off screen.
+ */
+function useVisibleArea(active: boolean) {
+  const [area, setArea] = useState<{ top: number; height: number } | null>(null);
+  useEffect(() => {
+    if (!active) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => setArea({ top: vv.offsetTop, height: vv.height });
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, [active]);
+  return area;
+}
+
+/**
  * "Pregunta": a conversation with the app about the Word, answered in the
- * same voice as the verse lines. The chat lives on this phone only; the
- * server keeps a daily count per person and nothing else.
+ * same voice as the verse lines. A full-screen panel rather than a bottom
+ * sheet, because a sheet and the iPhone keyboard fight over the space. The
+ * chat lives on this phone only; the server keeps a daily count per person
+ * and nothing else.
  */
 export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerProps) {
   const { t, locale } = useI18n();
@@ -60,17 +79,37 @@ export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerPro
   const [failure, setFailure] = useState<string | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const area = useVisibleArea(open);
 
   useEffect(() => {
     if (open) setTurns(loadTurns());
   }, [open]);
-  // Scroll the list itself, never the page: on iPhone `scrollIntoView` can
-  // drag the whole document and leave the drawer half off the screen.
+
+  // While the panel is open the page behind must not scroll: on iPhone a
+  // scrolling page under a fixed panel is what drags the panel away.
+  useEffect(() => {
+    if (!open) return;
+    const { documentElement: html, body } = document;
+    const previous = { html: html.style.overflow, body: body.style.overflow };
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onOpenChange(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      html.style.overflow = previous.html;
+      body.style.overflow = previous.body;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open, onOpenChange]);
+
+  // Scroll the list itself, never the page.
   const lastLength = turns[turns.length - 1]?.content.length ?? 0;
   useEffect(() => {
     const list = listRef.current;
     if (open && list) list.scrollTop = list.scrollHeight;
-  }, [open, turns.length, lastLength, busy]);
+  }, [open, turns.length, lastLength, busy, area?.height]);
 
   async function send() {
     const text = question.trim();
@@ -122,113 +161,134 @@ export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerPro
     saveTurns([]);
   }
 
+  if (!open) return null;
   const signedOut = userId === "";
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} repositionInputs={false}>
-      <DrawerContent className="h-[88dvh] max-h-[88dvh]">
-        <DrawerHeader className="text-left">
-          <DrawerTitle className="font-serif text-2xl tracking-tight">{t("askTitle")}</DrawerTitle>
-          <DrawerDescription>{t("askIntro")}</DrawerDescription>
-        </DrawerHeader>
-        <div
-          ref={listRef}
-          className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-4 pb-2"
-        >
-          {signedOut ? (
-            <div className="space-y-3 rounded-xl border border-border bg-secondary p-4 text-sm">
-              <p>{t("askSignIn")}</p>
-              <Button type="button" onClick={onSignIn}>
-                {t("askSignInButton")}
-              </Button>
-            </div>
-          ) : null}
-          {turns.map((turn, index) => (
-            <p
-              key={index}
-              className={cn(
-                "max-w-[88%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-line",
-                turn.role === "user"
-                  ? "self-end bg-primary text-primary-foreground"
-                  : "self-start border border-border bg-secondary",
-              )}
-            >
-              {turn.content}
-            </p>
-          ))}
-          {busy ? (
-            <p role="status" className="self-start text-sm text-muted-foreground">
-              {t("askThinking")}
-            </p>
-          ) : null}
-          {notice ? (
-            <p role="alert" className="text-sm text-destructive">
-              {notice === "quota"
-                ? t("askQuota", { n: 20 })
-                : notice === "unavailable"
-                  ? t("askUnavailable")
-                  : t("askError")}
-              {failure ? (
-                <span className="mt-1 block text-xs text-muted-foreground">
-                  {t("askErrorCode", { code: failure })}
-                </span>
-              ) : null}
-            </p>
-          ) : null}
+    <section
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("askTitle")}
+      className="fixed inset-x-0 z-50 flex flex-col bg-card text-card-foreground"
+      style={area ? { top: area.top, height: area.height } : { top: 0, height: "100dvh" }}
+    >
+      <header className="mx-auto flex w-full max-w-lg shrink-0 items-start justify-between gap-3 px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-2">
+        <div className="min-w-0">
+          <h2 className="font-serif text-2xl tracking-tight">{t("askTitle")}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t("askIntro")}</p>
         </div>
-        {!signedOut ? (
-          <form
-            className="flex flex-col gap-2 border-t border-border px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void send();
-            }}
-          >
-            <div className="flex items-end gap-2">
-              <Textarea
-                value={question}
-                onChange={(event) => setQuestion(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    void send();
-                  }
-                }}
-                placeholder={t("askPlaceholder")}
-                maxLength={500}
-                rows={2}
-                aria-label={t("askPlaceholder")}
-                className="min-h-11 flex-1 resize-none"
-              />
-              <Button
-                type="submit"
-                size="icon"
-                className="h-11 w-11 shrink-0"
-                disabled={busy || !question.trim()}
-                aria-label={t("askSend")}
-              >
-                <Send />
-              </Button>
-            </div>
-            <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-              <span>
-                {remaining !== null ? `${t("askRemaining", { n: remaining })} ` : ""}
-                {t("askDisclaimer")}
-              </span>
-              {turns.length ? (
-                <button
-                  type="button"
-                  onClick={clear}
-                  className="inline-flex h-9 shrink-0 items-center gap-1 rounded-md px-2 hover:text-foreground"
-                >
-                  <Trash2 className="size-3.5" />
-                  {t("askClear")}
-                </button>
-              ) : null}
-            </div>
-          </form>
+        <button
+          type="button"
+          onClick={() => onOpenChange(false)}
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
+          aria-label={t("askClose")}
+        >
+          <X className="size-5" />
+        </button>
+      </header>
+      <div
+        ref={listRef}
+        className="mx-auto flex w-full max-w-lg min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-4 pb-2"
+      >
+        {signedOut ? (
+          <div className="space-y-3 rounded-xl border border-border bg-secondary p-4 text-sm">
+            <p>{t("askSignIn")}</p>
+            <Button type="button" onClick={onSignIn}>
+              {t("askSignInButton")}
+            </Button>
+          </div>
         ) : null}
-      </DrawerContent>
-    </Drawer>
+        {turns.map((turn, index) => (
+          <p
+            key={index}
+            className={cn(
+              "max-w-[88%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-line",
+              turn.role === "user"
+                ? "self-end bg-primary text-primary-foreground"
+                : "self-start border border-border bg-secondary",
+            )}
+          >
+            {turn.content}
+          </p>
+        ))}
+        {busy ? (
+          <p role="status" className="self-start text-sm text-muted-foreground">
+            {t("askThinking")}
+          </p>
+        ) : null}
+        {notice ? (
+          <p role="alert" className="text-sm text-destructive">
+            {notice === "quota"
+              ? t("askQuota", { n: 20 })
+              : notice === "unavailable"
+                ? t("askUnavailable")
+                : t("askError")}
+            {failure ? (
+              <span className="mt-1 block text-xs text-muted-foreground">
+                {t("askErrorCode", { code: failure })}
+              </span>
+            ) : null}
+          </p>
+        ) : null}
+      </div>
+      {!signedOut ? (
+        <form
+          className={cn(
+            "mx-auto flex w-full max-w-lg shrink-0 flex-col gap-2 border-t border-border px-4 pt-3",
+            // With the keyboard up the safe area is under it; keep the bottom tight then.
+            area && area.height < window.innerHeight - 100
+              ? "pb-3"
+              : "pb-[calc(env(safe-area-inset-bottom)+0.75rem)]",
+          )}
+          onSubmit={(event) => {
+            event.preventDefault();
+            void send();
+          }}
+        >
+          <div className="flex items-end gap-2">
+            <Textarea
+              value={question}
+              onChange={(event) => setQuestion(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  void send();
+                }
+              }}
+              placeholder={t("askPlaceholder")}
+              maxLength={500}
+              rows={2}
+              aria-label={t("askPlaceholder")}
+              className="min-h-11 flex-1 resize-none text-base"
+            />
+            <Button
+              type="submit"
+              size="icon"
+              className="h-11 w-11 shrink-0"
+              disabled={busy || !question.trim()}
+              aria-label={t("askSend")}
+            >
+              <Send />
+            </Button>
+          </div>
+          <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+            <span>
+              {remaining !== null ? `${t("askRemaining", { n: remaining })} ` : ""}
+              {t("askDisclaimer")}
+            </span>
+            {turns.length ? (
+              <button
+                type="button"
+                onClick={clear}
+                className="inline-flex h-9 shrink-0 items-center gap-1 rounded-md px-2 hover:text-foreground"
+              >
+                <Trash2 className="size-3.5" />
+                {t("askClear")}
+              </button>
+            ) : null}
+          </div>
+        </form>
+      ) : null}
+    </section>
   );
 }
