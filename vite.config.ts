@@ -171,6 +171,9 @@ export default defineConfig(({ command, isPreview }) => ({
       ? [
           nitro({
             preset: "vercel",
+            // An answer from DeepSeek can take longer than Vercel's default
+            // window for a function; give every server call up to a minute.
+            vercel: { functions: { maxDuration: 60 } },
             // Auto-registers server/middleware/* (the PWA install page +
             // manifest + head-tag middleware). Nitro v3 defaults serverDir to
             // false, so removing this silently unwires /?install=1 on deploys.

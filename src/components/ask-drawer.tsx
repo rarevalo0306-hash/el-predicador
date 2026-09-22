@@ -57,6 +57,7 @@ export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerPro
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<"quota" | "unavailable" | "error" | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -75,6 +76,7 @@ export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerPro
     setTurns(next);
     setQuestion("");
     setNotice(null);
+    setFailure(null);
     setBusy(true);
     try {
       const reply = await askPreacher({ data: { question: text, history, locale } });
@@ -84,9 +86,19 @@ export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerPro
       setRemaining(Math.max(0, reply.limit - reply.used));
     } catch (error) {
       const key = error instanceof Error ? error.message : "";
+      const code = key.startsWith("ask_failed:") ? key.slice("ask_failed:".length) : null;
+      // A rejected or unpaid key reads as "unavailable"; anything else as a
+      // plain failure, with the code shown so the owner can tell what it was.
+      const keyProblem =
+        code === "deepseek_401" || code === "deepseek_402" || code === "deepseek_403";
       setNotice(
-        key === "ask_quota" ? "quota" : key === "ask_unavailable" ? "unavailable" : "error",
+        key === "ask_quota"
+          ? "quota"
+          : key === "ask_unavailable" || keyProblem
+            ? "unavailable"
+            : "error",
       );
+      setFailure(code ?? (key && key !== "ask_quota" && key !== "ask_unavailable" ? key : null));
       // The question stays in the box so it can be sent again.
       setTurns(history);
       setQuestion(text);
@@ -98,6 +110,7 @@ export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerPro
   function clear() {
     setTurns([]);
     setNotice(null);
+    setFailure(null);
     saveTurns([]);
   }
 
@@ -144,6 +157,11 @@ export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerPro
                 : notice === "unavailable"
                   ? t("askUnavailable")
                   : t("askError")}
+              {failure ? (
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  {t("askErrorCode", { code: failure })}
+                </span>
+              ) : null}
             </p>
           ) : null}
           <div ref={endRef} />

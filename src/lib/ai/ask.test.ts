@@ -3,7 +3,15 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "../db.ts";
-import { ASK_DAILY_LIMIT, answerQuestion, askPrompt, consumeAskQuota, trimHistory } from "./ask.ts";
+import {
+  ASK_DAILY_LIMIT,
+  answerQuestion,
+  askPrompt,
+  consumeAskQuota,
+  failureCode,
+  releaseAskQuota,
+  trimHistory,
+} from "./ask.ts";
 
 const db = new PGlite();
 const sql = (async (parts: TemplateStringsArray, ...values: unknown[]) => {
@@ -42,6 +50,28 @@ test("the daily quota counts per person and per day, and stops exactly at the li
   assert.deepEqual(await consumeAskQuota(sql, "ana", 3, "2026-09-22"), { allowed: true, used: 1 });
   assert.deepEqual(await consumeAskQuota(sql, "beto", 3, "2026-09-21"), { allowed: true, used: 1 });
   assert.equal(ASK_DAILY_LIMIT, 20);
+});
+
+test("a failed answer gives the question back, never below zero", async () => {
+  await consumeAskQuota(sql, "cris", 3, "2026-09-21");
+  await consumeAskQuota(sql, "cris", 3, "2026-09-21");
+  await releaseAskQuota(sql, "cris", "2026-09-21");
+  assert.deepEqual(await consumeAskQuota(sql, "cris", 3, "2026-09-21"), { allowed: true, used: 2 });
+  await releaseAskQuota(sql, "cris", "2026-09-21");
+  await releaseAskQuota(sql, "cris", "2026-09-21");
+  await releaseAskQuota(sql, "cris", "2026-09-21");
+  assert.deepEqual(await consumeAskQuota(sql, "cris", 3, "2026-09-21"), { allowed: true, used: 1 });
+  await releaseAskQuota(sql, "nadie", "2026-09-21");
+});
+
+test("failure codes are short and stable", () => {
+  const timeout = new Error("aborted");
+  timeout.name = "TimeoutError";
+  assert.equal(failureCode(timeout), "timeout");
+  assert.equal(failureCode(new Error("deepseek_402")), "deepseek_402");
+  assert.equal(failureCode(new Error("deepseek_not_configured")), "deepseek_not_configured");
+  assert.equal(failureCode(new TypeError("fetch failed")), "network");
+  assert.equal(failureCode("boom"), "unknown");
 });
 
 test("the brief keeps the voice, the task and the stance", () => {
