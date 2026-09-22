@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/components/language-switch";
 import { AskError, askStream, type AskTurn } from "@/lib/ask-client";
+import { MarkdownLite } from "@/components/markdown-lite";
 import { cn } from "@/lib/utils";
 
 type AskDrawerProps = {
@@ -198,19 +199,23 @@ export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerPro
             </Button>
           </div>
         ) : null}
-        {turns.map((turn, index) => (
-          <p
-            key={index}
-            className={cn(
-              "max-w-[88%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-line",
-              turn.role === "user"
-                ? "self-end bg-primary text-primary-foreground"
-                : "self-start border border-border bg-secondary",
-            )}
-          >
-            {turn.content}
-          </p>
-        ))}
+        {turns.map((turn, index) =>
+          turn.role === "user" ? (
+            <p
+              key={index}
+              className="max-w-[88%] self-end rounded-xl bg-primary px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-line text-primary-foreground"
+            >
+              {turn.content}
+            </p>
+          ) : (
+            <div
+              key={index}
+              className="max-w-[92%] self-start rounded-xl border border-border bg-secondary px-3.5 py-2.5 text-sm leading-relaxed"
+            >
+              <MarkdownLite text={turn.content} />
+            </div>
+          ),
+        )}
         {busy ? (
           <p role="status" className="self-start text-sm text-muted-foreground">
             {t("askThinking")}
