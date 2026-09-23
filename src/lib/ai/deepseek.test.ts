@@ -61,6 +61,9 @@ test("the brief names the ministry, the one-God stance, and shows sample lines",
     assert.match(prompt, /Watchman Nee/);
     assert.match(prompt, /Witness Lee/);
     assert.match(prompt, /sana doctrina|sound doctrine/);
+    assert.match(prompt, /Calvario|Calvary/);
+    assert.match(prompt, /no te encierres en doctrinas|do not box yourself into doctrines/);
+    assert.match(prompt, /por su nombre|by name/);
     assert.match(prompt, /prosperidad|prosperity/);
     assert.match(prompt, /ap[oó]stoles|apostles/);
     assert.match(prompt, /manifest/i);
