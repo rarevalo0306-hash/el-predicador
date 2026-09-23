@@ -82,6 +82,8 @@ test("the brief keeps the voice, the task and the stance", () => {
     assert.match(prompt, /Watchman Nee/);
     assert.match(prompt, /sana doctrina|sound doctrine/);
     assert.match(prompt, /prosperidad|prosperity/);
+    assert.match(prompt, /Calvario|Calvary/);
+    assert.match(prompt, /sin etiquetas|without labels/);
     assert.match(prompt, /versículos|verses/);
     assert.match(prompt, /manifest/i);
   }
