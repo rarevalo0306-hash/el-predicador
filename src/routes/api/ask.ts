@@ -11,15 +11,9 @@ export const Route = createFileRoute("/api/ask")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { requireUserId, UnauthorizedError } = await import("@/lib/auth/verify.server");
-        const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-        let userId: string;
-        try {
-          userId = await requireUserId(bearer || undefined);
-        } catch (error) {
-          if (error instanceof UnauthorizedError) return fail(401, "unauthorized");
-          throw error;
-        }
+        const { callerId, fail, textStream } = await import("@/lib/ai/stream-route.server");
+        const userId = await callerId(request);
+        if (userId instanceof Response) return userId;
         let data: { question?: unknown; history?: unknown; locale?: unknown };
         try {
           data = (await request.json()) as typeof data;
@@ -53,43 +47,8 @@ export const Route = createFileRoute("/api/ask")({
           await releaseAskQuota(sql, userId).catch(() => undefined);
           return fail(502, `ask_failed:${code}`);
         }
-        const encoder = new TextEncoder();
-        let sent = 0;
-        const body = new ReadableStream<Uint8Array>({
-          async pull(controller) {
-            try {
-              const next = await words.next();
-              if (next.done) {
-                if (sent === 0) await releaseAskQuota(sql, userId).catch(() => undefined);
-                controller.close();
-                return;
-              }
-              sent += next.value.length;
-              controller.enqueue(encoder.encode(next.value));
-            } catch (error) {
-              console.error("[ask] stream failed:", failureCode(error));
-              if (sent === 0) await releaseAskQuota(sql, userId).catch(() => undefined);
-              controller.error(error);
-            }
-          },
-          cancel() {
-            void words.return(undefined);
-          },
-        });
-        return new Response(body, {
-          status: 200,
-          headers: {
-            "Content-Type": "text/plain; charset=utf-8",
-            "Cache-Control": "no-store",
-            "X-Accel-Buffering": "no",
-            "X-Ask-Remaining": String(Math.max(0, ASK_DAILY_LIMIT - quota.used)),
-          },
-        });
+        return textStream(words, sql, userId, ASK_DAILY_LIMIT - quota.used, "ask");
       },
     },
   },
 });
-
-function fail(status: number, error: string) {
-  return Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
-}

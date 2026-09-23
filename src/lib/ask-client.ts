@@ -22,10 +22,28 @@ export async function askStream(
   onText: (text: string) => void,
   signal?: AbortSignal,
 ): Promise<{ remaining: number | null }> {
+  return streamPost("/api/ask", input, onText, signal);
+}
+
+/** A message for one person from a preaching case, written as it streams. */
+export async function composeStream(
+  input: { caseId: string; details: string; locale: "es" | "en" },
+  onText: (text: string) => void,
+  signal?: AbortSignal,
+): Promise<{ remaining: number | null }> {
+  return streamPost("/api/compose", input, onText, signal);
+}
+
+async function streamPost(
+  path: string,
+  input: unknown,
+  onText: (text: string) => void,
+  signal?: AbortSignal,
+): Promise<{ remaining: number | null }> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   const token = getBearerToken();
   if (token) headers.Authorization = `Bearer ${token}`;
-  const response = await fetch("/api/ask", {
+  const response = await fetch(path, {
     method: "POST",
     headers,
     body: JSON.stringify(input),

@@ -50,6 +50,16 @@ const es = {
   askError: "No se pudo responder. Intenta de nuevo.",
   askErrorCode: "Código: {code}",
   askClose: "Cerrar",
+  caseAiKicker: "A la medida",
+  caseAiTitle: "Un mensaje para esta persona",
+  caseAiHint:
+    "Cuéntame de la persona y la app escribe el mensaje sobre este caso, con sus versículos. Después puedes corregirlo y enviarlo.",
+  caseAiPlaceholder: "Por ejemplo: mi tía Rosa, tiene un altar en casa y está pasando una enfermedad…",
+  caseAiWrite: "Escribir el mensaje",
+  caseAiWriting: "Escribiendo…",
+  caseAiAnother: "Escribir otro",
+  caseAiEdit: "Puedes corregirlo antes de enviarlo.",
+  caseAiSignIn: "Inicia sesión para que la app escriba mensajes a la medida.",
   adminNotesRegenerate: "Volver a generar con la voz actual",
   adminNotesRegenerateConfirm:
     "¿Borrar estas frases y escribirlas de nuevo? Mientras tanto los envíos por tema usan las frases genéricas.",
@@ -246,7 +256,7 @@ const es = {
   evangelism: "Evangelismo",
   evangelismSub:
     "Un asistente para el predicador: según a quién hablas, y el camino del evangelio.",
-  cases: "Casos",
+  cases: "Evangelismo",
   doctrine: "Doctrina",
   doctrineIntro: "Las enseñanzas, el porqué, y qué tiene base en la Biblia y qué no.",
   theSchools: "Las escuelas",
@@ -509,6 +519,16 @@ const en: Record<keyof typeof es, string> = {
   askError: "Could not answer. Please try again.",
   askErrorCode: "Code: {code}",
   askClose: "Close",
+  caseAiKicker: "Tailored",
+  caseAiTitle: "A message for this person",
+  caseAiHint:
+    "Tell me about the person and the app writes the message on this case, with its verses. Then you can edit it and send it.",
+  caseAiPlaceholder: "For example: my aunt Rosa, she has an altar at home and is going through an illness…",
+  caseAiWrite: "Write the message",
+  caseAiWriting: "Writing…",
+  caseAiAnother: "Write another",
+  caseAiEdit: "You can edit it before sending.",
+  caseAiSignIn: "Sign in so the app can write tailored messages.",
   adminNotesRegenerate: "Write again with the current voice",
   adminNotesRegenerateConfirm:
     "Delete these lines and write them again? Meanwhile theme sends use the generic lines.",
@@ -704,7 +724,7 @@ const en: Record<keyof typeof es, string> = {
   evangelism: "Evangelism",
   evangelismSub:
     "An assistant for the preacher: according to whom you speak to, and the gospel path.",
-  cases: "Cases",
+  cases: "Evangelism",
   doctrine: "Doctrine",
   doctrineIntro: "The teachings, the reason, and what has a basis in the Bible and what does not.",
   theSchools: "The schools",

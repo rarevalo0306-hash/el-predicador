@@ -26,6 +26,10 @@ import {
   type DoctrineTopic,
 } from "@/lib/doctrine";
 import { NwtCompare } from "@/components/nwt-compare";
+import { Textarea } from "@/components/ui/textarea";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { AskError, composeStream } from "@/lib/ask-client";
+import { recobroSource } from "@/lib/bible";
 import { letterBlocks } from "@/lib/letter-format";
 import { prefetchVerses } from "@/lib/recobro";
 import { getVerseById, type Verse } from "@/lib/verses";
@@ -85,21 +89,13 @@ export function EvangelismoView({ onSend }: EvangelismoViewProps) {
 
       {pane === "doctrina" ? (
         doctrine ? (
-          <DoctrineDetail
-            entry={doctrine}
-            onBack={() => setDoctrineId(null)}
-            onSend={onSend}
-          />
+          <DoctrineDetail entry={doctrine} onBack={() => setDoctrineId(null)} onSend={onSend} />
         ) : (
           <DoctrineList onOpen={setDoctrineId} />
         )
       ) : pane === "casos" ? (
         selected ? (
-          <CaseDetail
-            entry={selected}
-            onBack={() => setCaseId(null)}
-            onSend={onSend}
-          />
+          <CaseDetail entry={selected} onBack={() => setCaseId(null)} onSend={onSend} />
         ) : (
           <CasesList onOpen={setCaseId} />
         )
@@ -425,9 +421,7 @@ function CaseDetail({
           {t("howToPreach")}
         </p>
         <p className="mt-2 font-serif text-xl leading-snug">{copy.issue}</p>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          {copy.approach}
-        </p>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{copy.approach}</p>
         <ul className="mt-4 flex flex-col gap-2">
           {copy.points.map((point) => (
             <li key={point} className="text-sm leading-relaxed">
@@ -440,6 +434,7 @@ function CaseDetail({
         <Send />
         {sending ? t("wait") : t("sendThisMessage")}
       </Button>
+      <CaseComposer entry={copy} onSend={onSend} />
       {entry.id === "testigos" ? <NwtCompare onSend={onSend} /> : null}
       <section className="flex flex-col gap-3">
         <h3 className="font-serif text-2xl tracking-tight">{t("versesLabel")}</h3>
@@ -451,19 +446,143 @@ function CaseDetail({
   );
 }
 
+/**
+ * A message written for one person on this case: the owner says who the
+ * person is, the app writes it in its voice with the case's verses, the
+ * owner corrects it and sends it like any other message.
+ */
+function CaseComposer({ entry, onSend }: { entry: PreachCase; onSend: (verse: Verse) => void }) {
+  const { locale, t } = useI18n();
+  const { user, isPending } = useCurrentUserState();
+  const [details, setDetails] = useState("");
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [remaining, setRemaining] = useState<number | null>(null);
+
+  async function write() {
+    setBusy(true);
+    setNotice(null);
+    setDraft("");
+    let text = "";
+    try {
+      const { remaining: left } = await composeStream(
+        { caseId: entry.id, details, locale },
+        (piece) => {
+          text += piece;
+          setDraft(text);
+        },
+      );
+      if (!text.trim()) throw new AskError("ask_failed:empty", 502);
+      setDraft(text.trim());
+      if (left !== null && Number.isFinite(left)) setRemaining(left);
+    } catch (error) {
+      const key = error instanceof Error ? error.message : "";
+      const code = key.startsWith("ask_failed:") ? key.slice("ask_failed:".length) : "";
+      setNotice(
+        key === "ask_quota"
+          ? t("askQuota", { n: 20 })
+          : key === "ask_unavailable" || /^deepseek_40[123]$/.test(code)
+            ? t("askUnavailable")
+            : `${t("askError")}${code ? ` ${t("askErrorCode", { code })}` : ""}`,
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function send() {
+    onSend({
+      id: `caso-ia-${entry.id}`,
+      ref: entry.title,
+      book: t("preachFor"),
+      text: draft.trim(),
+      themes: ["evangelio"],
+      source: recobroSource(locale),
+    });
+  }
+
+  return (
+    <section className="rounded-xl bg-card px-4 py-4 shadow-paper">
+      <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
+        {t("caseAiKicker")}
+      </p>
+      <h3 className="mt-1 font-serif text-2xl tracking-tight">{t("caseAiTitle")}</h3>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t("caseAiHint")}</p>
+      {!isPending && !user ? (
+        <p className="mt-3 rounded-lg border border-border bg-secondary p-3 text-sm">
+          {t("caseAiSignIn")}
+        </p>
+      ) : (
+        <div className="mt-3 flex flex-col gap-3">
+          <Textarea
+            value={details}
+            onChange={(event) => setDetails(event.target.value)}
+            placeholder={t("caseAiPlaceholder")}
+            maxLength={400}
+            rows={3}
+            aria-label={t("caseAiTitle")}
+            className="text-base"
+          />
+          {!draft && !busy ? (
+            <Button type="button" onClick={() => void write()} disabled={isPending}>
+              {t("caseAiWrite")}
+            </Button>
+          ) : null}
+          {busy ? (
+            <div className="rounded-lg border border-border bg-secondary p-3 text-sm leading-relaxed whitespace-pre-line">
+              {draft || (
+                <span role="status" className="text-muted-foreground">
+                  {t("caseAiWriting")}
+                </span>
+              )}
+            </div>
+          ) : null}
+          {draft && !busy ? (
+            <>
+              <Textarea
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                rows={10}
+                aria-label={t("caseAiEdit")}
+                className="text-base leading-relaxed"
+              />
+              <p className="text-xs text-muted-foreground">
+                {t("caseAiEdit")}
+                {remaining !== null ? ` ${t("askRemaining", { n: remaining })}` : ""}
+              </p>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button type="button" size="lg" onClick={send} disabled={!draft.trim()}>
+                  <Send />
+                  {t("sendThisMessage")}
+                </Button>
+                <Button type="button" variant="outline" size="lg" onClick={() => void write()}>
+                  {t("caseAiAnother")}
+                </Button>
+              </div>
+            </>
+          ) : null}
+          {notice ? (
+            <p role="alert" className="text-sm text-destructive">
+              {notice}
+            </p>
+          ) : null}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function CaminoPane({ onSend }: { onSend: (verse: Verse) => void }) {
   const { locale, t } = useI18n();
   const steps = gospelStepsWithVerses(locale);
-  const charge = PREACHER_VERSES.map((id) => getVerseById(id)).filter(
-    (verse): verse is Verse => Boolean(verse),
+  const charge = PREACHER_VERSES.map((id) => getVerseById(id)).filter((verse): verse is Verse =>
+    Boolean(verse),
   );
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
-    prefetchVerses(
-      [...steps.map((step) => step.verse), ...charge],
-      locale,
-    );
+    prefetchVerses([...steps.map((step) => step.verse), ...charge], locale);
   }, [locale]);
 
   async function sendGospel() {

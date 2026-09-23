@@ -15,6 +15,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ApiAskRouteImport } from './routes/api/ask'
 import { Route as ApiAuthStatusRouteImport } from './routes/api/auth-status'
+import { Route as ApiComposeRouteImport } from './routes/api/compose'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiCronMessagesRouteImport } from './routes/api/cron/messages'
 import { Route as ApiTwilioStatusRouteImport } from './routes/api/twilio/status'
@@ -49,6 +50,11 @@ const ApiAuthStatusRoute = ApiAuthStatusRouteImport.update({
   path: '/api/auth-status',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiComposeRoute = ApiComposeRouteImport.update({
+  id: '/api/compose',
+  path: '/api/compose',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/api/ask': typeof ApiAskRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
+  '/api/compose': typeof ApiComposeRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/messages': typeof ApiCronMessagesRoute
   '/api/twilio/status': typeof ApiTwilioStatusRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/api/ask': typeof ApiAskRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
+  '/api/compose': typeof ApiComposeRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/messages': typeof ApiCronMessagesRoute
   '/api/twilio/status': typeof ApiTwilioStatusRoute
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/api/ask': typeof ApiAskRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
+  '/api/compose': typeof ApiComposeRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/messages': typeof ApiCronMessagesRoute
   '/api/twilio/status': typeof ApiTwilioStatusRoute
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/api/ask'
     | '/api/auth-status'
+    | '/api/compose'
     | '/api/auth/$'
     | '/api/cron/messages'
     | '/api/twilio/status'
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/api/ask'
     | '/api/auth-status'
+    | '/api/compose'
     | '/api/auth/$'
     | '/api/cron/messages'
     | '/api/twilio/status'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/api/ask'
     | '/api/auth-status'
+    | '/api/compose'
     | '/api/auth/$'
     | '/api/cron/messages'
     | '/api/twilio/status'
@@ -142,6 +154,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   ApiAskRoute: typeof ApiAskRoute
   ApiAuthStatusRoute: typeof ApiAuthStatusRoute
+  ApiComposeRoute: typeof ApiComposeRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronMessagesRoute: typeof ApiCronMessagesRoute
   ApiTwilioStatusRoute: typeof ApiTwilioStatusRoute
@@ -191,6 +204,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/compose': {
+      id: '/api/compose'
+      path: '/api/compose'
+      fullPath: '/api/compose'
+      preLoaderRoute: typeof ApiComposeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -222,6 +242,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   ApiAskRoute: ApiAskRoute,
   ApiAuthStatusRoute: ApiAuthStatusRoute,
+  ApiComposeRoute: ApiComposeRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronMessagesRoute: ApiCronMessagesRoute,
   ApiTwilioStatusRoute: ApiTwilioStatusRoute,
