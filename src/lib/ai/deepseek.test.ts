@@ -94,6 +94,37 @@ test("lines that use the labels the owner rejects are dropped whatever the model
   );
 });
 
+test("a blocked word the verse itself uses does not cost the line", () => {
+  const prophecy =
+    "Seguid el amor; y procurad los dones espirituales, pero sobre todo que profeticéis.";
+  assert.equal(
+    cleanNote(
+      "Hermano, profetizar aquí es hablar para edificar; pide al Señor palabras que consuelen.",
+      prophecy,
+    ),
+    "Hermano, profetizar aquí es hablar para edificar; pide al Señor palabras que consuelen.",
+  );
+  assert.equal(
+    cleanNote(
+      "Hermano, profetizar aquí es hablar para edificar; pide al Señor palabras que consuelen.",
+      "Jesús lloró.",
+    ),
+    null,
+  );
+  const apostles =
+    "Y el muro de la ciudad tenía doce cimientos, y sobre ellos los doce nombres de los doce apóstoles del Cordero.";
+  assert.ok(
+    cleanNote(
+      "Los apóstoles del Cordero son cimiento; tú descansas sobre lo que Cristo ya edificó.",
+      apostles,
+    ),
+  );
+  assert.equal(
+    cleanNote("El apóstol de hoy tiene una palabra para ti; recíbela con fe.", "Jesús lloró."),
+    null,
+  );
+});
+
 test("cleanNote normalises whitespace and refuses the wrong shape", () => {
   assert.equal(
     cleanNote("  Que  tengas   un día lleno de su paz.  "),

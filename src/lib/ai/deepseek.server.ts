@@ -100,13 +100,22 @@ export function deepseekConfigured(config: Config = process.env) {
   return Boolean(config.DEEPSEEK_API_KEY);
 }
 
-/** A line the model wrote, or null when it does not fit the brief. */
-export function cleanNote(value: unknown): string | null {
+/**
+ * A line the model wrote, or null when it does not fit the brief. A blocked
+ * word that the verse itself uses (apostles in Revelation 21:14, prophecy in
+ * 1 Corinthians 14) is not a reason to drop the line: the line is speaking
+ * about the verse, not preaching the thing the owner keeps out.
+ */
+export function cleanNote(value: unknown, verseText = ""): string | null {
   if (typeof value !== "string") return null;
   const text = value.replace(/\s+/g, " ").trim();
   if (text.length < 20 || text.length > 220) return null;
   if (/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(text)) return null;
-  if (OFF_BRIEF.test(text)) return null;
+  const verse = verseText.toLowerCase();
+  for (const hit of text.matchAll(new RegExp(OFF_BRIEF.source, "gi"))) {
+    const stem = hit[0].toLowerCase().slice(0, 5);
+    if (!stem || !verse.includes(stem)) return null;
+  }
   return text;
 }
 
@@ -159,7 +168,7 @@ export async function generateVerseNotes(
   for (const verse of verses) {
     const list = parsed.notes?.[verse.id];
     const notes = (Array.isArray(list) ? list : [])
-      .map(cleanNote)
+      .map((line) => cleanNote(line, verse.text))
       .filter((n): n is string => n !== null);
     out[verse.id] = [...new Set(notes)].slice(0, perVerse);
   }
