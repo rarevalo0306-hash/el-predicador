@@ -50,6 +50,10 @@ const es = {
   askError: "No se pudo responder. Intenta de nuevo.",
   askErrorCode: "Código: {code}",
   askClose: "Cerrar",
+  adminNotesRegenerate: "Volver a generar con la voz actual",
+  adminNotesRegenerateConfirm:
+    "¿Borrar estas frases y escribirlas de nuevo? Mientras tanto los envíos por tema usan las frases genéricas.",
+  adminNotesRegenerateYes: "Sí, volver a generar",
   askClearConfirm: "¿Borrar toda la conversación?",
   askClearYes: "Borrar",
   askClearNo: "No",
@@ -505,6 +509,10 @@ const en: Record<keyof typeof es, string> = {
   askError: "Could not answer. Please try again.",
   askErrorCode: "Code: {code}",
   askClose: "Close",
+  adminNotesRegenerate: "Write again with the current voice",
+  adminNotesRegenerateConfirm:
+    "Delete these lines and write them again? Meanwhile theme sends use the generic lines.",
+  adminNotesRegenerateYes: "Yes, write again",
   askClearConfirm: "Delete the whole conversation?",
   askClearYes: "Delete",
   askClearNo: "No",

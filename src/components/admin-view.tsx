@@ -6,6 +6,7 @@ import { getAdminOverview, type AdminOverview } from "@/lib/admin";
 import {
   getVerseNotesStatus,
   prepareVerseNotes,
+  resetVerseNotes,
   type NotesStatus,
   type PrepareResult,
 } from "@/lib/admin-notes";
@@ -43,6 +44,7 @@ export function AdminView() {
   const [sample, setSample] = useState<PrepareResult["sample"]>([]);
   const [noteErrors, setNoteErrors] = useState<string[]>([]);
   const [noteFailure, setNoteFailure] = useState<string | null>(null);
+  const [regenerating, setRegenerating] = useState<"es" | "en" | null>(null);
   const cancelled = useRef(false);
   useEffect(() => {
     getVerseNotesStatus()
@@ -54,11 +56,17 @@ export function AdminView() {
   }, []);
   // Runs one batch at a time until nothing remains, so no single request has
   // to outlive a serverless timeout; a failure stops here and says why.
-  async function prepare(locale: "es" | "en") {
+  async function prepare(locale: "es" | "en", fresh = false) {
     setWorking(locale);
+    setRegenerating(null);
     setNoteFailure(null);
     setNoteErrors([]);
     try {
+      if (fresh) {
+        // The old lines go first, then the loop below writes them all again.
+        await resetVerseNotes({ data: { locale } });
+        setNotes(await getVerseNotesStatus());
+      }
       let remaining = Infinity;
       while (remaining > 0 && !cancelled.current) {
         const result = await prepareVerseNotes({ data: { locale } });
@@ -286,6 +294,39 @@ export function AdminView() {
                       : t("adminNotesPrepare", { lang: lang === "es" ? "español" : "English" })}
                   </Button>
                 )}
+                {done > 0 && working === null && notes?.configured ? (
+                  regenerating === lang ? (
+                    <div
+                      role="alertdialog"
+                      aria-label={t("adminNotesRegenerateConfirm")}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-secondary p-3 text-sm"
+                    >
+                      <span>{t("adminNotesRegenerateConfirm")}</span>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setRegenerating(null)}
+                        >
+                          {t("askClearNo")}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => void prepare(lang, true)}
+                        >
+                          {t("adminNotesRegenerateYes")}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button type="button" variant="outline" onClick={() => setRegenerating(lang)}>
+                      {t("adminNotesRegenerate")}
+                    </Button>
+                  )
+                ) : null}
               </article>
             );
           })}
