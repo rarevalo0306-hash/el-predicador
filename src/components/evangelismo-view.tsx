@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, ChevronRight, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { VerseCard } from "@/components/verse-card";
@@ -131,27 +131,52 @@ function PaneButton({
   );
 }
 
+/** A row in the doctrine or case list: number, serif title, summary, chevron. */
+function TopicRow({
+  index,
+  title,
+  summary,
+  onClick,
+}: {
+  index: number;
+  title: string;
+  summary: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex w-full items-center gap-3 rounded-xl bg-card px-4 py-4 text-left shadow-paper transition-colors duration-150 hover:bg-secondary/80 active:bg-secondary"
+    >
+      <span className="w-7 shrink-0 font-serif text-lg leading-none text-primary/70 tabular-nums">
+        {String(index + 1).padStart(2, "0")}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-serif text-xl leading-snug tracking-tight">{title}</span>
+        <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">{summary}</span>
+      </span>
+      <ChevronRight className="size-5 shrink-0 text-muted-foreground transition-transform duration-150 group-hover:translate-x-0.5" />
+    </button>
+  );
+}
+
 function CasesList({ onOpen }: { onOpen: (id: string) => void }) {
   const { locale, t } = useI18n();
   return (
     <section className="flex flex-col gap-3">
       <p className="text-sm text-muted-foreground">{t("casesIntro")}</p>
-      <div className="overflow-hidden rounded-xl bg-card shadow-paper">
+      <div className="flex flex-col gap-2">
         {PREACH_CASES.map((item, index) => {
           const copy = localizedCase(item, locale);
           return (
-            <button
+            <TopicRow
               key={item.id}
-              type="button"
+              index={index}
+              title={copy.title}
+              summary={copy.who}
               onClick={() => onOpen(item.id)}
-              className={cn(
-                "flex min-h-14 w-full flex-col items-start justify-center gap-0.5 px-4 py-3 text-left hover:bg-secondary/80",
-                index !== 0 && "border-t border-border/70",
-              )}
-            >
-              <span className="font-medium">{copy.title}</span>
-              <span className="text-sm text-muted-foreground">{copy.who}</span>
-            </button>
+            />
           );
         })}
       </div>
@@ -164,22 +189,17 @@ function DoctrineList({ onOpen }: { onOpen: (id: string) => void }) {
   return (
     <section className="flex flex-col gap-3">
       <p className="text-sm text-muted-foreground">{t("doctrineIntro")}</p>
-      <div className="overflow-hidden rounded-xl bg-card shadow-paper">
+      <div className="flex flex-col gap-2">
         {DOCTRINE_TOPICS.map((item, index) => {
           const copy = localizedDoctrine(item, locale);
           return (
-            <button
+            <TopicRow
               key={item.id}
-              type="button"
+              index={index}
+              title={copy.title}
+              summary={copy.who}
               onClick={() => onOpen(item.id)}
-              className={cn(
-                "flex min-h-14 w-full flex-col items-start justify-center gap-0.5 px-4 py-3 text-left hover:bg-secondary/80",
-                index !== 0 && "border-t border-border/70",
-              )}
-            >
-              <span className="font-medium">{copy.title}</span>
-              <span className="text-sm text-muted-foreground">{copy.who}</span>
-            </button>
+            />
           );
         })}
       </div>
