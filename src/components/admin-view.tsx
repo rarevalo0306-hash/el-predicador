@@ -68,9 +68,11 @@ export function AdminView() {
         setNotes(await getVerseNotesStatus());
       }
       let remaining = Infinity;
+      const skip: string[] = [];
       while (remaining > 0 && !cancelled.current) {
-        const result = await prepareVerseNotes({ data: { locale } });
+        const result = await prepareVerseNotes({ data: { locale, skip } });
         remaining = result.remaining;
+        skip.push(...result.failedIds);
         if (result.sample.length) setSample(result.sample);
         if (result.errors.length) setNoteErrors((e) => [...e, ...result.errors]);
         setNotes(await getVerseNotesStatus());
