@@ -69,7 +69,21 @@ export const prepareVerseNotes = createServerFn({ method: "POST" })
     const batch = pending.slice(0, data.batch);
     const errors: string[] = [];
     const ready: { id: string; ref: string; text: string }[] = [];
+    // Texts stored on an earlier pass are reused, so writing the lines again
+    // never waits on the Bible service.
+    const stored = new Map(
+      (
+        await sql<{ verse_id: string; ref: string; text: string }>`
+          select verse_id, ref, text from verse_texts
+          where locale = ${data.locale} and verse_id = any(${batch.map((v) => v.id)})`
+      ).map((row) => [row.verse_id, row]),
+    );
     for (const verse of batch) {
+      const kept = stored.get(verse.id);
+      if (kept?.text.trim()) {
+        ready.push({ id: verse.id, ref: kept.ref, text: kept.text });
+        continue;
+      }
       try {
         const full = await hydrateVerse(verse, data.locale);
         if (!full.text.trim()) throw new Error("empty");
@@ -110,4 +124,24 @@ export const prepareVerseNotes = createServerFn({ method: "POST" })
       sample,
       errors,
     };
+  });
+
+/**
+ * Drops the lines of one language so the owner can write them again with
+ * the current voice. The verse texts stay; only the lines go. Until the
+ * next preparation, theme sends use the four lines the app ships.
+ */
+export const resetVerseNotes = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((data: { locale: "es" | "en" }) => {
+    if (data?.locale !== "es" && data?.locale !== "en") throw new Error("invalid");
+    return { locale: data.locale };
+  })
+  .handler(async ({ data, context }): Promise<{ removed: number }> => {
+    await requireAdmin(context.userId);
+    const { getSql } = await import("@/lib/db");
+    const sql = await getSql();
+    const rows = await sql<{ id: number }>`
+      delete from verse_notes where locale = ${data.locale} returning id`;
+    return { removed: rows.length };
   });
