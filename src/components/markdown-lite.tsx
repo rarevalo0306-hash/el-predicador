@@ -68,7 +68,14 @@ export function MarkdownLite({
         {blocks.map((block, index) => {
           if (block.kind === "heading") {
             return (
-              <p key={index} className="font-serif text-base leading-snug font-medium">
+              <p
+                key={index}
+                className={
+                  block.level <= 2
+                    ? "mt-3 font-serif text-xl leading-snug tracking-tight"
+                    : "mt-1 font-serif text-base leading-snug font-medium"
+                }
+              >
                 <Inlines inlines={block.inlines} />
               </p>
             );
@@ -83,7 +90,10 @@ export function MarkdownLite({
               </blockquote>
             );
           }
-          if (block.kind === "list") {
+          if (block.kind === "rule") {
+          return <hr key={index} className="my-2 border-border" />;
+        }
+        if (block.kind === "list") {
             const Tag = block.ordered ? "ol" : "ul";
             return (
               <Tag

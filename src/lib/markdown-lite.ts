@@ -6,15 +6,17 @@
  */
 export type Inline = { kind: "text" | "bold" | "italic"; text: string };
 export type Block =
-  | { kind: "heading"; inlines: Inline[] }
+  | { kind: "heading"; level: number; inlines: Inline[] }
   | { kind: "paragraph"; inlines: Inline[] }
   | { kind: "quote"; inlines: Inline[] }
-  | { kind: "list"; ordered: boolean; items: Inline[][] };
+  | { kind: "list"; ordered: boolean; items: Inline[][] }
+  | { kind: "rule" };
 
 const BULLET = /^\s*[-*•]\s+(.*)$/;
 const NUMBERED = /^\s*\d+[.)]\s+(.*)$/;
-const HEADING = /^\s*#{1,6}\s+(.*)$/;
+const HEADING = /^\s*(#{1,6})\s+(.*)$/;
 const QUOTE = /^\s*>\s?(.*)$/;
+const RULE = /^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/;
 
 export function parseInlines(text: string): Inline[] {
   const out: Inline[] = [];
@@ -75,10 +77,19 @@ export function parseMarkdownLite(source: string): Block[] {
       flushAll();
       continue;
     }
+    if (RULE.test(line)) {
+      flushAll();
+      blocks.push({ kind: "rule" });
+      continue;
+    }
     const heading = HEADING.exec(line);
     if (heading) {
       flushAll();
-      blocks.push({ kind: "heading", inlines: parseInlines(heading[1].trim()) });
+      blocks.push({
+        kind: "heading",
+        level: heading[1].length,
+        inlines: parseInlines(heading[2].trim()),
+      });
       continue;
     }
     const quoted = QUOTE.exec(line);
@@ -111,4 +122,33 @@ export function parseMarkdownLite(source: string): Block[] {
   }
   flushAll();
   return blocks;
+}
+
+/**
+ * The same text as a plain message for WhatsApp, SMS or e-mail: headings,
+ * quote marks, rules and bold/italic markers are dropped and the words kept,
+ * so nobody receives "##" or "**".
+ */
+export function messageText(source: string): string {
+  return source
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((raw) => {
+      const line = raw.trimEnd();
+      if (RULE.test(line)) return "";
+      const heading = HEADING.exec(line);
+      const quoted = QUOTE.exec(line);
+      const text = heading ? heading[2] : quoted ? quoted[1] : line;
+      return parseInlines(text.trim())
+        .map((part) => part.text)
+        .join("");
+    })
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/** Whether a text uses this Markdown (headings, quotations or rules). */
+export function hasMarkdown(source: string): boolean {
+  return source.split("\n").some((line) => HEADING.test(line) || QUOTE.test(line) || RULE.test(line));
 }

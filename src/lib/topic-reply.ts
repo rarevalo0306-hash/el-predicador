@@ -1,4 +1,4 @@
-import { localizedCase, PREACH_CASES } from "@/lib/preach-cases";
+import { caseBrief, localizedCase, PREACH_CASES } from "@/lib/preach-cases";
 import { DOCTRINE_TOPICS, localizedDoctrine } from "@/lib/doctrine";
 import type { Locale } from "@/lib/i18n";
 import {
@@ -165,7 +165,7 @@ export function answerTopic(query: string, locale: Locale): TopicReply | null {
     );
     return {
       title: copy.title,
-      body: copy.letter,
+      body: caseBrief(copy),
       verses: verses.length ? verses : searchVerses(needle).slice(0, 5),
     };
   }
