@@ -4,6 +4,7 @@ import type { MessageKind } from "@/lib/messages";
 import { persistLocale, type Locale } from "@/lib/i18n";
 import { todayKey, type ThemeId, type Verse } from "@/lib/verses";
 import { EMPTY_CHURCH, isThemeId, normalizeChurch, type ChurchInfo } from "@/lib/church";
+import { recipientThemes } from "@/lib/recipient-themes";
 import type { MessageChannel } from "@/lib/message-schedule";
 
 export type SentItem = {
@@ -42,8 +43,11 @@ export type Recipient = {
   name: string;
   phone: string;
   at: number;
-  /** Theme that interests them most. */
+  /** First of their themes; kept for copies of the app saved before
+   *  several themes could be chosen. */
   themeId?: ThemeId;
+  /** Themes that interest them, in the order chosen. */
+  themeIds?: ThemeId[];
   messageLocale?: Locale;
   /** How this person prefers to be reached. Older contacts have none: they
    *  predate the choice and are treated as WhatsApp, which is what the app
@@ -64,6 +68,7 @@ export type RecipientInput = {
   phone: string;
   id?: string;
   themeId?: ThemeId | null;
+  themeIds?: ThemeId[];
   messageLocale?: Locale;
   channel?: MessageChannel;
   notes?: string;
@@ -221,18 +226,24 @@ export const useAppStore = create<AppState>()((set, get) => ({
     const existing = get().recipients.find(
       (row) => row.id === item.id || normalizePhone(row.phone) === phone,
     );
-    const themeId =
-      item.themeId === null
+    const chosen = item.themeIds?.filter(isThemeId) ?? [];
+    const themeIds = chosen.length
+      ? [...new Set(chosen)]
+      : item.themeId === null
         ? undefined
         : isThemeId(item.themeId)
-          ? item.themeId
-          : existing?.themeId;
+          ? [item.themeId]
+          : existing
+            ? recipientThemes(existing)
+            : undefined;
+    const themeId = themeIds?.[0];
     const base: Recipient = {
       id: existing?.id ?? item.id ?? newId(),
       name,
       phone,
       at: Date.now(),
       themeId,
+      themeIds,
       messageLocale: item.messageLocale ?? existing?.messageLocale ?? get().locale,
       channel: item.channel ?? existing?.channel ?? "whatsapp",
       notes: item.notes !== undefined ? item.notes.trim() || undefined : existing?.notes,

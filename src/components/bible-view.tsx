@@ -8,6 +8,7 @@ import {
   Heart,
   Highlighter,
   Languages,
+  MessageCircleQuestion,
   Search,
   Send,
 } from "lucide-react";
@@ -48,6 +49,8 @@ type BibleViewProps = {
   jump?: BibleJump | null;
   /** Called once the jump is shown, so coming back later starts fresh. */
   onJumpDone?: () => void;
+  /** Ask Pregunta about the picked verses. */
+  onAsk?: (ref: string, text: string) => void;
 };
 
 type Testament = "at" | "nt";
@@ -62,7 +65,7 @@ function savedTestament(): Testament | null {
   }
 }
 
-export function BibleView({ onSend, jump, onJumpDone }: BibleViewProps) {
+export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
   const { locale, t } = useI18n();
   const [query, setQuery] = useState("");
   const [bookId, setBookId] = useState<string | null>(null);
@@ -215,6 +218,7 @@ export function BibleView({ onSend, jump, onJumpDone }: BibleViewProps) {
           setSelected(null);
         }}
         onSend={onSend}
+        onAsk={onAsk}
       />
     );
   }
@@ -573,6 +577,7 @@ function ChapterReader({
   onBack,
   onChapter,
   onSend,
+  onAsk,
 }: {
   book: BibleBook;
   chapter: number;
@@ -584,6 +589,7 @@ function ChapterReader({
   onBack: () => void;
   onChapter: (chapter: number) => void;
   onSend: (verse: Verse) => void;
+  onAsk?: (ref: string, text: string) => void;
 }) {
   const { locale, t } = useI18n();
   const favorites = useAppStore((s) => s.favorites);
@@ -828,11 +834,30 @@ function ChapterReader({
               </button>
             ) : null}
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button className="min-w-[8rem] flex-1" onClick={() => onSend(combined)}>
+          <div className="flex gap-2">
+            <Button className="min-w-0 flex-1" onClick={() => onSend(combined)}>
               <Send />
-              {t("sendN", { ref: `${abbr} ${chapter}:${rangeLabel}` })}
+              <span className="truncate">{t("sendN", { ref: `${abbr} ${chapter}:${rangeLabel}` })}</span>
             </Button>
+            {onAsk ? (
+              <Button
+                type="button"
+                variant="secondary"
+                className="shrink-0"
+                aria-label={t("askVerses")}
+                onClick={() =>
+                  onAsk(
+                    `${name} ${chapter}:${rangeLabel}`,
+                    pickedVerses.map((verse) => verse.text).join(" "),
+                  )
+                }
+              >
+                <MessageCircleQuestion />
+                {t("askVersesShort")}
+              </Button>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap gap-2">
             <Button
               type="button"
               variant="outline"

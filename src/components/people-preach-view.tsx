@@ -5,6 +5,7 @@ import { scheduleCopy } from "@/lib/schedule-copy";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bell,
+  Check,
   CalendarClock,
   Church,
   ContactRound,
@@ -37,12 +38,20 @@ import {
   getDailyVerse,
   localizedTheme,
   versesForTheme,
-  type ThemeId,
   type Verse,
 } from "@/lib/verses";
 import { hydrateVerse } from "@/lib/recobro";
 import { formatVerseMessage, openSms, openWhatsApp } from "@/lib/share";
 import { showDailyNotification } from "@/lib/notify";
+import { recipientThemes, themeForDay, toggleTheme } from "@/lib/recipient-themes";
+import type { Locale } from "@/lib/i18n";
+
+/** "Amor · Fe · Paz": every theme a contact cares about, in their order. */
+function themeNames(row: Recipient, locale: Locale) {
+  return recipientThemes(row)
+    .map((id) => localizedTheme(id, locale).name)
+    .join(" · ");
+}
 
 type PeoplePreachViewProps = {
   onSend: (verse: Verse, draft?: SendDraft) => void;
@@ -51,7 +60,7 @@ type PeoplePreachViewProps = {
 const emptyForm: RecipientInput = {
   name: "",
   phone: "",
-  themeId: "amor",
+  themeIds: ["amor"],
   channel: "whatsapp",
   notes: "",
   dailyEnabled: true,
@@ -103,7 +112,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       id: row.id,
       name: row.name,
       phone: normalizePhone(row.phone) ?? row.phone,
-      themeId: row.themeId ?? "amor",
+      themeIds: recipientThemes(row),
       messageLocale: row.messageLocale ?? locale,
       channel: row.channel ?? "whatsapp",
       notes: row.notes ?? "",
@@ -201,7 +210,10 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       return;
     }
     const messageLocale = row.messageLocale ?? locale;
-    const themeId = (row.themeId ?? "amor") as ThemeId;
+    const themeId = themeForDay(
+      recipientThemes(row),
+      Math.floor(Date.now() / 86_400_000),
+    );
     const pool = versesForTheme(themeId);
     const base = pool[Math.floor(Math.random() * Math.max(pool.length, 1))] ?? getDailyVerse();
     try {
@@ -324,7 +336,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                   <p className="text-xs text-muted-foreground">
                     {item.kind === "daily"
                       ? t("preachDueDaily", {
-                          theme: localizedTheme(item.recipient.themeId ?? "amor", locale).name,
+                          theme: themeNames(item.recipient, locale),
                         })
                       : t("preachDueCulto")}
                   </p>
@@ -530,22 +542,31 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
             </div>
             <div className="grid gap-1.5">
               <Label>{t("personTheme")}</Label>
+              <p className="text-xs text-muted-foreground">{t("personThemeHint")}</p>
               <div className="flex flex-wrap gap-2">
                 {THEMES.map((theme) => {
                   const label = localizedTheme(theme.id, locale).name;
-                  const on = form.themeId === theme.id;
+                  const chosen = form.themeIds ?? ["amor"];
+                  const on = chosen.includes(theme.id);
                   return (
                     <button
                       key={theme.id}
                       type="button"
-                      onClick={() => setForm((f) => ({ ...f, themeId: theme.id }))}
+                      aria-pressed={on}
+                      onClick={() =>
+                        setForm((f) => ({
+                          ...f,
+                          themeIds: toggleTheme(f.themeIds ?? ["amor"], theme.id),
+                        }))
+                      }
                       className={cn(
-                        "h-9 rounded-full border px-3 text-sm font-medium",
+                        "inline-flex h-9 items-center gap-1 rounded-full border px-3 text-sm font-medium",
                         on
                           ? "border-primary bg-primary text-primary-foreground"
                           : "border-border bg-background",
                       )}
                     >
+                      {on ? <Check className="size-3.5" /> : null}
                       {label}
                     </button>
                   );
@@ -626,7 +647,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                       <p className="font-medium">{row.name}</p>
                       <p className="text-xs text-muted-foreground">{formatPhone(row.phone)}</p>
                       <p className="mt-1 text-xs text-primary">
-                        {localizedTheme(row.themeId ?? "amor", locale).name} ·{" "}
+                        {themeNames(row, locale)} ·{" "}
                         {messageLanguageName(row.messageLocale ?? locale)} ·{" "}
                         {(row.channel ?? "whatsapp") === "sms"
                           ? t("personChannelSms")

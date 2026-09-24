@@ -23,7 +23,7 @@ import { PeoplePreachView } from "@/components/people-preach-view";
 import { SendDrawer } from "@/components/send-drawer";
 import { SettingsDrawer } from "@/components/settings-drawer";
 import { ProfileDrawer } from "@/components/profile-drawer";
-import { AskDrawer } from "@/components/ask-drawer";
+import { AskDrawer, type AskPassage } from "@/components/ask-drawer";
 import { LanguageSwitch, useI18n } from "@/components/language-switch";
 import { useCloudSync } from "@/components/cloud-sync";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -85,6 +85,7 @@ function PreacherApp({
   const [profileMode, setProfileMode] = useState<"entrar" | "crear">("entrar");
   const [askOpen, setAskOpen] = useState(false);
   const [jump, setJump] = useState<BibleJump | null>(null);
+  const [askPassage, setAskPassage] = useState<AskPassage | null>(null);
   const ready = useCloudSync(userId, sessionReady);
   const admin = useIsAdmin(userId);
   const tabs = admin ? TAB_ICONS : TAB_ICONS.filter((item) => item.id !== "admin");
@@ -248,7 +249,15 @@ function PreacherApp({
           <TodayView mood={mood} onMoodChange={setMood} onSend={openSend} />
         ) : null}
         {ready && tab === "biblia" ? (
-          <BibleView onSend={openSend} jump={jump} onJumpDone={() => setJump(null)} />
+          <BibleView
+            onSend={openSend}
+            jump={jump}
+            onJumpDone={() => setJump(null)}
+            onAsk={(ref, text) => {
+              setAskPassage({ ref, text, at: Date.now() });
+              setAskOpen(true);
+            }}
+          />
         ) : null}
         {ready && tab === "evangelio" ? (
           <EvangelismoView onSend={openSend} onReadVerse={readVerse} />
@@ -356,6 +365,7 @@ function PreacherApp({
         userId={sessionReady ? (userId ?? "") : undefined}
         onSendVerse={openSend}
         onReadVerse={readVerse}
+        passage={askPassage}
         onSignIn={() => {
           setAskOpen(false);
           setProfileMode("entrar");
