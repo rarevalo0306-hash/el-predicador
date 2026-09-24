@@ -419,16 +419,21 @@ function MessageScheduleForm({
                   onClick={() => {
                     requestVersion.current++;
                     setPreparing(false);
-                    update(
-                      option.theme
-                        ? {
-                            themeId: pickerTheme || null,
-                            verseId: undefined,
-                            message: "",
-                            senderName: form.senderName ?? displayName.trim() ?? "",
-                          }
-                        : { themeId: null },
-                    );
+                    if (!option.theme) {
+                      update({ themeId: null });
+                      return;
+                    }
+                    // Theme mode needs a theme: without one the switch did
+                    // nothing visible and only emptied the message, so the
+                    // first theme is chosen and can be changed above.
+                    const theme = pickerTheme || THEMES[0].id;
+                    setPickerTheme(theme);
+                    update({
+                      themeId: theme,
+                      verseId: undefined,
+                      message: "",
+                      senderName: form.senderName ?? displayName.trim() ?? "",
+                    });
                   }}
                 >
                   {option.label}
@@ -441,7 +446,6 @@ function MessageScheduleForm({
               {copy.modeThemeHint.replaceAll("{n}", String(versesForTheme(form.themeId).length))}
             </p>
           ) : null}
-          {!form.themeId && !pickerTheme ? null : null}
         </fieldset>
         {form.themeId ? (
           <div className="space-y-1.5">

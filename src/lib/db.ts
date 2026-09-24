@@ -195,6 +195,14 @@ async function createPgliteSql(): Promise<Sql> {
         await tx.query("insert into _migrations (name) values ($1)", [name]);
       });
     }
+    // This embedded database only ever backs the preview with auth off, where
+    // every call runs as the shared dev user; per-user tables reference
+    // "user", so that row must exist or a save fails on the foreign key.
+    await pg.query(
+      `insert into "user" (id, name, email, "emailVerified", "createdAt", "updatedAt")
+       values ('dev-user', 'Dev', 'dev@example.com', true, now(), now())
+       on conflict (id) do nothing`,
+    );
   };
   const pass = (globalRef.__pgliteMigrateChain__ ?? Promise.resolve())
     .catch(() => undefined) // an earlier failed pass must not wedge the chain
