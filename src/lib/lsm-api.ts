@@ -84,6 +84,7 @@ const ONE_CHAPTER = new Set(["oba", "phm", "2jn", "3jn", "jud"]);
 
 type LsmVerse = { ref?: string; text?: string; urlpfx?: string };
 type LsmResponse = {
+  detected?: string;
   verses?: LsmVerse[];
   message?: string;
   copyright?: string;
@@ -166,4 +167,16 @@ export async function loadChapterFromLsm(
     copyright,
     url: recobroChapterUrl(book, chapter, locale),
   };
+}
+
+/**
+ * Every verse holding all of the given words (LSM's concordance search), or
+ * null when this app has no LSM key yet or LSM refuses it.
+ */
+export async function searchLsmWords(words: string, locale: Locale) {
+  if (!lsmCredentials()) return null;
+  const payload = await lsmRequest(words, locale);
+  const message = (payload.message ?? "").toLowerCase();
+  if (message.includes("not authorized") || message.includes("authorization")) return null;
+  return payload;
 }

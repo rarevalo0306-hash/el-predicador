@@ -8,6 +8,7 @@ import {
   Heart,
   Highlighter,
   Languages,
+  Search,
   Send,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -34,6 +35,8 @@ import { chapterToVerses, loadCachedChapter, type RecobroChapter } from "@/lib/r
 import { isSamePlace, useAppStore, type ReadingPlace } from "@/lib/store";
 import type { Verse } from "@/lib/verses";
 import { NviCompare } from "@/components/nvi-compare";
+import { ConcordanceView } from "@/components/concordance-view";
+import { cleanWords } from "@/lib/concordance";
 import { combineVerses, formatVerseRange } from "@/lib/reader-prefs";
 import { copyText, formatVerseMessage } from "@/lib/share";
 
@@ -69,6 +72,10 @@ export function BibleView({ onSend, jump, onJumpDone }: BibleViewProps) {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [compare, setCompare] = useState(false);
+  // The words of the open concordance (null when closed), and whether the
+  // chapter being read was opened from it, so "back" returns to the list.
+  const [concordance, setConcordance] = useState<string | null>(null);
+  const [fromConcordance, setFromConcordance] = useState(false);
 
   const book = bookId ? bookById(bookId) : undefined;
   const parsed = useMemo(() => parseReference(query), [query]);
@@ -147,6 +154,7 @@ export function BibleView({ onSend, jump, onJumpDone }: BibleViewProps) {
   }
 
   function openChapter(nextBook: BibleBook, nextChapter: number, verse?: number) {
+    setFromConcordance(false);
     setBookId(nextBook.id);
     setChapter(nextChapter);
     setSelected(verse ?? null);
@@ -197,12 +205,33 @@ export function BibleView({ onSend, jump, onJumpDone }: BibleViewProps) {
         onBack={() => {
           setChapter(null);
           setSelected(null);
+          if (fromConcordance) {
+            setBookId(null);
+            setFromConcordance(false);
+          }
         }}
         onChapter={(next) => {
           setChapter(next);
           setSelected(null);
         }}
         onSend={onSend}
+      />
+    );
+  }
+
+  if (concordance !== null) {
+    return (
+      <ConcordanceView
+        initialWords={concordance}
+        onBack={() => setConcordance(null)}
+        onWordsChange={setConcordance}
+        onSend={onSend}
+        onOpen={(hit) => {
+          const next = bookById(hit.bookId);
+          if (!next) return;
+          openChapter(next, hit.chapter, hit.verse);
+          setFromConcordance(true);
+        }}
       />
     );
   }
@@ -263,6 +292,7 @@ export function BibleView({ onSend, jump, onJumpDone }: BibleViewProps) {
   const at = visibleBooks.filter((item) => item.testament === "at");
   const nt = visibleBooks.filter((item) => item.testament === "nt");
   const searching = query.trim().length > 0;
+  const wordSearch = !parsed && cleanWords(query).replace(/\s/g, "").length >= 3;
   const counts = {
     at: BIBLE_BOOKS.filter((item) => item.testament === "at").length,
     nt: BIBLE_BOOKS.filter((item) => item.testament === "nt").length,
@@ -294,6 +324,19 @@ export function BibleView({ onSend, jump, onJumpDone }: BibleViewProps) {
           {t("go")}
         </Button>
       </form>
+      {wordSearch ? (
+        <button
+          type="button"
+          onClick={() => {
+            setConcordance(cleanWords(query));
+            setQuery("");
+          }}
+          className="flex w-full items-center gap-3 rounded-xl border border-primary/30 bg-card px-4 py-3 text-left text-sm font-medium text-primary shadow-paper transition-transform duration-150 ease-out active:scale-[0.98]"
+        >
+          <Search className="size-5 shrink-0" />
+          {t("concordanceSearchFor", { q: cleanWords(query) })}
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={() => setCompare(true)}
@@ -304,6 +347,19 @@ export function BibleView({ onSend, jump, onJumpDone }: BibleViewProps) {
           <span className="block font-medium">{t("nviTitle")}</span>
           <span className="mt-0.5 block text-sm text-muted-foreground">
             {t("nviCardLine")}
+          </span>
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={() => setConcordance("")}
+        className="flex w-full items-center gap-3 rounded-xl bg-card px-4 py-4 text-left shadow-paper transition-transform duration-150 ease-out active:scale-[0.98]"
+      >
+        <Search className="size-5 shrink-0 text-primary" />
+        <span className="min-w-0">
+          <span className="block font-medium">{t("concordance")}</span>
+          <span className="mt-0.5 block text-sm text-muted-foreground">
+            {t("concordanceLine")}
           </span>
         </span>
       </button>
@@ -336,11 +392,11 @@ export function BibleView({ onSend, jump, onJumpDone }: BibleViewProps) {
           </div>
         </section>
       ) : null}
-      {visibleBooks.length === 0 ? (
+      {visibleBooks.length === 0 && !wordSearch ? (
         <p className="rounded-lg bg-card px-4 py-8 text-center text-sm text-muted-foreground shadow-paper">
           {t("noBook")}
         </p>
-      ) : searching ? (
+      ) : visibleBooks.length === 0 ? null : searching ? (
         <>
           {at.length > 0 ? (
             <BookGroup title={t("oldTestament")} books={at} onOpen={openBook} />
