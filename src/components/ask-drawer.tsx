@@ -5,6 +5,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/components/language-switch";
 import { AskError, askStream, type AskTurn } from "@/lib/ask-client";
 import { MarkdownLite } from "@/components/markdown-lite";
+import { VerseSheet } from "@/components/verse-sheet";
+import type { VerseLink } from "@/lib/verse-links";
+import type { Verse } from "@/lib/verses";
 import { cn } from "@/lib/utils";
 
 type AskDrawerProps = {
@@ -13,6 +16,10 @@ type AskDrawerProps = {
   /** Undefined until the session is known; empty string when signed out. */
   userId?: string;
   onSignIn: () => void;
+  /** A verse the answer quoted, to send like any other. */
+  onSendVerse?: (verse: Verse) => void;
+  /** Open the Bible at a quoted passage. */
+  onReadVerse?: (link: VerseLink) => void;
 };
 
 const STORAGE_KEY = "preacher-ask";
@@ -71,8 +78,16 @@ function useVisibleArea(active: boolean) {
  * chat lives on this phone only; the server keeps a daily count per person
  * and nothing else.
  */
-export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerProps) {
+export function AskDrawer({
+  open,
+  onOpenChange,
+  userId,
+  onSignIn,
+  onSendVerse,
+  onReadVerse,
+}: AskDrawerProps) {
   const { t, locale } = useI18n();
+  const [verseLink, setVerseLink] = useState<VerseLink | null>(null);
   const [turns, setTurns] = useState<AskTurn[]>([]);
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
@@ -248,7 +263,7 @@ export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerPro
               key={index}
               className="max-w-[92%] self-start rounded-xl border border-border bg-secondary px-3.5 py-2.5 text-sm leading-relaxed"
             >
-              <MarkdownLite text={turn.content} />
+              <MarkdownLite text={turn.content} onVerse={setVerseLink} />
             </div>
           ),
         )}
@@ -318,6 +333,26 @@ export function AskDrawer({ open, onOpenChange, userId, onSignIn }: AskDrawerPro
           </p>
         </form>
       ) : null}
+      <VerseSheet
+        link={verseLink}
+        onClose={() => setVerseLink(null)}
+        onSend={
+          onSendVerse
+            ? (verse) => {
+                setVerseLink(null);
+                onSendVerse(verse);
+              }
+            : undefined
+        }
+        onRead={
+          onReadVerse
+            ? (link) => {
+                setVerseLink(null);
+                onReadVerse(link);
+              }
+            : undefined
+        }
+      />
     </section>
   );
 }

@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { useI18n } from "@/components/language-switch";
 import { cn } from "@/lib/utils";
 import {
+  BIBLE_BOOKS,
   bookAbbr,
   bookById,
   bookName,
@@ -36,11 +37,29 @@ import { NviCompare } from "@/components/nvi-compare";
 import { combineVerses, formatVerseRange } from "@/lib/reader-prefs";
 import { copyText, formatVerseMessage } from "@/lib/share";
 
+/** A place to open as soon as the Bible shows, e.g. a verse tapped in a chat. */
+export type BibleJump = { bookId: string; chapter: number; verse?: number; at: number };
+
 type BibleViewProps = {
   onSend: (verse: Verse) => void;
+  jump?: BibleJump | null;
+  /** Called once the jump is shown, so coming back later starts fresh. */
+  onJumpDone?: () => void;
 };
 
-export function BibleView({ onSend }: BibleViewProps) {
+type Testament = "at" | "nt";
+const TESTAMENT_KEY = "preacher-bible-testament";
+
+function savedTestament(): Testament | null {
+  try {
+    const value = window.localStorage.getItem(TESTAMENT_KEY);
+    return value === "at" || value === "nt" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+export function BibleView({ onSend, jump, onJumpDone }: BibleViewProps) {
   const { locale, t } = useI18n();
   const [query, setQuery] = useState("");
   const [bookId, setBookId] = useState<string | null>(null);
@@ -57,6 +76,29 @@ export function BibleView({ onSend }: BibleViewProps) {
   const readingPlace = useAppStore((s) => s.readingPlace);
   const setReadingPlace = useAppStore((s) => s.setReadingPlace);
   const bookmarks = useAppStore((s) => s.bookmarks);
+  const [testament, setTestament] = useState<Testament>(
+    () =>
+      savedTestament() ??
+      (readingPlace ? (bookById(readingPlace.bookId)?.testament ?? "at") : "at"),
+  );
+
+  function pickTestament(next: Testament) {
+    setTestament(next);
+    try {
+      window.localStorage.setItem(TESTAMENT_KEY, next);
+    } catch {
+      /* private mode */
+    }
+  }
+
+  useEffect(() => {
+    if (!jump) return;
+    const next = bookById(jump.bookId);
+    if (next) openChapter(next, jump.chapter, jump.verse);
+    onJumpDone?.();
+    // Only a new jump moves the reader; `at` tells two taps on one verse apart.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jump?.at]);
 
   useEffect(() => {
     if (!book || chapter === null) return;
@@ -220,6 +262,11 @@ export function BibleView({ onSend }: BibleViewProps) {
 
   const at = visibleBooks.filter((item) => item.testament === "at");
   const nt = visibleBooks.filter((item) => item.testament === "nt");
+  const searching = query.trim().length > 0;
+  const counts = {
+    at: BIBLE_BOOKS.filter((item) => item.testament === "at").length,
+    nt: BIBLE_BOOKS.filter((item) => item.testament === "nt").length,
+  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -293,7 +340,7 @@ export function BibleView({ onSend }: BibleViewProps) {
         <p className="rounded-lg bg-card px-4 py-8 text-center text-sm text-muted-foreground shadow-paper">
           {t("noBook")}
         </p>
-      ) : (
+      ) : searching ? (
         <>
           {at.length > 0 ? (
             <BookGroup title={t("oldTestament")} books={at} onOpen={openBook} />
@@ -302,6 +349,41 @@ export function BibleView({ onSend }: BibleViewProps) {
             <BookGroup title={t("newTestament")} books={nt} onOpen={openBook} />
           ) : null}
         </>
+      ) : (
+        <section className="flex flex-col gap-3">
+          <div
+            role="tablist"
+            aria-label={t("bibleTitle")}
+            className="grid grid-cols-2 gap-1 rounded-xl bg-secondary p-1"
+          >
+            {(["at", "nt"] as const).map((id) => {
+              const active = testament === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => pickTestament(id)}
+                  className={cn(
+                    "flex min-h-12 flex-col items-center justify-center rounded-lg px-2 py-1.5 text-center transition-colors duration-150",
+                    active
+                      ? "bg-card text-foreground shadow-paper"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <span className="font-serif text-base leading-tight">
+                    {id === "at" ? t("oldTestament") : t("newTestament")}
+                  </span>
+                  <span className="text-[0.7rem] tracking-wide">
+                    {t("booksCount", { n: counts[id] })}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <BookGrid books={testament === "at" ? at : nt} onOpen={openBook} />
+        </section>
       )}
       <p className="text-center text-[0.7rem] leading-relaxed text-muted-foreground">
         {t("recobroFooter")}{" "}
@@ -352,6 +434,38 @@ function PlaceCard({
         ) : null}
       </span>
     </button>
+  );
+}
+
+/** One testament's books, two to a row so the whole list fits at a glance. */
+function BookGrid({
+  books,
+  onOpen,
+}: {
+  books: BibleBook[];
+  onOpen: (book: BibleBook) => void;
+}) {
+  const { locale } = useI18n();
+  const readingPlace = useAppStore((s) => s.readingPlace);
+  return (
+    <div role="tabpanel" className="grid grid-cols-2 gap-2">
+      {books.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          onClick={() => onOpen(item)}
+          className={cn(
+            "flex min-h-12 items-center justify-between gap-2 rounded-lg bg-card px-3 py-2 text-left text-sm shadow-paper transition-transform duration-150 ease-out active:scale-[0.97]",
+            readingPlace?.bookId === item.id && "ring-1 ring-primary/40",
+          )}
+        >
+          <span className="min-w-0 font-medium leading-snug">{bookName(item, locale)}</span>
+          <span className="shrink-0 text-[0.65rem] tracking-[0.12em] text-muted-foreground uppercase">
+            {bookAbbr(item, locale)}
+          </span>
+        </button>
+      ))}
+    </div>
   );
 }
 

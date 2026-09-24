@@ -16,7 +16,7 @@ import { useIsAdmin } from "@/lib/use-is-admin";
 import { Logo } from "@/components/mark";
 import { TodayView } from "@/components/today-view";
 import { ThemesView } from "@/components/themes-view";
-import { BibleView } from "@/components/bible-view";
+import { BibleView, type BibleJump } from "@/components/bible-view";
 import { EvangelismoView } from "@/components/evangelismo-view";
 import { SavedView } from "@/components/saved-view";
 import { PeoplePreachView } from "@/components/people-preach-view";
@@ -34,6 +34,7 @@ import { getDailyVerse, todayKey, type ThemeId, type Verse } from "@/lib/verses"
 import { allDueItems } from "@/lib/preach-schedule";
 import { showDailyNotification } from "@/lib/notify";
 import { cn } from "@/lib/utils";
+import type { VerseLink } from "@/lib/verse-links";
 
 type Tab = "hoy" | "biblia" | "evangelio" | "temas" | "personas" | "guardados" | "admin";
 
@@ -83,6 +84,7 @@ function PreacherApp({
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileMode, setProfileMode] = useState<"entrar" | "crear">("entrar");
   const [askOpen, setAskOpen] = useState(false);
+  const [jump, setJump] = useState<BibleJump | null>(null);
   const ready = useCloudSync(userId, sessionReady);
   const admin = useIsAdmin(userId);
   const tabs = admin ? TAB_ICONS : TAB_ICONS.filter((item) => item.id !== "admin");
@@ -170,6 +172,14 @@ function PreacherApp({
     setSendDraft(draft ?? {});
   }
 
+  /** A passage tapped in an AI answer, opened in the Bible tab. */
+  function readVerse(link: VerseLink) {
+    setAskOpen(false);
+    setJump({ bookId: link.bookId, chapter: link.chapter, verse: link.from, at: Date.now() });
+    setTab("biblia");
+    window.scrollTo({ top: 0 });
+  }
+
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col">
       <header className="flex items-center justify-between gap-2 px-4 pt-5 pb-3 sm:gap-3 sm:px-5">
@@ -237,8 +247,12 @@ function PreacherApp({
         {ready && tab === "hoy" ? (
           <TodayView mood={mood} onMoodChange={setMood} onSend={openSend} />
         ) : null}
-        {ready && tab === "biblia" ? <BibleView onSend={openSend} /> : null}
-        {ready && tab === "evangelio" ? <EvangelismoView onSend={openSend} /> : null}
+        {ready && tab === "biblia" ? (
+          <BibleView onSend={openSend} jump={jump} onJumpDone={() => setJump(null)} />
+        ) : null}
+        {ready && tab === "evangelio" ? (
+          <EvangelismoView onSend={openSend} onReadVerse={readVerse} />
+        ) : null}
         {ready && tab === "temas" ? (
           <ThemesView
             query={query}
@@ -340,6 +354,8 @@ function PreacherApp({
         open={askOpen}
         onOpenChange={setAskOpen}
         userId={sessionReady ? (userId ?? "") : undefined}
+        onSendVerse={openSend}
+        onReadVerse={readVerse}
         onSignIn={() => {
           setAskOpen(false);
           setProfileMode("entrar");
