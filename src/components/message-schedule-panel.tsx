@@ -146,7 +146,11 @@ function MessageScheduleForm({
     retry: false,
     refetchInterval: user ? 60_000 : false,
   });
-  const connected = query.data?.channelsByLocale[form.messageLocale ?? "es"][form.channel] ?? false;
+  const channels = query.data?.channelsByLocale[form.messageLocale ?? "es"];
+  const connected = channels?.[form.channel] ?? false;
+  const otherChannel = form.channel === "sms" ? "whatsapp" : "sms";
+  const otherConnected = channels?.[otherChannel] ?? false;
+  const channelName = (channel: "sms" | "whatsapp") => (channel === "sms" ? "SMS" : "WhatsApp");
   const update = (patch: Partial<ScheduleInput>) =>
     setForm((current) => ({ ...current, ...patch }));
   async function chooseVerse(verseId: string, messageLocale = form.messageLocale ?? "es") {
@@ -291,7 +295,15 @@ function MessageScheduleForm({
           role="status"
           className="rounded-lg border border-border bg-secondary p-3 text-sm leading-relaxed"
         >
-          <p>{connected ? copy.ready : copy.notConnected}</p>
+          <p>
+            {connected
+              ? copy.ready
+              : otherConnected
+                ? copy.notConnectedOther
+                    .replaceAll("{channel}", channelName(form.channel))
+                    .replaceAll("{other}", channelName(otherChannel))
+                : copy.notConnected}
+          </p>
           {!connected && query.data.requirements ? (
             <>
               <p className="mt-3 font-medium">{copy.missingTitle}</p>
