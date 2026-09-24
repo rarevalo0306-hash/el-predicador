@@ -35,6 +35,8 @@ const es = {
   loading: "Cargando programaciones…",
   notConnected:
     "Falta conectar el servicio de mensajería. Puedes guardar los días y la hora, pero los mensajes todavía no saldrán solos.",
+  notConnectedOther:
+    "{channel} todavía no está conectado, pero {other} sí sale solo. Cambia «Enviar por» a {other}, o conecta {channel}:",
   ready: "Canal conectado. Al activarlo, el envío se procesará aunque cierres la app.",
   accepted: "Aceptado por el servicio; no confirma entrega",
   failed: "El servicio rechazó el envío",
@@ -138,6 +140,8 @@ const en: Record<keyof typeof es, string> = {
   loading: "Loading schedules…",
   notConnected:
     "The messaging service still needs to be connected. You can save the days and time, but messages will not send automatically yet.",
+  notConnectedOther:
+    "{channel} is not connected yet, but {other} already sends on its own. Switch “Send via” to {other}, or connect {channel}:",
   ready: "Channel connected. When enabled, sending will be processed even with the app closed.",
   accepted: "Accepted by the service; delivery not confirmed",
   failed: "The service rejected the message",
