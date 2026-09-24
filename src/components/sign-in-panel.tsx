@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { GROK_PROVIDERS, authClient, authEnabled, signIn } from "@/lib/auth/client";
+import { WELCOME_PARAM } from "@/components/invite-contacts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/phone-input";
@@ -15,7 +16,8 @@ type SignInPanelProps = {
   collectDetails?: boolean;
   /** Default auth mode. Guests looking for sign-in should land on "entrar". */
   initialMode?: "entrar" | "crear";
-  onSuccess?: () => void;
+  /** `created` is true when this was a new account rather than a sign-in. */
+  onSuccess?: (result: { created: boolean }) => void;
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -126,7 +128,7 @@ export function SignInPanel({
         });
         if (result.error) throw new Error(result.error.message);
       }
-      onSuccess?.();
+      onSuccess?.({ created: creating });
       await navigate({ to: "/" });
     } catch (err) {
       setError(err instanceof Error && err.message ? err.message : t("signInError"));
@@ -240,7 +242,10 @@ export function SignInPanel({
                 setBusy(true);
                 setError(null);
                 try {
-                  await signIn(provider.providerId, { callbackURL: "/" });
+                  await signIn(provider.providerId, {
+                    callbackURL: "/",
+                    newUserCallbackURL: `/?${WELCOME_PARAM}=1`,
+                  });
                 } catch (err) {
                   const message =
                     err instanceof Error && err.message ? err.message : t("signInError");

@@ -98,7 +98,7 @@ type PopupMessage = { source: "grok-auth-popup"; token: string | null; error?: s
  */
 export async function signIn(
   providerId: string,
-  opts: { callbackURL?: string; errorCallbackURL?: string } = {},
+  opts: { callbackURL?: string; errorCallbackURL?: string; newUserCallbackURL?: string } = {},
 ): Promise<void> {
   const callbackURL = opts.callbackURL ?? "/";
   const errorCallbackURL = opts.errorCallbackURL ?? "/";
@@ -160,6 +160,8 @@ export async function signIn(
         provider: "google",
         callbackURL,
         errorCallbackURL,
+        // Where a brand-new account lands instead, when the caller wants to know.
+        ...(opts.newUserCallbackURL ? { newUserCallbackURL: opts.newUserCallbackURL } : {}),
       }),
     });
     const body = (await res.json().catch(() => ({}))) as {
