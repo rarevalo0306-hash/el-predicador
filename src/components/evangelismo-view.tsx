@@ -35,6 +35,8 @@ import { prefetchVerses } from "@/lib/recobro";
 import { getVerseById, type Verse } from "@/lib/verses";
 import { cn } from "@/lib/utils";
 import { versesIn, type VerseLink } from "@/lib/verse-links";
+import { hasMarkdown } from "@/lib/markdown-lite";
+import { MarkdownLite } from "@/components/markdown-lite";
 import { VerseSheet } from "@/components/verse-sheet";
 
 type EvangelismoViewProps = {
@@ -417,6 +419,10 @@ function CaseDetail({
   const copy = localizedCase(entry, locale);
   const verses = caseVerses(entry, locale);
   const [sending, setSending] = useState(false);
+  const [readAll, setReadAll] = useState(false);
+  const [letterLink, setLetterLink] = useState<VerseLink | null>(null);
+  // A long written message is shown on screen as well as sent.
+  const written = hasMarkdown(copy.letter);
 
   useEffect(() => {
     prefetchVerses(verses, locale);
@@ -461,10 +467,53 @@ function CaseDetail({
           ))}
         </ul>
       </div>
+      {written ? (
+        <section className="rounded-xl bg-card px-4 py-4 shadow-paper">
+          <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
+            {t("caseMessage")}
+          </p>
+          <div
+            className={cn(
+              "relative mt-3 text-[0.95rem] leading-relaxed",
+              !readAll && "max-h-[22rem] overflow-hidden",
+            )}
+          >
+            <MarkdownLite text={copy.letter} onVerse={setLetterLink} />
+            {!readAll ? (
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-card to-transparent" />
+            ) : null}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-3 w-full"
+            aria-expanded={readAll}
+            onClick={() => setReadAll((open) => !open)}
+          >
+            {readAll ? t("caseMessageLess") : t("caseMessageMore")}
+          </Button>
+        </section>
+      ) : null}
       <Button size="lg" disabled={sending} onClick={() => void sendCase()}>
         <Send />
         {sending ? t("wait") : t("sendThisMessage")}
       </Button>
+      <VerseSheet
+        link={letterLink}
+        onClose={() => setLetterLink(null)}
+        onSend={(verse) => {
+          setLetterLink(null);
+          onSend(verse);
+        }}
+        onRead={
+          onReadVerse
+            ? (link) => {
+                setLetterLink(null);
+                onReadVerse(link);
+              }
+            : undefined
+        }
+      />
       <CaseComposer entry={copy} onSend={onSend} onReadVerse={onReadVerse} />
       {entry.id === "testigos" ? <NwtCompare onSend={onSend} /> : null}
       <section className="flex flex-col gap-3">

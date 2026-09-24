@@ -13,6 +13,8 @@ import {
 import { useAppStore } from "@/lib/store";
 import { normalizePhone, formatPhone } from "@/lib/phone";
 import { cn } from "@/lib/utils";
+import { FileSpreadsheet } from "lucide-react";
+import { REGISTRATION_SHEET_URL } from "@/lib/sheet";
 
 type Pane = "registrations" | "accounts" | "notes";
 
@@ -152,6 +154,13 @@ export function AdminView() {
 
       {data && pane === "registrations" ? (
         <div className="space-y-3">
+          <Button asChild variant="outline" className="w-full">
+            <a href={REGISTRATION_SHEET_URL} target="_blank" rel="noreferrer">
+              <FileSpreadsheet className="size-4" />
+              {t("sheetsOpen")}
+            </a>
+          </Button>
+          <p className="text-xs leading-relaxed text-muted-foreground">{t("sheetsHint")}</p>
           {data.registrations.length ? (
             <Button
               variant="outline"

@@ -1,8 +1,6 @@
 import { normalizePhone } from "@/lib/phone";
 import { createServerFn } from "@tanstack/react-start";
-import { authMiddleware } from "@/lib/auth/middleware";
 import { getSql } from "@/lib/db";
-import { env } from "@/lib/env.server";
 import { forwardRegistration } from "@/lib/sheet";
 
 export type Contact = {
@@ -28,20 +26,6 @@ type ContactInput = {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** Admin PIN must come from env — no public default. */
-function adminPin(): string | undefined {
-  return env("CONTACTS_ADMIN_PIN");
-}
-
-function adminUserIds(): string[] {
-  const raw = env("CONTACTS_ADMIN_USER_IDS");
-  if (!raw) return [];
-  return raw
-    .split(",")
-    .map((id) => id.trim())
-    .filter(Boolean);
-}
-
 function clean(value: unknown, max: number) {
   return String(value ?? "")
     .replace(/\s+/g, " ")
@@ -62,15 +46,6 @@ function parseInput(data: ContactInput) {
   if (!phone) throw new Error("phone");
   if (address.length < 5) throw new Error("address");
   return { name, email, phone, address, locale, origin };
-}
-
-function isAuthorizedAdmin(userId: string, pin: string): boolean {
-  const expected = adminPin();
-  if (!expected) return false;
-  if (clean(pin, 40) !== expected) return false;
-  const allow = adminUserIds();
-  if (allow.length > 0 && !allow.includes(userId)) return false;
-  return true;
 }
 
 export const submitContact = createServerFn({ method: "POST" })
@@ -102,42 +77,4 @@ export const submitContact = createServerFn({ method: "POST" })
     `;
     await forwardRegistration(row);
     return { ok: true as const, duplicate: false };
-  });
-
-export const listContacts = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
-  .validator((data: { pin: string }) => data)
-  .handler(async ({ data, context }) => {
-    if (!adminPin()) {
-      return { ok: false as const, error: "unavailable" as const };
-    }
-    if (!isAuthorizedAdmin(context.userId, data.pin)) {
-      return { ok: false as const, error: "pin" as const };
-    }
-    const sql = await getSql();
-    const rows = await sql<{
-      id: number;
-      name: string;
-      email: string;
-      phone: string;
-      address: string;
-      locale: string;
-      created_at: string;
-    }>`
-      select id, name, email, phone, address, locale, created_at
-      from contacts
-      order by created_at desc
-    `;
-    return {
-      ok: true as const,
-      rows: rows.map((row): Contact => ({
-        id: row.id,
-        name: row.name,
-        email: row.email,
-        phone: row.phone,
-        address: row.address,
-        locale: row.locale,
-        createdAt: row.created_at,
-      })),
-    };
   });

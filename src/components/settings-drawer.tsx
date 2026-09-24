@@ -17,7 +17,6 @@ import { useAppStore } from "@/lib/store";
 import { hydrateVerse } from "@/lib/recobro";
 import { getDailyVerse } from "@/lib/verses";
 import { ContactForm } from "@/components/contact-form";
-import { PeoplePanel } from "@/components/people-panel";
 import { ensurePreacherServiceWorker, showDailyNotification } from "@/lib/notify";
 import {
   applyFontScale,
@@ -273,16 +272,6 @@ export function SettingsDrawer({
             <p className="text-sm font-medium">{t("contactTitle")}</p>
             <ContactForm compact />
           </div>
-          <SignedIn>
-            <div className="rounded-lg border border-border bg-card px-4 py-4">
-              <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
-                {t("peopleTitle")}
-              </p>
-              <div className="mt-3">
-                <PeoplePanel />
-              </div>
-            </div>
-          </SignedIn>
           <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             <Link to="/privacy" className="underline underline-offset-4 hover:text-foreground">
               {t("privacyLink")}

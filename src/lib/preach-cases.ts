@@ -2,6 +2,8 @@ import { recobroSource } from "@/lib/bible";
 import { t, type Locale } from "@/lib/i18n";
 import { hydrateVerses } from "@/lib/recobro";
 import { getVerseById, localizeVerse, type Verse } from "@/lib/verses";
+import { hasMarkdown, messageText } from "@/lib/markdown-lite";
+import { TESTIGOS_LETTER_EN, TESTIGOS_LETTER_ES } from "@/lib/cases/testigos-letter";
 
 export type PreachCase = {
   id: string;
@@ -93,8 +95,7 @@ export const PREACH_CASES: PreachCase[] = [
       "No hay salvación en una organización. Hay un solo nombre.",
     ],
     verseIds: ["jn-1-1", "jn-8-58", "col-2-9", "hch-4-12"],
-    letter:
-      "Te escribo con respeto, porque te han dado otra Biblia. Juan 1:1 en griego dice: kai theòs ēn ho lógos, el Verbo era Dios. No «un dios». En Juan 8:58 Jesús dijo egṑ eimí, yo soy, no «yo he sido». En Colosenses 1:16 el griego dice todas las cosas, no «las otras». Ningún manuscrito del Nuevo Testamento trae el nombre Jehová: lo insertan ellos. El Verbo era Dios. Llámalo Señor. En ningún otro hay salvación.",
+    letter: TESTIGOS_LETTER_ES,
   },
   {
     id: "mormones",
@@ -220,8 +221,7 @@ const CASES_EN: Record<
       "The Word was God. Before Abraham, Jesus said: I am.",
       "There is no salvation in an organization. There is one name.",
     ],
-    letter:
-      "I write with respect, because they have given you another Bible. John 1:1 in Greek says: kai theòs ēn ho lógos, the Word was God. Not «a god». In John 8:58 Jesus said egṑ eimí, I am, not «I have been». In Colossians 1:16 the Greek says all things, not «the other». No New Testament manuscript carries the name Jehovah: they insert it. The Word was God. Call Him Lord. Neither is there salvation in any other.",
+    letter: TESTIGOS_LETTER_EN,
   },
   mormones: {
     title: "Mormons",
@@ -285,6 +285,7 @@ export function caseVerses(entry: PreachCase, locale: Locale = "es") {
 
 export async function composeCaseText(entry: PreachCase, locale: Locale = "es") {
   const localized = localizedCase(entry, locale);
+  if (hasMarkdown(localized.letter)) return messageText(localized.letter);
   const hydrated = await hydrateVerses(caseVerses(entry, locale), locale);
   const lines = [localized.letter, ""];
   for (const verse of hydrated) {
@@ -293,6 +294,14 @@ export async function composeCaseText(entry: PreachCase, locale: Locale = "es") 
     lines.push("");
   }
   return lines.join("\n").trim();
+}
+
+/**
+ * A few lines about the case for places with no room for the whole message
+ * (a topic reply): the message itself when short, else its summary.
+ */
+export function caseBrief(entry: PreachCase): string {
+  return hasMarkdown(entry.letter) ? `${entry.issue} ${entry.approach}` : entry.letter;
 }
 
 export async function caseMessageVerse(
