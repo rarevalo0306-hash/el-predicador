@@ -191,13 +191,24 @@ function MessageScheduleForm({
     setPickerTheme("");
     setForm(newForm("", undefined, locale));
   }
+  const [saveFailure, setSaveFailure] = useState<string | null>(null);
   function showError(error: unknown) {
     const key = error instanceof Error ? error.message : "";
-    toast.error(key in copy ? copy[key as keyof typeof copy] : copy.error);
+    const known = key in copy;
+    toast.error(known ? copy[key as keyof typeof copy] : copy.error);
+    // A failure the owner cannot name cannot be fixed: keep its code on
+    // screen, under the form, until the next attempt.
+    setSaveFailure(known ? copy[key as keyof typeof copy] : `${copy.error} · ${key || "?"}`);
+    console.error("[schedule] save failed:", key || error);
   }
   async function save(event: React.FormEvent) {
     event.preventDefault();
-    if (!user || preparing) return;
+    if (!user) {
+      setSaveFailure(`${copy.error} · sin sesión`);
+      return;
+    }
+    if (preparing) return;
+    setSaveFailure(null);
     setBusy(true);
     try {
       await saveMessageSchedule({ data: validateSchedule(form) });
@@ -432,7 +443,7 @@ function MessageScheduleForm({
                       themeId: theme,
                       verseId: undefined,
                       message: "",
-                      senderName: form.senderName ?? displayName.trim() ?? "",
+                      senderName: form.senderName ?? (displayName ?? "").trim(),
                     });
                   }}
                 >
@@ -611,6 +622,11 @@ function MessageScheduleForm({
             {busy ? t("wait") : copy.save}
           </Button>
         </div>
+        {saveFailure ? (
+          <p role="alert" className="text-sm text-destructive">
+            {saveFailure}
+          </p>
+        ) : null}
       </form>
       {user && query.isPending ? <p role="status">{copy.loading}</p> : null}
       {query.data ? (
