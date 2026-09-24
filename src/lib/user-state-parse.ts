@@ -1,6 +1,7 @@
 import { restorePhone } from "./phone.ts";
 import { isLocale } from "./i18n.ts";
 import { isThemeId, normalizeChurch } from "./church.ts";
+import { recipientThemes } from "./recipient-themes.ts";
 import type { CloudPayload, Recipient } from "./store.ts";
 
 /**
@@ -18,12 +19,14 @@ export function parseRecipient(row: unknown): Recipient | null {
   const phone = restorePhone(String(value.phone ?? ""));
   if (phone.length < 7) return null;
   const dailyHour = Number(value.dailyHour);
+  const themeIds = Array.isArray(value.themeIds) ? recipientThemes(value) : undefined;
   return {
     id: value.id,
     name: value.name,
     phone,
     at: Number(value.at) || Date.now(),
-    themeId: isThemeId(value.themeId) ? value.themeId : undefined,
+    themeId: themeIds?.[0] ?? (isThemeId(value.themeId) ? value.themeId : undefined),
+    themeIds,
     messageLocale: isLocale(value.messageLocale) ? value.messageLocale : undefined,
     channel: value.channel === "sms" || value.channel === "whatsapp" ? value.channel : undefined,
     notes: typeof value.notes === "string" ? value.notes : undefined,

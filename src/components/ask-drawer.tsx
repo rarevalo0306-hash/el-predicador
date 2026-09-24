@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Send, Trash2, X } from "lucide-react";
+import { BookOpen, Send, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/components/language-switch";
@@ -8,6 +8,10 @@ import { MarkdownLite } from "@/components/markdown-lite";
 import { VerseSheet } from "@/components/verse-sheet";
 import type { VerseLink } from "@/lib/verse-links";
 import type { Verse } from "@/lib/verses";
+import { passageQuestion } from "@/lib/ask-passage";
+
+/** Verses picked in the Bible to ask about; `at` tells two picks apart. */
+export type AskPassage = { ref: string; text: string; at: number };
 import { cn } from "@/lib/utils";
 
 type AskDrawerProps = {
@@ -20,6 +24,8 @@ type AskDrawerProps = {
   onSendVerse?: (verse: Verse) => void;
   /** Open the Bible at a quoted passage. */
   onReadVerse?: (link: VerseLink) => void;
+  /** Verses picked in the Bible, asked about with the next question. */
+  passage?: AskPassage | null;
 };
 
 const STORAGE_KEY = "preacher-ask";
@@ -85,8 +91,10 @@ export function AskDrawer({
   onSignIn,
   onSendVerse,
   onReadVerse,
+  passage,
 }: AskDrawerProps) {
   const { t, locale } = useI18n();
+  const [attached, setAttached] = useState<AskPassage | null>(null);
   const [verseLink, setVerseLink] = useState<VerseLink | null>(null);
   const [turns, setTurns] = useState<AskTurn[]>([]);
   const [question, setQuestion] = useState("");
@@ -128,9 +136,18 @@ export function AskDrawer({
     if (open && list) list.scrollTop = list.scrollHeight;
   }, [open, turns.length, lastLength, busy, area?.height]);
 
-  async function send() {
-    const text = question.trim();
-    if (!text || busy) return;
+  useEffect(() => {
+    if (passage) setAttached(passage);
+    // A new pick is a new `at`; the same pick must not come back once removed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [passage?.at]);
+
+  async function send(typed = question) {
+    const raw = typed.trim();
+    if (!raw || busy) return;
+    const about = attached;
+    const text = about ? passageQuestion(about.ref, about.text, raw) : raw;
+    setAttached(null);
     const history = turns;
     const asked = [...turns, { role: "user" as const, content: text }];
     setTurns(asked);
@@ -163,9 +180,10 @@ export function AskDrawer({
             : "error",
       );
       setFailure(code ?? (key && key !== "ask_quota" && key !== "ask_unavailable" ? key : null));
-      // The question stays in the box so it can be sent again.
+      // The question (and its passage) stay so it can be sent again.
       setTurns(history);
-      setQuestion(text);
+      setQuestion(raw);
+      setAttached(about);
     } finally {
       setBusy(false);
     }
@@ -301,6 +319,42 @@ export function AskDrawer({
             void send();
           }}
         >
+          {attached ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-secondary px-3 py-2">
+                <BookOpen className="mt-0.5 size-4 shrink-0 text-primary" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-primary">
+                    {t("askAbout", { ref: attached.ref })}
+                  </p>
+                  <p className="line-clamp-2 font-serif text-sm leading-snug">{attached.text}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAttached(null)}
+                  className="-mt-1 -mr-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+                  aria-label={t("askAboutRemove")}
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {(["askSuggestExplain", "askSuggestApply", "askSuggestContext"] as const).map(
+                  (key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void send(t(key))}
+                      className="inline-flex min-h-9 items-center rounded-full border border-border bg-background px-3 text-sm font-medium transition-transform duration-150 active:scale-95 disabled:opacity-50"
+                    >
+                      {t(key)}
+                    </button>
+                  ),
+                )}
+              </div>
+            </div>
+          ) : null}
           <div className="flex items-end gap-2">
             <Textarea
               value={question}
@@ -311,7 +365,7 @@ export function AskDrawer({
                   void send();
                 }
               }}
-              placeholder={t("askPlaceholder")}
+              placeholder={attached ? t("askPassagePlaceholder") : t("askPlaceholder")}
               maxLength={500}
               rows={2}
               aria-label={t("askPlaceholder")}
