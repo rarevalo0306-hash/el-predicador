@@ -10,10 +10,6 @@ export function formatVerseMessage(
   locale: Locale = "es",
 ) {
   const lines: string[] = [];
-  const trimmedNote = note?.trim();
-  if (trimmedNote) {
-    lines.push(trimmedNote, "");
-  }
   if (
     verse.id === "evangelio-camino" ||
     verse.id.startsWith("caso-") ||
@@ -26,6 +22,11 @@ export function formatVerseMessage(
     if (verse.source) {
       lines.push(verse.source);
     }
+  }
+  // The verse comes whole and first; the personal line follows it.
+  const trimmedNote = note?.trim();
+  if (trimmedNote) {
+    lines.push("", trimmedNote);
   }
   const name = fromName?.trim();
   if (name) {

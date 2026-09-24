@@ -2,7 +2,7 @@ import { MessageLanguageSelect } from "@/components/message-language-select";
 import { messageLanguageCopy, messageLanguageName } from "@/lib/message-language";
 import { SMS_FOOTER } from "@/lib/messaging/sms-footer";
 import { providerStatusLine } from "@/lib/provider-status";
-import { fallbackNotes } from "@/lib/messaging/compose";
+import { composeVerseMessage, fallbackNotes } from "@/lib/messaging/compose";
 import type { Locale } from "@/lib/i18n";
 import {
   THEMES,
@@ -482,10 +482,19 @@ function MessageScheduleForm({
             <p className="text-xs text-muted-foreground">{copy.senderNameHint}</p>
             <p className="text-xs text-muted-foreground">{copy.themeExample}</p>
             <pre className="rounded-md border border-border bg-secondary p-3 text-xs whitespace-pre-wrap break-words">
-              {`${fallbackNotes(form.messageLocale ?? "es")[0]}\n\n«…»\n— ${(() => {
+              {(() => {
+                const messageLocale = form.messageLocale ?? "es";
                 const first = versesForTheme(form.themeId)[0];
-                return first ? localizeVerse(first, form.messageLocale ?? "es").ref : "";
-              })()}${form.senderName?.trim() ? `\n\n${t("signOff", { name: form.senderName.trim() })}` : ""}`}
+                const shown = first ? localizeVerse(first, messageLocale) : null;
+                return composeVerseMessage({
+                  text: shown?.text.trim() || "…",
+                  ref: shown?.ref ?? "",
+                  source: shown?.source,
+                  note: fallbackNotes(messageLocale)[0],
+                  senderName: form.senderName,
+                  locale: messageLocale,
+                });
+              })()}
             </pre>
           </div>
         ) : null}

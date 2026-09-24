@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { composeVerseMessage, fallbackNotes, pickRotating } from "./compose.ts";
 
-test("a composed message reads note, verse, reference, source, sign-off", () => {
+test("a composed message reads verse, reference, source, then the line and sign-off", () => {
   const message = composeVerseMessage({
     note: "Pensé en ti hoy.",
     text: "Todo lo puedo en Cristo que me fortalece.",
@@ -13,7 +13,7 @@ test("a composed message reads note, verse, reference, source, sign-off", () => 
   });
   assert.equal(
     message,
-    "Pensé en ti hoy.\n\n«Todo lo puedo en Cristo que me fortalece.»\n— Filipenses 4:13\nRVR1960\n\nCon cariño, Ricardo",
+    "«Todo lo puedo en Cristo que me fortalece.»\n— Filipenses 4:13\nRVR1960\n\nPensé en ti hoy.\n\nCon cariño, Ricardo",
   );
 });
 

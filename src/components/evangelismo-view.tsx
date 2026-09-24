@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, ChevronRight, Send } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronRight, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { VerseCard } from "@/components/verse-card";
@@ -34,14 +34,18 @@ import { letterBlocks } from "@/lib/letter-format";
 import { prefetchVerses } from "@/lib/recobro";
 import { getVerseById, type Verse } from "@/lib/verses";
 import { cn } from "@/lib/utils";
+import { versesIn, type VerseLink } from "@/lib/verse-links";
+import { VerseSheet } from "@/components/verse-sheet";
 
 type EvangelismoViewProps = {
   onSend: (verse: Verse) => void;
+  /** Open the Bible at a passage the written message quotes. */
+  onReadVerse?: (link: VerseLink) => void;
 };
 
 type Pane = "camino" | "casos" | "doctrina";
 
-export function EvangelismoView({ onSend }: EvangelismoViewProps) {
+export function EvangelismoView({ onSend, onReadVerse }: EvangelismoViewProps) {
   const { t } = useI18n();
   const [pane, setPane] = useState<Pane>("doctrina");
   const [caseId, setCaseId] = useState<string | null>(null);
@@ -95,7 +99,12 @@ export function EvangelismoView({ onSend }: EvangelismoViewProps) {
         )
       ) : pane === "casos" ? (
         selected ? (
-          <CaseDetail entry={selected} onBack={() => setCaseId(null)} onSend={onSend} />
+          <CaseDetail
+            entry={selected}
+            onBack={() => setCaseId(null)}
+            onSend={onSend}
+            onReadVerse={onReadVerse}
+          />
         ) : (
           <CasesList onOpen={setCaseId} />
         )
@@ -397,10 +406,12 @@ function CaseDetail({
   entry,
   onBack,
   onSend,
+  onReadVerse,
 }: {
   entry: PreachCase;
   onBack: () => void;
   onSend: (verse: Verse) => void;
+  onReadVerse?: (link: VerseLink) => void;
 }) {
   const { locale, t } = useI18n();
   const copy = localizedCase(entry, locale);
@@ -454,7 +465,7 @@ function CaseDetail({
         <Send />
         {sending ? t("wait") : t("sendThisMessage")}
       </Button>
-      <CaseComposer entry={copy} onSend={onSend} />
+      <CaseComposer entry={copy} onSend={onSend} onReadVerse={onReadVerse} />
       {entry.id === "testigos" ? <NwtCompare onSend={onSend} /> : null}
       <section className="flex flex-col gap-3">
         <h3 className="font-serif text-2xl tracking-tight">{t("versesLabel")}</h3>
@@ -471,8 +482,17 @@ function CaseDetail({
  * person is, the app writes it in its voice with the case's verses, the
  * owner corrects it and sends it like any other message.
  */
-function CaseComposer({ entry, onSend }: { entry: PreachCase; onSend: (verse: Verse) => void }) {
+function CaseComposer({
+  entry,
+  onSend,
+  onReadVerse,
+}: {
+  entry: PreachCase;
+  onSend: (verse: Verse) => void;
+  onReadVerse?: (link: VerseLink) => void;
+}) {
   const { locale, t } = useI18n();
+  const [verseLink, setVerseLink] = useState<VerseLink | null>(null);
   const { user, isPending } = useCurrentUserState();
   const [details, setDetails] = useState("");
   const [draft, setDraft] = useState("");
@@ -567,6 +587,26 @@ function CaseComposer({ entry, onSend }: { entry: PreachCase; onSend: (verse: Ve
                 aria-label={t("caseAiEdit")}
                 className="text-base leading-relaxed"
               />
+              {versesIn(draft).length ? (
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {t("versesInMessage")}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {versesIn(draft).map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={() => setVerseLink(item.link)}
+                        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-primary/30 bg-secondary px-3 text-sm font-medium text-primary transition-transform duration-150 active:scale-95"
+                      >
+                        <BookOpen className="size-3.5" />
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               <p className="text-xs text-muted-foreground">
                 {t("caseAiEdit")}
                 {remaining !== null ? ` ${t("askRemaining", { n: remaining })}` : ""}
@@ -589,6 +629,22 @@ function CaseComposer({ entry, onSend }: { entry: PreachCase; onSend: (verse: Ve
           ) : null}
         </div>
       )}
+      <VerseSheet
+        link={verseLink}
+        onClose={() => setVerseLink(null)}
+        onSend={(verse) => {
+          setVerseLink(null);
+          onSend(verse);
+        }}
+        onRead={
+          onReadVerse
+            ? (link) => {
+                setVerseLink(null);
+                onReadVerse(link);
+              }
+            : undefined
+        }
+      />
     </section>
   );
 }

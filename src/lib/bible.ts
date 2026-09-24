@@ -249,11 +249,27 @@ export type ParsedRef = {
   verse?: number;
 };
 
+/**
+ * Puts a typed reference in one shape before it is read: "mateo23:3",
+ * "mateo;23;3", "Mt. 23.3", "mateo 23,3" and "mateo 23 3" all become
+ * "mateo 23:3", and "1juan3" becomes "1 juan 3".
+ */
+function tidyReference(query: string) {
+  const joined = query.replace(/(\d)\s*[;:.,]\s*(?=\d)/g, "$1:").replace(/;/g, " ");
+  return normalizeQuery(joined.replace(/:/g, " : "))
+    .replace(/\s*:\s*/g, ":")
+    .replace(/(\p{L})(\d)/gu, "$1 $2")
+    .replace(/(\d)(\p{L})/gu, "$1 $2");
+}
+
 export function parseReference(query: string): ParsedRef | null {
-  const raw = normalizeQuery(query);
+  const raw = tidyReference(query);
   if (!raw) return null;
-  const match = raw.match(/^(.+?)\s+(\d+)(?:\s*:\s*(\d+))?$/);
-  if (!match) return findBook(raw) ? { book: findBook(raw)!, chapter: 1 } : null;
+  const match = raw.match(/^(.+?)\s+(\d+)(?:(?::|\s+)(\d+)(?:\s+\d+)?)?$/);
+  if (!match) {
+    const only = findBook(raw);
+    return only ? { book: only, chapter: 1 } : null;
+  }
   const book = findBook(match[1] ?? "");
   if (!book) return null;
   const chapter = Number(match[2]);

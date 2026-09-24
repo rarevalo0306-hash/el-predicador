@@ -289,11 +289,11 @@ test("a theme schedule walks its verses in order and varies the line, without re
     await runScheduledMessages(sql, at, send, ready, verses);
   }
   assert.equal(sent.length, 3);
-  assert.match(sent[0], /^Nota uno\n\n«Texto A»\n— Ref A\nRV\n\nCon cariño, Ricardo$/);
+  assert.match(sent[0], /^«Texto A»\n— Ref A\nRV\n\nNota uno\n\nCon cariño, Ricardo$/);
   // The catalog's own Spanish text serves a verse that was never prepared.
   assert.match(sent[1], /«Texto B en catálogo»\n— Ref B/);
   // Back to the first verse with its other line, not the same one again.
-  assert.match(sent[2], /^Nota dos\n\n«Texto A»/);
+  assert.match(sent[2], /^«Texto A»\n— Ref A\nRV\n\nNota dos\n/);
   // A verse without any text anywhere fails visibly rather than sending "«»".
   const { id: bare } = await saveSchedule(
     "owner",

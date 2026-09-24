@@ -1,8 +1,8 @@
 import { t, type Locale } from "../i18n.ts";
 
 /**
- * The message a theme schedule sends: a short line, the verse, its reference
- * and source, and the sender's sign-off. Same shape as formatVerseMessage in
+ * The message a theme schedule sends: the whole verse with its reference and
+ * source first, then the short teaching line, then the sender's sign-off. Same shape as formatVerseMessage in
  * share.ts, which the hand-sent messages use; kept apart because the worker
  * and its tests must load without the app's import aliases.
  */
@@ -14,11 +14,10 @@ export function composeVerseMessage(input: {
   senderName?: string | null;
   locale: Locale;
 }): string {
-  const lines: string[] = [];
-  const note = input.note?.trim();
-  if (note) lines.push(note, "");
-  lines.push(`«${input.text.trim()}»`, `— ${input.ref}`);
+  const lines: string[] = [`«${input.text.trim()}»`, `— ${input.ref}`];
   if (input.source) lines.push(input.source);
+  const note = input.note?.trim();
+  if (note) lines.push("", note);
   const name = input.senderName?.trim();
   if (name) lines.push("", t(input.locale, "signOff", { name }));
   return lines.join("\n");
