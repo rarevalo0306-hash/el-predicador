@@ -24,6 +24,7 @@ import { SendDrawer } from "@/components/send-drawer";
 import { SettingsDrawer } from "@/components/settings-drawer";
 import { ProfileDrawer } from "@/components/profile-drawer";
 import { AskDrawer, type AskPassage } from "@/components/ask-drawer";
+import { WELCOME_PARAM } from "@/components/invite-contacts";
 import { LanguageSwitch, useI18n } from "@/components/language-switch";
 import { useCloudSync } from "@/components/cloud-sync";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -86,6 +87,18 @@ function PreacherApp({
   const [askOpen, setAskOpen] = useState(false);
   const [jump, setJump] = useState<BibleJump | null>(null);
   const [askPassage, setAskPassage] = useState<AskPassage | null>(null);
+  const [welcome, setWelcome] = useState(false);
+
+  // Google brings a brand-new account back with ?bienvenido=1: offer to
+  // share the app, then drop the mark so a reload does not ask again.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get(WELCOME_PARAM) !== "1") return;
+    url.searchParams.delete(WELCOME_PARAM);
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    setWelcome(true);
+    setProfileOpen(true);
+  }, []);
   const ready = useCloudSync(userId, sessionReady);
   const admin = useIsAdmin(userId);
   const tabs = admin ? TAB_ICONS : TAB_ICONS.filter((item) => item.id !== "admin");
@@ -374,7 +387,11 @@ function PreacherApp({
       />
       <ProfileDrawer
         open={profileOpen}
-        onOpenChange={setProfileOpen}
+        welcome={welcome}
+        onOpenChange={(next) => {
+          setProfileOpen(next);
+          if (!next) setWelcome(false);
+        }}
         initialMode={profileMode}
       />
     </div>

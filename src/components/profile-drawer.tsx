@@ -10,23 +10,51 @@ import {
 import { SignInPanel } from "@/components/sign-in-panel";
 import { ContactForm } from "@/components/contact-form";
 import { useI18n } from "@/components/language-switch";
+import { InviteContacts } from "@/components/invite-contacts";
+import { useEffect, useState } from "react";
 
 type ProfileDrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialMode?: "entrar" | "crear";
+  /** Open straight on "share the app", for an account just created elsewhere. */
+  welcome?: boolean;
 };
 
 export function ProfileDrawer({
   open,
   onOpenChange,
   initialMode = "entrar",
+  welcome = false,
 }: ProfileDrawerProps) {
   const { t } = useI18n();
   const { user, isPending } = useCurrentUserState();
   const greeting = user?.displayName || user?.primaryEmail || "";
   const guestTitle = initialMode === "crear" ? t("signupTitle") : t("logIn");
   const guestDesc = initialMode === "crear" ? t("profileDesc") : t("loginSub");
+  // Right after a new account, the drawer offers to share the app before closing.
+  const [justJoined, setJustJoined] = useState(false);
+
+  useEffect(() => {
+    if (!open) setJustJoined(false);
+    else if (welcome) setJustJoined(true);
+  }, [open, welcome]);
+
+  if (justJoined && user) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>{t("inviteTitle")}</DrawerTitle>
+            <DrawerDescription>{t("inviteDesc")}</DrawerDescription>
+          </DrawerHeader>
+          <div className="px-5 pb-8">
+            <InviteContacts onDone={() => onOpenChange(false)} />
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -49,7 +77,7 @@ export function ProfileDrawer({
               key={initialMode}
               collectDetails
               initialMode={initialMode}
-              onSuccess={() => onOpenChange(false)}
+              onSuccess={({ created }) => (created ? setJustJoined(true) : onOpenChange(false))}
             />
           </SignedOut>
           <SignedIn>
