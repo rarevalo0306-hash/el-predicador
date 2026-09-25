@@ -7,9 +7,11 @@ import { VerseCard } from "@/components/verse-card";
 import { ContactForm } from "@/components/contact-form";
 import { useI18n } from "@/components/language-switch";
 import { prefetchVerses } from "@/lib/recobro";
-import { useAppStore } from "@/lib/store";
+import { useAppStore, type SendDraft } from "@/lib/store";
+import { getDailyReflection, type DailyReflection } from "@/lib/daily-reflection";
 import {
   getDailyVerse,
+  todayKey,
   versesForTheme,
   type ThemeId,
   type Verse,
@@ -21,7 +23,7 @@ const MOODS: ThemeId[] = ["amor", "paz", "fortaleza", "esperanza", "consuelo"];
 type TodayViewProps = {
   mood: ThemeId | null;
   onMoodChange: (mood: ThemeId | null) => void;
-  onSend: (verse: Verse) => void;
+  onSend: (verse: Verse, draft?: SendDraft) => void;
 };
 
 export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
@@ -30,6 +32,26 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
   const bumpOffset = useAppStore((s) => s.bumpOffset);
   const [showContact, setShowContact] = useState(false);
   const [asked, setAsked] = useState(true);
+  const [reflection, setReflection] = useState<DailyReflection | null>(null);
+  const [reflecting, setReflecting] = useState(false);
+
+  // The word of the day, written once for everyone; nothing shows if it is not there.
+  useEffect(() => {
+    let cancelled = false;
+    setReflection(null);
+    setReflecting(true);
+    getDailyReflection({ data: { day: todayKey(), locale } })
+      .then((result) => {
+        if (!cancelled) setReflection(result);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setReflecting(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [locale]);
 
   useEffect(() => {
     try {
@@ -84,8 +106,27 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
         <p className="mt-1 text-sm text-muted-foreground">{t("sendHow")}</p>
       </header>
       <div className="rise-in rise-in-2">
-        <VerseCard verse={verse} variant="hero" onSend={onSend} />
+        <VerseCard
+          verse={verse}
+          variant="hero"
+          onSend={(shown) =>
+            onSend(
+              shown,
+              reflection && shown.id === reflection.verseId ? { note: reflection.text } : undefined,
+            )
+          }
+        />
       </div>
+      {reflection && verse.id === reflection.verseId ? (
+        <section className="rise-in rise-in-2 rounded-xl border border-border bg-card px-4 py-4 shadow-paper">
+          <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
+            {t("dailyWord")}
+          </p>
+          <p className="mt-2 font-serif text-lg leading-relaxed">{reflection.text}</p>
+        </section>
+      ) : reflecting && !mood && verse.id === daily.id ? (
+        <div className="h-24 animate-pulse rounded-xl bg-card" aria-hidden />
+      ) : null}
       {asked ? null : (
         <section className="rise-in rounded-xl border border-border bg-card p-4 shadow-paper">
           <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
