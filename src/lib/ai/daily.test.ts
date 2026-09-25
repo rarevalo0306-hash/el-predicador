@@ -57,3 +57,18 @@ test("a send line only ever sees a first name", async () => {
   assert.equal(firstName("<b>"), "");
   assert.equal(firstName(null), "");
 });
+
+test("a reflection that runs long keeps its first whole sentences", async () => {
+  const long =
+    "Amigo mío, Dios no esperó a que fueras mejor para amarte. Cuando todavía eras pecador, Cristo murió por ti en la cruz. " +
+    "Deja de intentar limpiarte solo para ser aceptado y mira el Calvario, donde todo fue pagado. " +
+    "Ese amor no es un recuerdo lejano ni una idea bonita; es para ti hoy, en tu casa, en tu trabajo y en tu corazón cansado. " +
+    "Vuélvete a Él ahora mismo, invoca Su nombre con sencillez y deja que Su amor te alcance y te levante una vez más.";
+  const out = await writeReflection(
+    { ref: "Romanos 5:8", text: "Mas Dios muestra Su amor…", locale: "es" },
+    config,
+    fakeFetch(long),
+  );
+  assert.ok(out && out.length <= 440 && out.endsWith("."), String(out?.length));
+  assert.ok(out!.startsWith("Amigo mío, Dios no esperó"));
+});
