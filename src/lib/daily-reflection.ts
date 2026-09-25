@@ -5,7 +5,7 @@ export type DailyReflection = { verseId: string; text: string };
 
 const DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-/** Retry a day that could not be written only after a while, not on every visit. */
+/** Retry a day that could not be written only after a few minutes, not on every visit. */
 const cooldown = new Map<string, number>();
 
 /**
@@ -69,17 +69,17 @@ export const getDailyReflection = createServerFn({ method: "POST" })
       }
     }
     if (!text.trim()) {
-      cooldown.set(key, Date.now() + 10 * 60_000);
+      cooldown.set(key, Date.now() + 3 * 60_000);
       return null;
     }
 
     const { writeReflection } = await import("@/lib/ai/daily.server");
     let written: string | null = null;
-    for (let attempt = 0; attempt < 2 && !written; attempt += 1) {
+    for (let attempt = 0; attempt < 3 && !written; attempt += 1) {
       written = await writeReflection({ ref, text, locale: data.locale }).catch(() => null);
     }
     if (!written) {
-      cooldown.set(key, Date.now() + 10 * 60_000);
+      cooldown.set(key, Date.now() + 3 * 60_000);
       return null;
     }
     await sql`insert into daily_reflections (day, locale, verse_id, text)

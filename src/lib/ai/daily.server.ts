@@ -114,6 +114,23 @@ async function chat(
   return body.choices?.[0]?.message?.content ?? "";
 }
 
+/**
+ * A reflection that ran long keeps its first whole sentences up to `max`
+ * instead of being thrown away; a single overlong sentence is left as is
+ * (and the filter drops it).
+ */
+export function fitSentences(text: string, max: number): string {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+  const sentences = clean.match(/[^.!?…]+[.!?…]+["”»']?\s*/g) ?? [clean];
+  let out = "";
+  for (const sentence of sentences) {
+    if ((out + sentence).trim().length > max) break;
+    out += sentence;
+  }
+  return out.trim() || clean;
+}
+
 /** Today's reflection on a verse, or null when it misses the brief. */
 export async function writeReflection(
   input: VerseInput,
@@ -124,11 +141,11 @@ export async function writeReflection(
     reflectionPrompt(input.locale),
     JSON.stringify({ ref: input.ref, text: input.text.slice(0, 800) }),
     400,
-    25_000,
+    15_000,
     config,
     request,
   );
-  return cleanNote(raw, input.text, { min: 60, max: 440 });
+  return cleanNote(fitSentences(raw, 440), input.text, { min: 60, max: 440 });
 }
 
 /** A fresh line for one scheduled send, or null (the caller uses a prepared one). */
