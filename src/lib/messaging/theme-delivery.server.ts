@@ -4,6 +4,27 @@ import { composeVerseMessage, fallbackNotes, pickRotating } from "./compose.ts";
 
 export type ThemeVerse = { id: string; ref: string; text: string; source?: string | null };
 
+/** Writes a fresh line for one send; null means "use a prepared one". */
+export type NoteWriter = (input: {
+  ref: string;
+  text: string;
+  locale: Locale;
+  theme: string;
+  name: string | null;
+}) => Promise<string | null>;
+
+/**
+ * DeepSeek, when the app has a key: one fresh line per send, in the app's
+ * voice. Without a key (and in tests) there is no writer and the prepared
+ * lines are used, as before.
+ */
+export async function defaultNoteWriter(): Promise<NoteWriter | null> {
+  const { deepseekConfigured } = await import("../ai/deepseek.server.ts");
+  if (!deepseekConfigured()) return null;
+  const { writeSendNote } = await import("../ai/daily.server.ts");
+  return (input) => writeSendNote(input);
+}
+
 /** The verses of a theme, in a stable order. Injected so tests need no catalog. */
 export type VerseSource = (themeId: string) => Promise<ThemeVerse[]>;
 
@@ -40,8 +61,15 @@ async function verseText(sql: Sql, verse: ThemeVerse, locale: Locale) {
  */
 export async function resolveThemeMessage(
   sql: Sql,
-  schedule: { id: string; theme_id: string; message_locale: Locale; sender_name: string | null },
+  schedule: {
+    id: string;
+    theme_id: string;
+    message_locale: Locale;
+    sender_name: string | null;
+    recipient_name?: string | null;
+  },
   verses: VerseSource = catalogVerseSource,
+  fresh: { write?: NoteWriter | null; themeName?: string } = {},
 ): Promise<{ message: string; verseId: string } | { error: "theme_empty" | "verse_unavailable" }> {
   const list = await verses(schedule.theme_id);
   if (!list.length) return { error: "theme_empty" };
@@ -57,7 +85,20 @@ export async function resolveThemeMessage(
       select text from verse_notes where verse_id = ${verse.id} and locale = ${schedule.message_locale}
       order by position`
   ).map((row) => row.text);
-  const note = pickRotating(
+  let note: string | null = null;
+  if (fresh.write) {
+    // A line written for this send; any failure falls back to a prepared one.
+    note = await fresh
+      .write({
+        ref: text.ref,
+        text: text.text,
+        locale: schedule.message_locale,
+        theme: fresh.themeName ?? schedule.theme_id,
+        name: schedule.recipient_name ?? null,
+      })
+      .catch(() => null);
+  }
+  note ??= pickRotating(
     notes.length ? notes : fallbackNotes(schedule.message_locale),
     Math.floor(turn / list.length) + turn,
   );

@@ -2,7 +2,12 @@ import { randomUUID, timingSafeEqual } from "node:crypto";
 import type { Sql } from "../db";
 import { nextMessageOccurrence } from "../message-schedule.ts";
 import { deliverMessage, messagingStatus, type DeliveryOutcome } from "./provider.server.ts";
-import { resolveThemeMessage, type VerseSource } from "./theme-delivery.server.ts";
+import {
+  defaultNoteWriter,
+  resolveThemeMessage,
+  type NoteWriter,
+  type VerseSource,
+} from "./theme-delivery.server.ts";
 import type { ScheduleRow } from "./schedules.server";
 
 export function validCronAuthorization(header: string | null, secret: string | undefined): boolean {
@@ -12,6 +17,15 @@ export function validCronAuthorization(header: string | null, secret: string | u
   return expected.length === received.length && timingSafeEqual(expected, received);
 }
 
+async function themeName(themeId: string, locale: "es" | "en") {
+  try {
+    const { localizedTheme } = await import("@/lib/verses");
+    return localizedTheme(themeId as never, locale).name;
+  } catch {
+    return themeId;
+  }
+}
+
 /** Leases plus the unique occurrence receipt prevent duplicate sends on overlapping cron runs. */
 export async function runScheduledMessages(
   sql: Sql,
@@ -19,8 +33,13 @@ export async function runScheduledMessages(
   send = deliverMessage,
   ready = messagingStatus,
   verses?: VerseSource,
+  writer?: NoteWriter | null,
 ) {
   const token = randomUUID();
+  // Fresh lines are written while the run is young; past this point the
+  // prepared ones are used so a busy minute never outlives its function.
+  const freshUntil = Date.now() + 30_000;
+  const write = writer === undefined ? await defaultNoteWriter() : writer;
   const rows = await sql<ScheduleRow>`with due as (
     select id from message_schedules where enabled and next_run_at <= ${now.toISOString()}
       and (lease_until is null or lease_until < ${now.toISOString()})
@@ -63,6 +82,10 @@ export async function runScheduledMessages(
             sql,
             { ...row, theme_id: row.theme_id },
             verses,
+            {
+              write: Date.now() < freshUntil ? write : null,
+              themeName: await themeName(row.theme_id, row.message_locale),
+            },
           );
           message = "message" in composed ? composed.message : null;
           if ("error" in composed) result = { status: "failed", errorCode: composed.error };

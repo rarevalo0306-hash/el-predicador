@@ -266,6 +266,41 @@ test("the carrier's final word is recorded on the accepted message, and never mo
   [{ schedules }] = [await listSchedules("owner", sql)];
   assert.equal(schedules[0].lastProviderStatus, "delivered");
 });
+test("a theme send uses a freshly written line, and a prepared one when writing fails", async () => {
+  const { id } = await saveSchedule(
+    "owner",
+    { ...schedule, message: "", themeId: "fe", senderName: "Ricardo" },
+    sql,
+  );
+  await sql`insert into verse_texts (verse_id, locale, ref, text, source) values ('w','es','Ref W','Texto W','RV')`;
+  await sql`insert into verse_notes (verse_id, locale, position, text) values ('w','es',0,'Nota W')`;
+  const verses = async () => [{ id: "w", ref: "Ref W", text: "" }];
+  const sent: string[] = [];
+  const send = async (data: { message: string }) => {
+    sent.push(data.message);
+    return { status: "accepted" as const, providerId: `SM${sent.length}` };
+  };
+  const asked: { ref: string; text: string; theme: string; name: string | null }[] = [];
+  const writers = [
+    async (input: { ref: string; text: string; theme: string; name: string | null }) => {
+      asked.push(input);
+      return "Hoy esta palabra es para ti; descansa en el Señor.";
+    },
+    async () => {
+      throw new Error("deepseek_503");
+    },
+  ];
+  for (let i = 0; i < writers.length; i++) {
+    const at = new Date(now.getTime() + i * 86_400_000);
+    await sql`update message_schedules set enabled=true,next_run_at=${at.toISOString()} where id=${id}`;
+    await runScheduledMessages(sql, at, send, ready, verses, writers[i]);
+  }
+  assert.equal(sent.length, 2);
+  assert.match(sent[0], /^«Texto W»\n— Ref W\nRV\n\nHoy esta palabra es para ti; descansa en el Señor\.\n\nCon cariño, Ricardo$/);
+  assert.equal(asked[0].text, "Texto W");
+  assert.equal(asked[0].ref, "Ref W");
+  assert.match(sent[1], /\n\nNota W\n\nCon cariño, Ricardo$/);
+});
 test("a theme schedule walks its verses in order and varies the line, without repeating", async () => {
   const { id } = await saveSchedule(
     "owner",

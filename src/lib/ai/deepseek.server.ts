@@ -18,7 +18,7 @@ export type NoteRequest = { id: string; ref: string; text: string };
  * present-day apostles or prophets. Sample lines set the register; the owner
  * can replace them with their own.
  */
-const STYLE = {
+export const STYLE = {
   es: [
     "Amigo mío, deja de pelear esa batalla con tus fuerzas; la victoria ya se ganó en la cruz. Pon hoy tu fe ahí y descansa.",
     "Hermano, no mires tu caída, mira el Calvario. Lo que Cristo hizo por ti alcanza para este día también.",
@@ -106,10 +106,18 @@ export function deepseekConfigured(config: Config = process.env) {
  * 1 Corinthians 14) is not a reason to drop the line: the line is speaking
  * about the verse, not preaching the thing the owner keeps out.
  */
-export function cleanNote(value: unknown, verseText = ""): string | null {
+export function cleanNote(
+  value: unknown,
+  verseText = "",
+  limits: { min?: number; max?: number } = {},
+): string | null {
   if (typeof value !== "string") return null;
-  const text = value.replace(/\s+/g, " ").trim();
-  if (text.length < 20 || text.length > 220) return null;
+  const text = value
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^["“«']+|["”»']+$/g, "")
+    .trim();
+  if (text.length < (limits.min ?? 20) || text.length > (limits.max ?? 220)) return null;
   if (/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(text)) return null;
   const verse = verseText.toLowerCase();
   for (const hit of text.matchAll(new RegExp(OFF_BRIEF.source, "gi"))) {
