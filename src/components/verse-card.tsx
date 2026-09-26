@@ -4,7 +4,7 @@ import { PreacherMark } from "@/components/mark";
 import { useI18n } from "@/components/language-switch";
 import { useHydratedVerse } from "@/components/use-hydrated-verse";
 import { cn } from "@/lib/utils";
-import { recobroSource } from "@/lib/bible";
+import { bibleSource } from "@/lib/bible";
 import { localizeVerse, type Verse } from "@/lib/verses";
 import { useAppStore } from "@/lib/store";
 
@@ -21,7 +21,9 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
   const favorites = useAppStore((s) => s.favorites);
   const toggleFavorite = useAppStore((s) => s.toggleFavorite);
   const saved = favorites.includes(verse.id);
-  const source = shown?.source ?? recobroSource(locale);
+  const bibleVersion = useAppStore((s) => s.bibleVersions[locale]);
+  // Before the text arrives (or when it cannot), name the version being asked for.
+  const source = shown?.source ?? bibleSource(bibleVersion, locale);
 
   if (variant === "hero") {
     return (

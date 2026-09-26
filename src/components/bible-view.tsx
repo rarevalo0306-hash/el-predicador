@@ -43,6 +43,7 @@ import { cleanWords } from "@/lib/concordance";
 import { combineVerses, formatVerseRange } from "@/lib/reader-prefs";
 import { copyText, formatVerseMessage } from "@/lib/share";
 import { trackApiBibleFums } from "@/lib/api-bible-fums";
+import { useRecoveryAvailable } from "@/lib/bible-availability";
 
 /** A place to open as soon as the Bible shows, e.g. a verse tapped in a chat. */
 export type BibleJump = { bookId: string; chapter: number; verse?: number; at: number };
@@ -494,6 +495,7 @@ function BibleVersionPicker({
   onChange: (version: BibleVersion) => void;
 }) {
   const { t } = useI18n();
+  const recoveryAvailable = useRecoveryAvailable();
   const choices = bibleVersionsFor(locale);
   return (
     <section className="rounded-xl bg-card p-3 shadow-paper">
@@ -506,21 +508,29 @@ function BibleVersionPicker({
       <div role="radiogroup" aria-label={t("bibleVersion")} className="grid grid-cols-2 gap-1">
         {choices.map((choice) => {
           const active = choice.id === value;
+          // Recobro waits for Living Stream Ministry's official access.
+          const soon = choice.id === "recovery" && !recoveryAvailable;
           return (
             <button
               key={choice.id}
               type="button"
               role="radio"
               aria-checked={active}
+              disabled={soon}
               onClick={() => onChange(choice.id)}
               className={cn(
-                "min-h-11 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "flex min-h-11 flex-col items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed",
                 active
                   ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-muted-foreground hover:text-foreground",
+                  : soon
+                    ? "bg-secondary/60 text-muted-foreground"
+                    : "bg-secondary text-muted-foreground hover:text-foreground",
               )}
             >
-              {choice.shortLabel}
+              <span>{choice.shortLabel}</span>
+              {soon ? (
+                <span className="text-[0.7rem] font-normal">{t("bibleVersionSoon")}</span>
+              ) : null}
             </button>
           );
         })}

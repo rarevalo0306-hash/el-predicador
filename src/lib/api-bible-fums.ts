@@ -33,7 +33,7 @@ function loadFumsScript() {
 
 /** Report each displayed API.Bible result once, as its license requires. */
 export async function trackApiBibleFums(fumsId: string | undefined) {
-  if (!fumsId || sent.has(fumsId)) return;
+  if (!fumsId || typeof window === "undefined" || sent.has(fumsId)) return;
   await loadFumsScript();
   if (!window._BAPI) return;
   window._BAPI.t(fumsId);

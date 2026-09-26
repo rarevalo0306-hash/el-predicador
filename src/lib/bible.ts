@@ -35,9 +35,13 @@ export const RECOBRO_COPYRIGHT =
 export const RECOBRO_COPYRIGHT_EN =
   "Holy Bible Recovery Version © Living Stream Ministry";
 
+/**
+ * LBLA and NASB 2020 (API.Bible) until Living Stream Ministry's official
+ * access (LSM_APPID, LSM_TOKEN) is set up; Recobro shows as "Próximamente".
+ */
 export const DEFAULT_BIBLE_VERSIONS: BibleVersionPreferences = {
-  es: "recovery",
-  en: "recovery",
+  es: "lbla",
+  en: "nasb20",
 };
 
 const SPANISH_BIBLE_VERSIONS: BibleVersionChoice[] = [
@@ -70,8 +74,9 @@ export function normalizeBibleVersion(value: unknown, locale: Locale): BibleVers
 }
 
 export function bibleSource(version: BibleVersion, locale: Locale): string {
-  if (version === "lbla") return "La Biblia de las Américas (LBLA)";
-  if (version === "nasb20") return "New American Standard Bible 2020 (NASB 2020)";
+  // Also the line under shared verses, so it names the publisher.
+  if (version === "lbla") return "La Biblia de las Américas (LBLA) © The Lockman Foundation";
+  if (version === "nasb20") return "New American Standard Bible (NASB 2020) © The Lockman Foundation";
   return recobroSource(locale);
 }
 

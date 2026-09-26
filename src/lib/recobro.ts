@@ -6,6 +6,7 @@ import {
   bookById,
   bookName,
   normalizeBibleVersion,
+  DEFAULT_BIBLE_VERSIONS,
   type BibleVersion,
   type BibleBook,
 } from "@/lib/bible";
@@ -128,6 +129,7 @@ export function chapterToVerses(
   chapter: RecobroChapter,
   locale: Locale = "es",
 ): Verse[] {
+  reportApiBibleUse(chapter);
   return chapter.verses.map((item) =>
     toVerse(book, chapter.chapter, item, locale, chapter.version),
   );
@@ -153,7 +155,7 @@ export function loadCachedChapter(
   bookId: string,
   chapter: number,
   locale: Locale,
-  version: BibleVersion = "recovery",
+  version: BibleVersion = DEFAULT_BIBLE_VERSIONS[locale],
 ): Promise<RecobroChapter> {
   const selected = normalizeBibleVersion(version, locale);
   const key = chapterKey(bookId, chapter, locale, selected);
@@ -183,6 +185,19 @@ function joinRange(chapter: RecobroChapter, from: number, to: number) {
     .trim();
 }
 
+/**
+ * API.Bible asks that every use of its text be reported (FUMS). The Bible
+ * reader and verse sheets report whole chapters; this covers single verses
+ * built from one (Hoy, Temas, cards, messages). Browser only, once per id.
+ */
+function reportApiBibleUse(chapter: RecobroChapter) {
+  if (!chapter.fumsId || typeof window === "undefined") return;
+  const id = chapter.fumsId;
+  void import("@/lib/api-bible-fums")
+    .then(({ trackApiBibleFums }) => trackApiBibleFums(id))
+    .catch(() => undefined);
+}
+
 function builtFromChapter(
   verse: Verse,
   span: NonNullable<ReturnType<typeof catalogSpan>>,
@@ -190,6 +205,7 @@ function builtFromChapter(
   locale: Locale,
   version: BibleVersion,
 ): Verse | null {
+  reportApiBibleUse(chapter);
   const text = joinRange(chapter, span.from, span.to);
   if (!text) return null;
   const name = bookName(span.book, locale);
@@ -217,7 +233,7 @@ export function canChangeMessageLanguage(verse: Verse): boolean {
 export function peekHydratedVerse(
   verse: Verse,
   locale: Locale,
-  version: BibleVersion = "recovery",
+  version: BibleVersion = DEFAULT_BIBLE_VERSIONS[locale],
 ): Verse | null {
   const selected = normalizeBibleVersion(version, locale);
   if (isComposedVerse(verse.id)) {
@@ -245,7 +261,7 @@ export function peekHydratedVerse(
 export async function hydrateVerse(
   verse: Verse,
   locale: Locale,
-  version: BibleVersion = "recovery",
+  version: BibleVersion = DEFAULT_BIBLE_VERSIONS[locale],
 ): Promise<Verse> {
   const selected = normalizeBibleVersion(version, locale);
   const peeked = peekHydratedVerse(verse, locale, selected);
@@ -280,7 +296,7 @@ export async function hydrateVerse(
 export async function hydrateVerses(
   verses: Verse[],
   locale: Locale,
-  version: BibleVersion = "recovery",
+  version: BibleVersion = DEFAULT_BIBLE_VERSIONS[locale],
 ) {
   const selected = normalizeBibleVersion(version, locale);
   const unique = new Map<string, { bookId: string; chapter: number }>();
@@ -304,7 +320,7 @@ export async function hydrateVerses(
 export function prefetchVerses(
   verses: Verse[],
   locale: Locale,
-  version: BibleVersion = "recovery",
+  version: BibleVersion = DEFAULT_BIBLE_VERSIONS[locale],
 ) {
   void hydrateVerses(verses, locale, version).catch(() => undefined);
 }
