@@ -49,6 +49,7 @@ import {
 import { verseCardFile } from "@/lib/verse-card";
 import { getVerseById, type Verse } from "@/lib/verses";
 import { useHydratedVerse } from "@/components/use-hydrated-verse";
+import { BibleNotice } from "@/components/bible-notice";
 
 type SendDrawerProps = {
   verse: Verse | null;
@@ -252,7 +253,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
 
   async function makeCard() {
     if (!shown) throw new Error("verse");
-    return verseCardFile(shown, note, displayName);
+    return verseCardFile(shown, note, displayName, messageLocale);
   }
 
   async function handleSaveImage() {
@@ -372,6 +373,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                 <p className="mt-2 text-xs font-medium tracking-[0.12em] text-primary uppercase">
                   {shown.ref}
                 </p>
+                <BibleNotice verse={shown} locale={messageLocale} className="mt-1" />
               </div>
               <div className="grid gap-2 rounded-lg border border-border bg-card px-3 py-3">
                 <div className="flex items-center gap-2">

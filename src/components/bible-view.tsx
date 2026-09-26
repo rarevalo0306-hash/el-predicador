@@ -30,7 +30,6 @@ import {
   formatPlace,
   parseReference,
   recobroChapterUrl,
-  recobroCopyright,
   recobroOrigin,
   type BibleVersion,
   type BibleBook,
@@ -45,6 +44,7 @@ import { combineVerses, formatVerseRange } from "@/lib/reader-prefs";
 import { copyText, formatVerseMessage } from "@/lib/share";
 import { trackApiBibleFums } from "@/lib/api-bible-fums";
 import { useBibleVersion } from "@/lib/use-bible-version";
+import { bibleNotice, plainNotice } from "@/lib/bible-notice";
 
 /** A place to open as soon as the Bible shows, e.g. a verse tapped in a chat. */
 export type BibleJump = { bookId: string; chapter: number; verse?: number; at: number };
@@ -1006,8 +1006,7 @@ function ChapterReader({
         <p className="text-center text-xs text-muted-foreground">{t("tapVerse")}</p>
       )}
       <p className="pb-2 text-center text-[0.7rem] leading-relaxed text-muted-foreground">
-        {data?.copyright ??
-          (version === "recovery" ? recobroCopyright(locale) : bibleSource(version, locale))}.{" "}
+        {plainNotice(data?.copyright ?? bibleNotice(version, locale))}{" "}
         <a
           href={officialUrl}
           target="_blank"

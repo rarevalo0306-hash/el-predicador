@@ -12,6 +12,8 @@ export type Verse = {
   text: string;
   themes: ThemeId[];
   source?: string;
+  /** The edition's copyright line, as its API sent it with the chapter. */
+  copyright?: string;
 };
 
 export const THEMES: {

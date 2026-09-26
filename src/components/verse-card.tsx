@@ -8,6 +8,7 @@ import { bibleSource } from "@/lib/bible";
 import { localizeVerse, type Verse } from "@/lib/verses";
 import { useAppStore } from "@/lib/store";
 import { useBibleVersion } from "@/lib/use-bible-version";
+import { BibleNotice } from "@/components/bible-notice";
 
 type VerseCardProps = {
   verse: Verse;
@@ -49,7 +50,11 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
         <p className="mt-6 font-sans text-sm font-medium tracking-[0.14em] text-primary uppercase">
           {shown?.ref ?? meta.ref}
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">{source}</p>
+        {shown && !error ? (
+          <BibleNotice verse={shown} locale={locale} className="mt-1 text-xs" />
+        ) : (
+          <p className="mt-1 text-xs text-muted-foreground">{source}</p>
+        )}
         <div className="mt-8 flex flex-col gap-2 sm:flex-row">
           <Button
             className="sm:flex-1"
@@ -91,7 +96,10 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
           {t("loadingVerse")}
         </p>
       ) : (
-        <p className="font-serif text-lg leading-snug text-foreground">{shown.text}</p>
+        <>
+          <p className="font-serif text-lg leading-snug text-foreground">{shown.text}</p>
+          <BibleNotice verse={shown} locale={locale} className="mt-2" />
+        </>
       )}
       <div className="mt-3 flex items-center justify-between gap-3">
         <p className="text-xs font-medium tracking-[0.12em] text-primary uppercase">

@@ -68,7 +68,8 @@ export function gospelStepsWithVerses(locale: Locale) {
     .filter((step): step is GospelStep & { verse: Verse } => Boolean(step));
 }
 
-export async function composeGospelText(locale: Locale) {
+/** The gospel message, and the verse it was read from (for its edition). */
+async function composeGospel(locale: Locale) {
   const intro =
     locale === "en"
       ? "I want to share the gospel with you, the best news:"
@@ -93,17 +94,23 @@ export async function composeGospelText(locale: Locale) {
     lines.push("");
   }
   lines.push(close);
-  return lines.join("\n").trim();
+  return { text: lines.join("\n").trim(), from: hydrated[0] ?? null };
+}
+
+export async function composeGospelText(locale: Locale) {
+  return (await composeGospel(locale)).text;
 }
 
 export async function gospelPathVerse(locale: Locale): Promise<Verse> {
+  const { text, from } = await composeGospel(locale);
   return {
     id: "evangelio-camino",
     ref: locale === "en" ? "The gospel" : "El evangelio",
     book: t(locale, "kindEvangelio"),
-    text: await composeGospelText(locale),
+    text,
     themes: ["evangelio"],
-    source: recobroSource(locale),
+    source: from?.source ?? recobroSource(locale),
+    copyright: from?.copyright,
   };
 }
 
@@ -120,6 +127,5 @@ export function gospelPrayerVerse(locale: Locale): Verse {
         ? "Lord Jesus, I confess that I am a sinner. I believe You died for me and rose again. I receive You now as my Savior and my life. Come into me. Thank You for forgiving me. Amen."
         : "Señor Jesús, reconozco que soy pecador. Creo que moriste por mí y resucitaste. Te recibo ahora como mi Salvador y mi vida. Entra en mí. Gracias por perdonarme. Amén.",
     themes: ["evangelio"],
-    source: recobroSource(locale),
   };
 }

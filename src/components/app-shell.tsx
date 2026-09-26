@@ -162,7 +162,8 @@ function PreacherApp({
         const { showDailyNotification } = await import("@/lib/notify");
         await showDailyNotification({
           title: t("notifyBodyTitle"),
-          body: `${verse.ref}: ${verse.text.slice(0, 140)}`,
+          // Only the reference: the text shows, with its copyright line, in the app.
+        body: `${verse.ref} · ${t("notifyTapToRead")}`,
           tag: key,
         });
         localStorage.setItem(key, "1");

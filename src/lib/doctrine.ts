@@ -1262,6 +1262,8 @@ export async function doctrineMessageVerse(
     book: t(locale, "doctrine"),
     text: lines.join("\n").trim(),
     themes: ["evangelio"],
-    source: recobroSource(locale),
+    // The edition the verses were read in, with its copyright line.
+    source: hydrated[0]?.source ?? recobroSource(locale),
+    copyright: hydrated[0]?.copyright,
   };
 }

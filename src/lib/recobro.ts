@@ -34,6 +34,7 @@ function toVerse(
   item: RecobroVerse,
   locale: Locale,
   version: BibleVersion,
+  copyright?: string,
 ): Verse {
   const name = bookName(book, locale);
   return {
@@ -43,6 +44,7 @@ function toVerse(
     text: item.text,
     themes: [],
     source: bibleSource(version, locale),
+    copyright,
   };
 }
 
@@ -130,7 +132,7 @@ export function chapterToVerses(
 ): Verse[] {
   reportApiBibleUse(chapter);
   return chapter.verses.map((item) =>
-    toVerse(book, chapter.chapter, item, locale, chapter.version),
+    toVerse(book, chapter.chapter, item, locale, chapter.version, chapter.copyright),
   );
 }
 
@@ -220,6 +222,7 @@ function builtFromChapter(
     book: name,
     text,
     source: bibleSource(version, locale),
+    copyright: chapter.copyright,
   };
 }
 

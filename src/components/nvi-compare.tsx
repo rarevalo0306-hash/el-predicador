@@ -9,6 +9,8 @@ import {
   nviSystem,
 } from "@/lib/nvi-compare";
 import type { Verse } from "@/lib/verses";
+import { BibleNotice } from "@/components/bible-notice";
+import { recobroSource } from "@/lib/bible";
 
 type NviCompareProps = {
   onSend: (verse: Verse) => void;
@@ -65,6 +67,11 @@ export function NviCompare({ onSend }: NviCompareProps) {
           );
         })}
       </div>
+      <BibleNotice
+        verse={{ source: recobroSource(locale) }}
+        locale={locale}
+        className="text-center"
+      />
       <p className="text-center text-[0.7rem] leading-relaxed text-muted-foreground">
         {t("nviFooter")}
       </p>

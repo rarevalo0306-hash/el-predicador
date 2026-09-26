@@ -1,6 +1,9 @@
 import { env } from "./env.server.ts";
 import type { BibleBook, BibleVersion } from "./bible.ts";
 import type { Locale } from "./i18n.ts";
+import { LOCKMAN_NOTICE } from "./bible-notice.ts";
+
+export { LOCKMAN_NOTICE };
 
 export type ApiBibleChapter = {
   verses: { n: number; text: string }[];
@@ -36,17 +39,6 @@ type ChapterResponse = {
 
 const API_BIBLE_URL = "https://rest.api.bible/v1";
 const LOCKMAN_URL = "https://www.lockman.org/";
-
-/**
- * The Lockman Foundation's copyright notices, used only when API.Bible sends
- * none with a chapter (it normally sends the edition's own line).
- */
-export const LOCKMAN_NOTICE: Record<Extract<BibleVersion, "lbla" | "nasb20">, string> = {
-  lbla:
-    "Texto bíblico tomado de LA BIBLIA DE LAS AMERICAS® © Copyright 1986, 1995, 1997 by The Lockman Foundation. Usado con permiso.",
-  nasb20:
-    "Scripture quotations taken from the (NASB®) New American Standard Bible®, Copyright © 1960, 1971, 1977, 1995, 2020 by The Lockman Foundation. Used by permission. All rights reserved. lockman.org",
-};
 
 let licensedBibles: Promise<ApiBibleEdition[]> | null = null;
 
