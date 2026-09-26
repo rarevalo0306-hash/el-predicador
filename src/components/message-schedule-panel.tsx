@@ -28,7 +28,7 @@ import { useI18n } from "@/components/language-switch";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAppStore } from "@/lib/store";
 import { WEEKDAY_KEYS } from "@/lib/church";
-import { formatPhone } from "@/lib/phone";
+import { maskPhone } from "@/lib/privacy";
 import {
   validateSchedule,
   type ScheduleInput,
@@ -355,7 +355,7 @@ function MessageScheduleForm({
               <option value="">{copy.manual}</option>
               {recipients.map((r) => (
                 <option key={r.id} value={r.id}>
-                  {r.name} · {formatPhone(r.phone)}
+                  {r.name} · {maskPhone(r.phone)}
                 </option>
               ))}
             </select>
@@ -662,7 +662,7 @@ function MessageScheduleForm({
                 <div>
                   <h4 className="font-medium">{row.recipientName}</h4>
                   <p className="text-sm text-muted-foreground">
-                    {formatPhone(row.phone)} · {row.channel === "sms" ? "SMS" : "WhatsApp"} ·{" "}
+                    {maskPhone(row.phone)} · {row.channel === "sms" ? "SMS" : "WhatsApp"} ·{" "}
                     {messageLanguageName(row.messageLocale ?? "es")}
                   </p>
                 </div>

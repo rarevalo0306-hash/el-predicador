@@ -51,7 +51,7 @@ export function ContactForm({ compact }: ContactFormProps) {
           origin: compact ? "ajustes" : "hoy",
         },
       });
-      toast.success(result.duplicate ? t("contactUpdated") : t("contactSaved"));
+      if (result.ok) toast.success(t("contactSaved"));
       try {
         localStorage.setItem("preacher-contacted", "1");
       } catch {
@@ -62,6 +62,7 @@ export function ContactForm({ compact }: ContactFormProps) {
       if (code === "email") toast.error(t("contactBadEmail"));
       else if (code === "phone") toast.error(t("contactBadPhone"));
       else if (code === "address" || code === "name") toast.error(t("contactBadFields"));
+      else if (code === "too_many") toast.error(t("contactTooMany"));
       else toast.error(t("contactFail"));
     } finally {
       setBusy(false);
