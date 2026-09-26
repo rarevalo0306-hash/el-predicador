@@ -113,6 +113,7 @@ function MessageScheduleForm({
   const { user, isPending } = useCurrentUserState();
   const recipients = useAppStore((s) => s.recipients);
   const displayName = useAppStore((s) => s.displayName);
+  const bibleVersions = useAppStore((s) => s.bibleVersions);
   const id = useId();
   const [form, setForm] = useState(() =>
     newForm(initialMessage, initialPerson, initialLocale ?? locale, initialVerseId),
@@ -159,7 +160,7 @@ function MessageScheduleForm({
     const version = ++requestVersion.current;
     setPreparing(true);
     try {
-      const verse = await hydrateVerse(base, messageLocale);
+      const verse = await hydrateVerse(base, messageLocale, bibleVersions[messageLocale]);
       if (version !== requestVersion.current) return;
       update({
         verseId,

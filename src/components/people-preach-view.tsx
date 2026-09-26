@@ -79,6 +79,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   const setChurch = useAppStore((s) => s.setChurch);
   const displayName = useAppStore((s) => s.displayName);
   const notifyHour = useAppStore((s) => s.notifyHour);
+  const bibleVersions = useAppStore((s) => s.bibleVersions);
   const [form, setForm] = useState<RecipientInput>(() => ({ ...emptyForm, messageLocale: locale }));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [section, setSection] = useState<"people" | "church" | "schedules">("people");
@@ -217,7 +218,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
     const pool = versesForTheme(themeId);
     const base = pool[Math.floor(Math.random() * Math.max(pool.length, 1))] ?? getDailyVerse();
     try {
-      const verse = await hydrateVerse(base, messageLocale);
+      const verse = await hydrateVerse(base, messageLocale, bibleVersions[messageLocale]);
       const theme = localizedTheme(themeId, messageLocale);
       const note =
         messageLocale === "en"

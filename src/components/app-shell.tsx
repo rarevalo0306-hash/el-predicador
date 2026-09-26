@@ -107,6 +107,7 @@ function PreacherApp({
   const fontScale = useAppStore((s) => s.fontScale);
   const recipients = useAppStore((s) => s.recipients);
   const church = useAppStore((s) => s.church);
+  const bibleVersion = useAppStore((s) => s.bibleVersions[locale]);
 
   useEffect(() => {
     void import("@/lib/reader-prefs").then(({ applyFontScale }) => {
@@ -147,7 +148,7 @@ function PreacherApp({
       const key = `pv-notified-${todayKey()}`;
       try {
         if (localStorage.getItem(key)) return;
-        const verse = await hydrateVerse(getDailyVerse(), locale);
+        const verse = await hydrateVerse(getDailyVerse(), locale, bibleVersion);
         if (cancelled) return;
         const { showDailyNotification } = await import("@/lib/notify");
         await showDailyNotification({
@@ -179,7 +180,7 @@ function PreacherApp({
       cancelled = true;
       if (timer) window.clearTimeout(timer);
     };
-  }, [ready, notify, notifyHour, locale, t]);
+  }, [ready, notify, notifyHour, locale, bibleVersion, t]);
 
   function openSend(verse: Verse, draft?: SendDraft) {
     setSending(verse);

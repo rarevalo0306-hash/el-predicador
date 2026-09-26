@@ -6,6 +6,12 @@ import { todayKey, type ThemeId, type Verse } from "@/lib/verses";
 import { EMPTY_CHURCH, isThemeId, normalizeChurch, type ChurchInfo } from "@/lib/church";
 import { recipientThemes } from "@/lib/recipient-themes";
 import type { MessageChannel } from "@/lib/message-schedule";
+import {
+  DEFAULT_BIBLE_VERSIONS,
+  normalizeBibleVersion,
+  type BibleVersion,
+  type BibleVersionPreferences,
+} from "@/lib/bible";
 
 export type SentItem = {
   verseId: string;
@@ -97,6 +103,8 @@ export type CloudPayload = {
   highlights: string[];
   /** Reader text size: 0 small … 3 largest. */
   fontScale: 0 | 1 | 2 | 3;
+  /** Bible edition chosen independently for Spanish and English. */
+  bibleVersions: BibleVersionPreferences;
   locale?: Locale;
 };
 
@@ -120,6 +128,7 @@ export const EMPTY_CLOUD: CloudPayload = {
   bookmarks: [],
   highlights: [],
   fontScale: 1,
+  bibleVersions: { ...DEFAULT_BIBLE_VERSIONS },
 };
 
 function placeKey(place: Pick<ReadingPlace, "bookId" | "chapter" | "verse">) {
@@ -155,6 +164,7 @@ type AppState = CloudPayload & {
   toggleBookmark: (place: ReadingPlace) => void;
   toggleHighlight: (verseId: string, verse?: Verse) => void;
   setFontScale: (scale: 0 | 1 | 2 | 3) => void;
+  setBibleVersion: (locale: Locale, version: BibleVersion) => void;
   setLocale: (locale: Locale) => void;
   hydrateFromCloud: (payload: CloudPayload) => void;
   snapshotCloud: () => CloudPayload;
@@ -324,6 +334,13 @@ export const useAppStore = create<AppState>()((set, get) => ({
       };
     }),
   setFontScale: (fontScale) => set({ fontScale }),
+  setBibleVersion: (locale, version) =>
+    set((state) => ({
+      bibleVersions: {
+        ...state.bibleVersions,
+        [locale]: normalizeBibleVersion(version, locale),
+      },
+    })),
   setLocale: (locale) => {
     persistLocale(locale);
     set({ locale });
@@ -351,6 +368,10 @@ export const useAppStore = create<AppState>()((set, get) => ({
       church: normalizeChurch(payload.church),
       highlights: Array.isArray(payload.highlights) ? payload.highlights : [],
       fontScale: scale,
+      bibleVersions: {
+        es: normalizeBibleVersion(payload.bibleVersions?.es, "es") as "recovery" | "lbla",
+        en: normalizeBibleVersion(payload.bibleVersions?.en, "en") as "recovery" | "nasb20",
+      },
       locale,
     });
   },
@@ -373,6 +394,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       bookmarks: state.bookmarks,
       highlights: state.highlights,
       fontScale: state.fontScale,
+      bibleVersions: state.bibleVersions,
       locale: state.locale,
     };
   },

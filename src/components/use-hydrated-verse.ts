@@ -1,14 +1,16 @@
-import { recobroSource } from "@/lib/bible";
+import { bibleSource } from "@/lib/bible";
 import { useEffect, useRef, useState } from "react";
 import type { Locale } from "@/lib/i18n";
 import { hydrateVerse, peekHydratedVerse } from "@/lib/recobro";
 import type { Verse } from "@/lib/verses";
+import { useAppStore } from "@/lib/store";
 
 export function useHydratedVerse(verse: Verse | null, locale: Locale) {
+  const bibleVersion = useAppStore((s) => s.bibleVersions[locale]);
   const verseId = verse?.id ?? "";
   const verseRef = useRef(verse);
   verseRef.current = verse;
-  const peeked = verse ? peekHydratedVerse(verse, locale) : null;
+  const peeked = verse ? peekHydratedVerse(verse, locale, bibleVersion) : null;
   const [hydrated, setHydrated] = useState<Verse | null>(peeked);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
@@ -20,7 +22,7 @@ export function useHydratedVerse(verse: Verse | null, locale: Locale) {
       setError(null);
       return;
     }
-    const ready = peekHydratedVerse(current, locale);
+    const ready = peekHydratedVerse(current, locale, bibleVersion);
     if (ready) {
       setHydrated(ready);
       setError(null);
@@ -29,7 +31,7 @@ export function useHydratedVerse(verse: Verse | null, locale: Locale) {
     let cancelled = false;
     setHydrated((prev) => (prev?.id === current.id ? prev : null));
     setError(null);
-    void hydrateVerse(current, locale)
+    void hydrateVerse(current, locale, bibleVersion)
       .then((result) => {
         if (cancelled) return;
         setHydrated(result);
@@ -41,11 +43,13 @@ export function useHydratedVerse(verse: Verse | null, locale: Locale) {
     return () => {
       cancelled = true;
     };
-  }, [verseId, locale, tick]);
+  }, [verseId, locale, bibleVersion, tick]);
 
   const shown =
     peeked ??
-    (hydrated && hydrated.id === verseId && hydrated.source === recobroSource(locale)
+    (hydrated &&
+    hydrated.id === verseId &&
+    hydrated.source === bibleSource(bibleVersion, locale)
       ? hydrated
       : null);
 

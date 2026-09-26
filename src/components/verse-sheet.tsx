@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { BookOpen, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/components/language-switch";
-import { bookAbbr, bookById, bookName, recobroSource } from "@/lib/bible";
+import { bibleSource, bookAbbr, bookById, bookName } from "@/lib/bible";
 import { chapterToVerses, loadCachedChapter } from "@/lib/recobro";
 import { combineVerses } from "@/lib/reader-prefs";
+import { useAppStore } from "@/lib/store";
 import type { VerseLink } from "@/lib/verse-links";
 import type { Verse } from "@/lib/verses";
 
@@ -22,6 +23,7 @@ type VerseSheetProps = {
  */
 export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
   const { locale, t } = useI18n();
+  const bibleVersion = useAppStore((s) => s.bibleVersions[locale]);
   const [verses, setVerses] = useState<Verse[] | null>(null);
   const [failed, setFailed] = useState(false);
   const book = link ? bookById(link.bookId) : undefined;
@@ -31,7 +33,7 @@ export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
     setFailed(false);
     if (!link || !book) return;
     let cancelled = false;
-    void loadCachedChapter(book.id, link.chapter, locale)
+    void loadCachedChapter(book.id, link.chapter, locale, bibleVersion)
       .then((chapter) => {
         if (cancelled) return;
         const picked = chapterToVerses(book, chapter, locale).filter((verse) => {
@@ -47,7 +49,7 @@ export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
     return () => {
       cancelled = true;
     };
-  }, [link, book, locale]);
+  }, [link, book, locale, bibleVersion]);
 
   useEffect(() => {
     if (!link) return;
@@ -90,7 +92,9 @@ export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
         <header className="flex shrink-0 items-start justify-between gap-3 px-4 pt-4 pb-2">
           <div className="min-w-0">
             <h2 className="font-serif text-2xl tracking-tight">{place}</h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">{recobroSource(locale)}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {bibleSource(bibleVersion, locale)}
+            </p>
           </div>
           <button
             type="button"

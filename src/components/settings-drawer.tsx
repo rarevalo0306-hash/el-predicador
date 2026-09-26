@@ -49,6 +49,7 @@ export function SettingsDrawer({
   const recipients = useAppStore((s) => s.recipients);
   const fontScale = useAppStore((s) => s.fontScale);
   const setFontScale = useAppStore((s) => s.setFontScale);
+  const bibleVersion = useAppStore((s) => s.bibleVersions[locale]);
 
   async function toggleNotify() {
     if (notify) {
@@ -67,7 +68,7 @@ export function SettingsDrawer({
     await ensurePreacherServiceWorker();
     setNotify(true);
     try {
-      const verse = await hydrateVerse(getDailyVerse(), locale);
+      const verse = await hydrateVerse(getDailyVerse(), locale, bibleVersion);
       await showDailyNotification({
         title: t("notifyBodyTitle"),
         body: `${verse.ref}: ${verse.text.slice(0, 140)}`,

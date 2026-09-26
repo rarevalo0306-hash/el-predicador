@@ -300,8 +300,10 @@ const es = {
   nviFooter:
     "Citas breves de la NVI © Biblica, y de la Versión Recobro © Living Stream Ministry, para enseñanza.",
   bibleTitle: "Biblia",
-  bibleSub: "Santa Biblia Versión Recobro. Busca una cita o entra por un libro.",
+  bibleSub: "Busca una cita o entra por un libro.",
   bibleSubEn: "Holy Bible Recovery Version. Search a reference or open a book.",
+  bibleVersion: "Versión de la Biblia",
+  bibleVersionHelp: "Escoge la traducción para leer, copiar, compartir y preguntar.",
   searchRef: "Juan 3:16, Salmos 23…",
   searchRefEn: "John 3:16, Psalms 23…",
   searchRefAria: "Buscar cita o libro",
@@ -445,6 +447,10 @@ const es = {
   chapterNotFound: "Capítulo no encontrado",
   chapterOpenFail: "No se pudo abrir este capítulo",
   chapterEmpty: "Este capítulo no trajo texto",
+  bibleApiPending:
+    "La conexión oficial de la Biblia está pendiente de aprobación. Mientras tanto, puedes abrir el capítulo en el sitio oficial.",
+  apiBibleUnavailable:
+    "Esta versión todavía no está conectada en la aplicación. La clave de API.Bible debe configurarse de forma privada en el servidor.",
   contactTitle: "Tus datos",
   contactLead:
     "Si quieres que te enviemos la palabra, deja tu nombre, correo, teléfono y dirección. Solo el predicador ve esta lista.",
@@ -805,8 +811,10 @@ const en: Record<keyof typeof es, string> = {
   nviFooter:
     "Brief quotations from the NIV © Biblica, and the Recovery Version © Living Stream Ministry, for teaching.",
   bibleTitle: "Bible",
-  bibleSub: "Holy Bible Recovery Version. Search a reference or open a book.",
+  bibleSub: "Search a reference or open a book.",
   bibleSubEn: "Holy Bible Recovery Version. Search a reference or open a book.",
+  bibleVersion: "Bible version",
+  bibleVersionHelp: "Choose the translation used to read, copy, share, and ask questions.",
   searchRef: "John 3:16, Psalms 23…",
   searchRefEn: "John 3:16, Psalms 23…",
   searchRefAria: "Search a reference or book",
@@ -950,6 +958,10 @@ const en: Record<keyof typeof es, string> = {
   chapterNotFound: "Chapter not found",
   chapterOpenFail: "Could not open this chapter",
   chapterEmpty: "This chapter returned no text",
+  bibleApiPending:
+    "The official Bible connection is awaiting approval. In the meantime, you can open the chapter on the official site.",
+  apiBibleUnavailable:
+    "This version is not connected in the app yet. The API.Bible key must be configured privately on the server.",
   contactTitle: "Your details",
   contactLead:
     "If you want us to send you the word, leave your name, email, phone, and address. Only the preacher sees this list.",

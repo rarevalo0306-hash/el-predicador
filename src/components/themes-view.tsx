@@ -6,7 +6,7 @@ import { VerseCard } from "@/components/verse-card";
 import { useI18n } from "@/components/language-switch";
 import { prefetchVerses } from "@/lib/recobro";
 import { answerTopic } from "@/lib/topic-reply";
-import type { SendDraft } from "@/lib/store";
+import { useAppStore, type SendDraft } from "@/lib/store";
 import {
   THEMES,
   localizedTheme,
@@ -31,13 +31,14 @@ export function ThemesView({
   onSend,
 }: ThemesViewProps) {
   const { locale, t } = useI18n();
+  const bibleVersion = useAppStore((s) => s.bibleVersions[locale]);
   const reply = query.trim() ? answerTopic(query, locale) : null;
   const results = reply?.verses ?? [];
 
   useEffect(() => {
-    if (themeId) prefetchVerses(versesForTheme(themeId), locale);
-    else if (results.length) prefetchVerses(results, locale);
-  }, [locale, query, themeId]);
+    if (themeId) prefetchVerses(versesForTheme(themeId), locale, bibleVersion);
+    else if (results.length) prefetchVerses(results, locale, bibleVersion);
+  }, [locale, query, themeId, bibleVersion]);
 
   if (themeId) {
     const theme = localizedTheme(themeId, locale);
