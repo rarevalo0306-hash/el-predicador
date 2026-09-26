@@ -11,19 +11,31 @@ export type AdminAccount = {
   people: number;
   /** Message schedules they own. */
   schedules: number;
+  /** "owner" from the deployment's settings, "manager" named in the app. */
+  role: "owner" | "manager" | null;
 };
 
 export type AdminOverview = {
   registrations: Contact[];
   accounts: AdminAccount[];
+  /** Whether the viewer is the owner (the AI lines are theirs only). */
+  owner: boolean;
 };
+
+async function staffAccess(userId: string) {
+  const { getSql } = await import("@/lib/db");
+  const { accessFor, isStaff } = await import("./roles.server.ts");
+  const sql = await getSql();
+  const access = await accessFor(sql, userId);
+  return { sql, access, staff: isStaff(access) };
+}
 
 /** Whether the signed-in account may open the administrator tab. */
 export const getAdminStatus = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
-    const { isAdminUser } = await import("./admin-access.ts");
-    return { admin: isAdminUser(context.userId, process.env) };
+    const { access, staff } = await staffAccess(context.userId);
+    return { admin: staff, owner: access.owner };
   });
 
 /**
@@ -34,11 +46,12 @@ export const getAdminStatus = createServerFn({ method: "GET" })
 export const getAdminOverview = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }): Promise<AdminOverview> => {
-    const { isAdminUser } = await import("./admin-access.ts");
-    if (!isAdminUser(context.userId, process.env)) throw new Error("forbidden");
-    const { getSql } = await import("@/lib/db");
+    const { sql, access, staff } = await staffAccess(context.userId);
+    if (!staff) throw new Error("forbidden");
     const { parsePayload } = await import("./user-state-parse.ts");
-    const sql = await getSql();
+    const { isAdminUser } = await import("./admin-access.ts");
+    const { managerIds } = await import("./roles.server.ts");
+    const managers = new Set(await managerIds(sql));
 
     const registrations = await sql<{
       id: number;
@@ -90,6 +103,39 @@ export const getAdminOverview = createServerFn({ method: "GET" })
         createdAt: iso(row.createdAt),
         people: peopleByUser.get(row.id) ?? 0,
         schedules: schedulesByUser.get(row.id) ?? 0,
+        role: isAdminUser(row.id, process.env)
+          ? ("owner" as const)
+          : managers.has(row.id)
+            ? ("manager" as const)
+            : null,
       })),
+      owner: access.owner,
     };
+  });
+
+/**
+ * Names or removes a manager. The owner and any manager may do it; the
+ * owner's own role lives in the deployment settings and cannot be touched.
+ */
+export const setManager = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((data: { userId: string; manager: boolean }) => ({
+    userId: String(data.userId ?? "").slice(0, 100),
+    manager: Boolean(data.manager),
+  }))
+  .handler(async ({ data, context }) => {
+    const { sql, staff } = await staffAccess(context.userId);
+    if (!staff) throw new Error("forbidden");
+    const { isAdminUser } = await import("./admin-access.ts");
+    if (!data.userId || isAdminUser(data.userId, process.env)) throw new Error("owner");
+    const [exists] = await sql<{ id: string }>`select id from "user" where id = ${data.userId}`;
+    if (!exists) throw new Error("unknown_account");
+    if (data.manager) {
+      await sql`insert into user_roles (user_id, role, granted_by)
+        values (${data.userId}, 'manager', ${context.userId})
+        on conflict (user_id) do nothing`;
+    } else {
+      await sql`delete from user_roles where user_id = ${data.userId}`;
+    }
+    return { ok: true };
   });

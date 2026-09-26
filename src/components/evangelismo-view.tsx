@@ -570,7 +570,7 @@ function CaseComposer({
       const code = key.startsWith("ask_failed:") ? key.slice("ask_failed:".length) : "";
       setNotice(
         key === "ask_quota"
-          ? t("askQuota", { n: 20 })
+          ? t("askQuota")
           : key === "ask_unavailable" || /^deepseek_40[123]$/.test(code)
             ? t("askUnavailable")
             : `${t("askError")}${code ? ` ${t("askErrorCode", { code })}` : ""}`,
