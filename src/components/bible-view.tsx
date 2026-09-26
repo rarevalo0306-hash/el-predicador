@@ -22,6 +22,7 @@ import {
   bibleSource,
   bibleVerseId,
   bibleVersionsFor,
+  isRecoveryReady,
   bookAbbr,
   bookById,
   bookName,
@@ -43,7 +44,7 @@ import { cleanWords } from "@/lib/concordance";
 import { combineVerses, formatVerseRange } from "@/lib/reader-prefs";
 import { copyText, formatVerseMessage } from "@/lib/share";
 import { trackApiBibleFums } from "@/lib/api-bible-fums";
-import { useRecoveryAvailable } from "@/lib/bible-availability";
+import { useBibleVersion } from "@/lib/use-bible-version";
 
 /** A place to open as soon as the Bible shows, e.g. a verse tapped in a chat. */
 export type BibleJump = { bookId: string; chapter: number; verse?: number; at: number };
@@ -90,7 +91,7 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
   const readingPlace = useAppStore((s) => s.readingPlace);
   const setReadingPlace = useAppStore((s) => s.setReadingPlace);
   const bookmarks = useAppStore((s) => s.bookmarks);
-  const bibleVersion = useAppStore((s) => s.bibleVersions[locale]);
+  const bibleVersion = useBibleVersion(locale);
   const setBibleVersion = useAppStore((s) => s.setBibleVersion);
   const [testament, setTestament] = useState<Testament>(
     () =>
@@ -495,7 +496,7 @@ function BibleVersionPicker({
   onChange: (version: BibleVersion) => void;
 }) {
   const { t } = useI18n();
-  const recoveryAvailable = useRecoveryAvailable();
+  const recoveryAvailable = isRecoveryReady();
   const choices = bibleVersionsFor(locale);
   return (
     <section className="rounded-xl bg-card p-3 shadow-paper">

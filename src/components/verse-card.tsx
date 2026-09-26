@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { bibleSource } from "@/lib/bible";
 import { localizeVerse, type Verse } from "@/lib/verses";
 import { useAppStore } from "@/lib/store";
+import { useBibleVersion } from "@/lib/use-bible-version";
 
 type VerseCardProps = {
   verse: Verse;
@@ -21,7 +22,7 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
   const favorites = useAppStore((s) => s.favorites);
   const toggleFavorite = useAppStore((s) => s.toggleFavorite);
   const saved = favorites.includes(verse.id);
-  const bibleVersion = useAppStore((s) => s.bibleVersions[locale]);
+  const bibleVersion = useBibleVersion(locale);
   // Before the text arrives (or when it cannot), name the version being asked for.
   const source = shown?.source ?? bibleSource(bibleVersion, locale);
 

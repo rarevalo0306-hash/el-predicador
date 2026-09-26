@@ -17,6 +17,7 @@ import {
   type Verse,
 } from "@/lib/verses";
 import { cn } from "@/lib/utils";
+import { useBibleVersion } from "@/lib/use-bible-version";
 
 const MOODS: ThemeId[] = ["amor", "paz", "fortaleza", "esperanza", "consuelo"];
 
@@ -30,7 +31,7 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
   const { locale, t } = useI18n();
   const dailyOffset = useAppStore((s) => s.dailyOffset);
   const bumpOffset = useAppStore((s) => s.bumpOffset);
-  const bibleVersion = useAppStore((s) => s.bibleVersions[locale]);
+  const bibleVersion = useBibleVersion(locale);
   const [showContact, setShowContact] = useState(false);
   const [asked, setAsked] = useState(true);
   const [reflection, setReflection] = useState<DailyReflection | null>(null);

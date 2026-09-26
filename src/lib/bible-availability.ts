@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
 
 /**
  * Whether the Recovery Version can be read: only once Living Stream
@@ -12,26 +11,3 @@ export const getBibleAvailability = createServerFn({ method: "GET" }).handler(
     return { recovery: Boolean(lsmCredentials()) };
   },
 );
-
-let known: Promise<boolean> | null = null;
-
-/** Recobro's availability, asked once per visit; false until known. */
-export function useRecoveryAvailable(): boolean {
-  const [available, setAvailable] = useState(false);
-  useEffect(() => {
-    let cancelled = false;
-    known ??= getBibleAvailability()
-      .then((result) => result.recovery)
-      .catch(() => {
-        known = null;
-        return false;
-      });
-    void known.then((value) => {
-      if (!cancelled) setAvailable(value);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-  return available;
-}

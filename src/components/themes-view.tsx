@@ -6,7 +6,7 @@ import { VerseCard } from "@/components/verse-card";
 import { useI18n } from "@/components/language-switch";
 import { prefetchVerses } from "@/lib/recobro";
 import { answerTopic } from "@/lib/topic-reply";
-import { useAppStore, type SendDraft } from "@/lib/store";
+import type { SendDraft } from "@/lib/store";
 import {
   THEMES,
   localizedTheme,
@@ -14,6 +14,7 @@ import {
   type ThemeId,
   type Verse,
 } from "@/lib/verses";
+import { useBibleVersion } from "@/lib/use-bible-version";
 
 type ThemesViewProps = {
   query: string;
@@ -31,7 +32,7 @@ export function ThemesView({
   onSend,
 }: ThemesViewProps) {
   const { locale, t } = useI18n();
-  const bibleVersion = useAppStore((s) => s.bibleVersions[locale]);
+  const bibleVersion = useBibleVersion(locale);
   const reply = query.trim() ? answerTopic(query, locale) : null;
   const results = reply?.verses ?? [];
 

@@ -6,7 +6,6 @@ import {
   bookById,
   bookName,
   normalizeBibleVersion,
-  DEFAULT_BIBLE_VERSIONS,
   type BibleVersion,
   type BibleBook,
 } from "@/lib/bible";
@@ -155,7 +154,7 @@ export function loadCachedChapter(
   bookId: string,
   chapter: number,
   locale: Locale,
-  version: BibleVersion = DEFAULT_BIBLE_VERSIONS[locale],
+  version?: BibleVersion,
 ): Promise<RecobroChapter> {
   const selected = normalizeBibleVersion(version, locale);
   const key = chapterKey(bookId, chapter, locale, selected);
@@ -233,7 +232,7 @@ export function canChangeMessageLanguage(verse: Verse): boolean {
 export function peekHydratedVerse(
   verse: Verse,
   locale: Locale,
-  version: BibleVersion = DEFAULT_BIBLE_VERSIONS[locale],
+  version?: BibleVersion,
 ): Verse | null {
   const selected = normalizeBibleVersion(version, locale);
   if (isComposedVerse(verse.id)) {
@@ -261,7 +260,7 @@ export function peekHydratedVerse(
 export async function hydrateVerse(
   verse: Verse,
   locale: Locale,
-  version: BibleVersion = DEFAULT_BIBLE_VERSIONS[locale],
+  version?: BibleVersion,
 ): Promise<Verse> {
   const selected = normalizeBibleVersion(version, locale);
   const peeked = peekHydratedVerse(verse, locale, selected);
@@ -296,7 +295,7 @@ export async function hydrateVerse(
 export async function hydrateVerses(
   verses: Verse[],
   locale: Locale,
-  version: BibleVersion = DEFAULT_BIBLE_VERSIONS[locale],
+  version?: BibleVersion,
 ) {
   const selected = normalizeBibleVersion(version, locale);
   const unique = new Map<string, { bookId: string; chapter: number }>();
@@ -320,7 +319,7 @@ export async function hydrateVerses(
 export function prefetchVerses(
   verses: Verse[],
   locale: Locale,
-  version: BibleVersion = DEFAULT_BIBLE_VERSIONS[locale],
+  version?: BibleVersion,
 ) {
   void hydrateVerses(verses, locale, version).catch(() => undefined);
 }

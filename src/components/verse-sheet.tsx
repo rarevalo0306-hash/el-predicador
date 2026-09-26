@@ -5,9 +5,9 @@ import { useI18n } from "@/components/language-switch";
 import { bibleSource, bookAbbr, bookById, bookName } from "@/lib/bible";
 import { chapterToVerses, loadCachedChapter } from "@/lib/recobro";
 import { combineVerses } from "@/lib/reader-prefs";
-import { useAppStore } from "@/lib/store";
 import type { VerseLink } from "@/lib/verse-links";
 import type { Verse } from "@/lib/verses";
+import { useBibleVersion } from "@/lib/use-bible-version";
 
 type VerseSheetProps = {
   link: VerseLink | null;
@@ -23,7 +23,7 @@ type VerseSheetProps = {
  */
 export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
   const { locale, t } = useI18n();
-  const bibleVersion = useAppStore((s) => s.bibleVersions[locale]);
+  const bibleVersion = useBibleVersion(locale);
   const [verses, setVerses] = useState<Verse[] | null>(null);
   const [failed, setFailed] = useState(false);
   const book = link ? bookById(link.bookId) : undefined;

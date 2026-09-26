@@ -35,14 +35,41 @@ export const RECOBRO_COPYRIGHT =
 export const RECOBRO_COPYRIGHT_EN =
   "Holy Bible Recovery Version © Living Stream Ministry";
 
+/** Which edition a reader picked, per language; missing means "the default". */
+export type BibleVersionChoices = Partial<BibleVersionPreferences>;
+
 /**
- * LBLA and NASB 2020 (API.Bible) until Living Stream Ministry's official
- * access (LSM_APPID, LSM_TOKEN) is set up; Recobro shows as "Próximamente".
+ * LBLA and NASB 2020 (API.Bible) are read while Living Stream Ministry's
+ * official access (LSM_APPID, LSM_TOKEN) is missing; Recobro then shows as
+ * "Próximamente".
  */
-export const DEFAULT_BIBLE_VERSIONS: BibleVersionPreferences = {
+export const FALLBACK_BIBLE_VERSIONS: BibleVersionPreferences = {
   es: "lbla",
   en: "nasb20",
 };
+
+let recoveryReadyInPage = false;
+
+/** The page is told once, from the server, whether Recobro can be read. */
+export function setRecoveryReady(ready: boolean) {
+  recoveryReadyInPage = ready;
+}
+
+/**
+ * Whether the Recovery Version can be read. The server knows from its own
+ * settings; the page from what the server told it. Never exposes the keys.
+ */
+export function isRecoveryReady(): boolean {
+  if (typeof window !== "undefined") return recoveryReadyInPage;
+  const vars = (globalThis as { process?: { env?: Record<string, string | undefined> } })
+    .process?.env;
+  return Boolean(vars?.LSM_APPID?.trim() && vars?.LSM_TOKEN?.trim());
+}
+
+/** Recobro is the main version once it can be read; LBLA / NASB 2020 until then. */
+export function defaultBibleVersion(locale: Locale): BibleVersion {
+  return isRecoveryReady() ? "recovery" : FALLBACK_BIBLE_VERSIONS[locale];
+}
 
 const SPANISH_BIBLE_VERSIONS: BibleVersionChoice[] = [
   { id: "recovery", label: "Santa Biblia Versión Recobro", shortLabel: "Recobro" },
@@ -69,8 +96,23 @@ export function isBibleVersionForLocale(
   return bibleVersionsFor(locale).some((item) => item.id === value);
 }
 
+/**
+ * The edition to read: the reader's choice when it can be read, otherwise
+ * the default for the language.
+ */
 export function normalizeBibleVersion(value: unknown, locale: Locale): BibleVersion {
-  return isBibleVersionForLocale(value, locale) ? value : DEFAULT_BIBLE_VERSIONS[locale];
+  if (!isBibleVersionForLocale(value, locale)) return defaultBibleVersion(locale);
+  if (value === "recovery" && !isRecoveryReady()) return FALLBACK_BIBLE_VERSIONS[locale];
+  return value;
+}
+
+/** Keeps only a valid choice per language, so an unknown value means "default". */
+export function parseBibleVersionChoices(value: unknown): BibleVersionChoices {
+  const raw = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  const choices: BibleVersionChoices = {};
+  if (raw.es === "recovery" || raw.es === "lbla") choices.es = raw.es;
+  if (raw.en === "recovery" || raw.en === "nasb20") choices.en = raw.en;
+  return choices;
 }
 
 export function bibleSource(version: BibleVersion, locale: Locale): string {

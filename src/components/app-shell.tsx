@@ -36,6 +36,7 @@ import { allDueItems } from "@/lib/preach-schedule";
 import { showDailyNotification } from "@/lib/notify";
 import { cn } from "@/lib/utils";
 import type { VerseLink } from "@/lib/verse-links";
+import { useBibleVersion } from "@/lib/use-bible-version";
 
 type Tab = "hoy" | "biblia" | "evangelio" | "temas" | "personas" | "guardados" | "admin";
 
@@ -115,7 +116,7 @@ function PreacherApp({
   const fontScale = useAppStore((s) => s.fontScale);
   const recipients = useAppStore((s) => s.recipients);
   const church = useAppStore((s) => s.church);
-  const bibleVersion = useAppStore((s) => s.bibleVersions[locale]);
+  const bibleVersion = useBibleVersion(locale);
 
   useEffect(() => {
     void import("@/lib/reader-prefs").then(({ applyFontScale }) => {

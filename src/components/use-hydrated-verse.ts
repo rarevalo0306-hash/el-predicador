@@ -3,10 +3,10 @@ import { useEffect, useRef, useState } from "react";
 import type { Locale } from "@/lib/i18n";
 import { hydrateVerse, peekHydratedVerse } from "@/lib/recobro";
 import type { Verse } from "@/lib/verses";
-import { useAppStore } from "@/lib/store";
+import { useBibleVersion } from "@/lib/use-bible-version";
 
 export function useHydratedVerse(verse: Verse | null, locale: Locale) {
-  const bibleVersion = useAppStore((s) => s.bibleVersions[locale]);
+  const bibleVersion = useBibleVersion(locale);
   const verseId = verse?.id ?? "";
   const verseRef = useRef(verse);
   verseRef.current = verse;

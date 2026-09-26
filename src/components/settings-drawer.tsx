@@ -25,6 +25,7 @@ import {
   type FontScale,
 } from "@/lib/reader-prefs";
 import { cn } from "@/lib/utils";
+import { useBibleVersion } from "@/lib/use-bible-version";
 
 type SettingsDrawerProps = {
   open: boolean;
@@ -52,7 +53,7 @@ export function SettingsDrawer({
   const recipients = useAppStore((s) => s.recipients);
   const fontScale = useAppStore((s) => s.fontScale);
   const setFontScale = useAppStore((s) => s.setFontScale);
-  const bibleVersion = useAppStore((s) => s.bibleVersions[locale]);
+  const bibleVersion = useBibleVersion(locale);
 
   async function toggleNotify() {
     if (notify) {

@@ -44,6 +44,7 @@ import {
 import { scheduleCopy } from "@/lib/schedule-copy";
 import { missingRequirements } from "@/lib/messaging-requirements";
 import { cn } from "@/lib/utils";
+import { normalizeBibleVersion } from "@/lib/bible";
 
 const selectClass =
   "h-11 w-full min-w-0 rounded-md border border-input bg-card px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30";
@@ -113,7 +114,7 @@ function MessageScheduleForm({
   const { user, isPending } = useCurrentUserState();
   const recipients = useAppStore((s) => s.recipients);
   const displayName = useAppStore((s) => s.displayName);
-  const bibleVersions = useAppStore((s) => s.bibleVersions);
+  const bibleChoice = useAppStore((s) => s.bibleChoice);
   const id = useId();
   const [form, setForm] = useState(() =>
     newForm(initialMessage, initialPerson, initialLocale ?? locale, initialVerseId),
@@ -160,7 +161,7 @@ function MessageScheduleForm({
     const version = ++requestVersion.current;
     setPreparing(true);
     try {
-      const verse = await hydrateVerse(base, messageLocale, bibleVersions[messageLocale]);
+      const verse = await hydrateVerse(base, messageLocale, normalizeBibleVersion(bibleChoice[messageLocale], messageLocale));
       if (version !== requestVersion.current) return;
       update({
         verseId,

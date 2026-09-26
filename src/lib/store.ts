@@ -7,10 +7,10 @@ import { EMPTY_CHURCH, isThemeId, normalizeChurch, type ChurchInfo } from "@/lib
 import { recipientThemes } from "@/lib/recipient-themes";
 import type { MessageChannel } from "@/lib/message-schedule";
 import {
-  DEFAULT_BIBLE_VERSIONS,
-  normalizeBibleVersion,
+  isBibleVersionForLocale,
+  parseBibleVersionChoices,
   type BibleVersion,
-  type BibleVersionPreferences,
+  type BibleVersionChoices,
 } from "@/lib/bible";
 
 export type SentItem = {
@@ -103,8 +103,11 @@ export type CloudPayload = {
   highlights: string[];
   /** Reader text size: 0 small … 3 largest. */
   fontScale: 0 | 1 | 2 | 3;
-  /** Bible edition chosen independently for Spanish and English. */
-  bibleVersions: BibleVersionPreferences;
+  /**
+   * Bible edition the reader picked for Spanish and for English. A language
+   * left out reads the default (Recobro once it can be read).
+   */
+  bibleChoice: BibleVersionChoices;
   locale?: Locale;
 };
 
@@ -128,7 +131,7 @@ export const EMPTY_CLOUD: CloudPayload = {
   bookmarks: [],
   highlights: [],
   fontScale: 1,
-  bibleVersions: { ...DEFAULT_BIBLE_VERSIONS },
+  bibleChoice: {},
 };
 
 function placeKey(place: Pick<ReadingPlace, "bookId" | "chapter" | "verse">) {
@@ -354,10 +357,9 @@ export const useAppStore = create<AppState>()((set, get) => ({
   setFontScale: (fontScale) => set({ fontScale }),
   setBibleVersion: (locale, version) =>
     set((state) => ({
-      bibleVersions: {
-        ...state.bibleVersions,
-        [locale]: normalizeBibleVersion(version, locale),
-      },
+      bibleChoice: isBibleVersionForLocale(version, locale)
+        ? { ...state.bibleChoice, [locale]: version }
+        : state.bibleChoice,
     })),
   setLocale: (locale) => {
     persistLocale(locale);
@@ -386,10 +388,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       church: normalizeChurch(payload.church),
       highlights: Array.isArray(payload.highlights) ? payload.highlights : [],
       fontScale: scale,
-      bibleVersions: {
-        es: normalizeBibleVersion(payload.bibleVersions?.es, "es") as "recovery" | "lbla",
-        en: normalizeBibleVersion(payload.bibleVersions?.en, "en") as "recovery" | "nasb20",
-      },
+      bibleChoice: parseBibleVersionChoices(payload.bibleChoice),
       locale,
     });
   },
@@ -412,7 +411,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       bookmarks: state.bookmarks,
       highlights: state.highlights,
       fontScale: state.fontScale,
-      bibleVersions: state.bibleVersions,
+      bibleChoice: state.bibleChoice,
       locale: state.locale,
     };
   },

@@ -2,6 +2,22 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { apiBibleContentToVerses, matchesApiBibleVersion } from "./api-bible.ts";
 
+/** Sets LSM access for one test; returns the undo. */
+function withLsmEnv(appid: string | undefined, token: string | undefined) {
+  const before = { appid: process.env.LSM_APPID, token: process.env.LSM_TOKEN };
+  const put = (key: string, value: string | undefined) => {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  };
+  put("LSM_APPID", appid);
+  put("LSM_TOKEN", token);
+  return () => {
+    put("LSM_APPID", before.appid);
+    put("LSM_TOKEN", before.token);
+  };
+}
+
+
 test("recognizes the two licensed Lockman editions", () => {
   assert.equal(
     matchesApiBibleVersion(
@@ -62,18 +78,39 @@ test("groups API.Bible JSON text under the correct verse number", () => {
   ]);
 });
 
-test("LBLA and NASB 2020 are the default versions; Recobro stays choosable", async () => {
-  const { DEFAULT_BIBLE_VERSIONS, normalizeBibleVersion, bibleVersionsFor } = await import(
-    "./bible.ts"
-  );
-  assert.deepEqual(DEFAULT_BIBLE_VERSIONS, { es: "lbla", en: "nasb20" });
+test("without LSM access, LBLA and NASB 2020 are read and Recobro waits", async (t) => {
+  const { FALLBACK_BIBLE_VERSIONS, defaultBibleVersion, normalizeBibleVersion, bibleVersionsFor } =
+    await import("./bible.ts");
+  t.after(withLsmEnv(undefined, undefined));
+  assert.deepEqual(FALLBACK_BIBLE_VERSIONS, { es: "lbla", en: "nasb20" });
+  assert.equal(defaultBibleVersion("es"), "lbla");
   assert.equal(normalizeBibleVersion(undefined, "es"), "lbla");
   assert.equal(normalizeBibleVersion("nasb20", "es"), "lbla", "each language keeps its own list");
-  assert.equal(normalizeBibleVersion("recovery", "en"), "recovery");
+  assert.equal(normalizeBibleVersion("recovery", "en"), "nasb20", "Recobro cannot be read yet");
   assert.deepEqual(
     bibleVersionsFor("en").map((item) => item.id),
     ["recovery", "nasb20"],
   );
+});
+
+test("with LSM access, Recobro is the main version and a reader's pick is kept", async (t) => {
+  const { defaultBibleVersion, normalizeBibleVersion } = await import("./bible.ts");
+  t.after(withLsmEnv("app-id", "app-token"));
+  assert.equal(defaultBibleVersion("es"), "recovery");
+  assert.equal(defaultBibleVersion("en"), "recovery");
+  assert.equal(normalizeBibleVersion(undefined, "es"), "recovery");
+  assert.equal(normalizeBibleVersion("lbla", "es"), "lbla", "LBLA stays for whoever picked it");
+  assert.equal(normalizeBibleVersion("nasb20", "en"), "nasb20");
+});
+
+test("only a real pick is saved, so an old automatic value never pins a version", async () => {
+  const { parseBibleVersionChoices } = await import("./bible.ts");
+  assert.deepEqual(parseBibleVersionChoices(undefined), {});
+  assert.deepEqual(parseBibleVersionChoices({ es: "lbla", en: "lbla" }), { es: "lbla" });
+  assert.deepEqual(parseBibleVersionChoices({ es: "recovery", en: "nasb20" }), {
+    es: "recovery",
+    en: "nasb20",
+  });
 });
 
 test("the key travels only in the request header, and the copyright is Lockman's", async (t) => {
