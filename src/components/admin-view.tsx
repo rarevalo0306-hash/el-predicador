@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/components/language-switch";
-import { getAdminOverview, type AdminOverview } from "@/lib/admin";
+import { getAdminOverview, setManager, type AdminOverview } from "@/lib/admin";
 import {
   getVerseNotesStatus,
   prepareVerseNotes,
@@ -87,6 +87,20 @@ export function AdminView() {
     }
   }
 
+  const [changingRole, setChangingRole] = useState<string | null>(null);
+  async function toggleManager(userId: string, manager: boolean, name: string) {
+    setChangingRole(userId);
+    try {
+      await setManager({ data: { userId, manager } });
+      toast(manager ? t("roleMadeManager", { name }) : t("roleRemovedManager", { name }));
+      load();
+    } catch {
+      toast.error(t("roleChangeFail"));
+    } finally {
+      setChangingRole(null);
+    }
+  }
+
   const load = () => {
     setError(false);
     getAdminOverview()
@@ -116,7 +130,10 @@ export function AdminView() {
         className="inline-flex w-full rounded-full border border-border bg-card p-0.5"
         role="tablist"
       >
-        {(["registrations", "accounts", "notes"] as const).map((id) => (
+        {(data && !data.owner
+          ? (["registrations", "accounts"] as const)
+          : (["registrations", "accounts", "notes"] as const)
+        ).map((id) => (
           <button
             key={id}
             type="button"
@@ -264,6 +281,26 @@ export function AdminView() {
                 {t("adminPeopleCount", { n: row.people })} ·{" "}
                 {t("adminSchedulesCount", { n: row.schedules })}
               </p>
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                {row.role ? (
+                  <span className="inline-flex h-7 items-center rounded-full bg-primary/10 px-3 text-xs font-medium text-primary">
+                    {row.role === "owner" ? t("roleOwner") : t("roleManager")}
+                  </span>
+                ) : (
+                  <span />
+                )}
+                {row.role !== "owner" ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={row.role === "manager" ? "outline" : "default"}
+                    disabled={changingRole === row.id}
+                    onClick={() => void toggleManager(row.id, row.role !== "manager", row.name || row.email)}
+                  >
+                    {row.role === "manager" ? t("roleRemoveManager") : t("roleMakeManager")}
+                  </Button>
+                ) : null}
+              </div>
             </article>
           ))}
         </div>
