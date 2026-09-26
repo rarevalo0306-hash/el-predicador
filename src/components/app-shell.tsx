@@ -196,16 +196,33 @@ function PreacherApp({
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col">
-      <header className="flex items-center justify-between gap-2 px-4 pt-5 pb-3 sm:gap-3 sm:px-5">
-        <Logo />
+      <header className="flex items-center justify-between gap-2 px-3 pt-5 pb-3 min-[360px]:px-4 sm:gap-3 sm:px-5">
+        <Logo fit />
         <div className="flex min-w-0 shrink-0 items-center gap-1">
           <LanguageSwitch compact />
+          {/* In the bar, not floating over the page, so it never covers a button. */}
+          <button
+            type="button"
+            onClick={() => setAskOpen(true)}
+            aria-label={t("askButton")}
+            title={t("askButton")}
+            className="inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full bg-primary px-2.5 text-sm font-medium text-primary-foreground transition-transform duration-150 active:scale-95"
+          >
+            <MessageCircleQuestion className="size-5 shrink-0" aria-hidden />
+            {/* Named only where the bar has room: signed in, on a wide phone.
+                Wider screens show the app's name there instead. */}
+            <span className={user ? "hidden pr-1 min-[400px]:inline sm:hidden" : "hidden"}>
+              {t("askButton")}
+            </span>
+          </button>
           {isPending ? (
             <span className="inline-flex h-11 w-16 animate-pulse rounded-full bg-secondary" />
           ) : user ? (
             <button
               type="button"
               onClick={() => setProfileOpen(true)}
+              data-profile-trigger
+              aria-haspopup="dialog"
               className="inline-flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
               aria-label={t("profile")}
             >
@@ -227,6 +244,8 @@ function PreacherApp({
                   setProfileMode("entrar");
                   setProfileOpen(true);
                 }}
+                data-profile-trigger
+                aria-haspopup="dialog"
                 className="inline-flex h-10 items-center rounded-full border border-border bg-card px-2.5 text-xs font-medium text-foreground sm:h-11 sm:px-3.5 sm:text-sm"
               >
                 {t("logIn")}
@@ -237,7 +256,7 @@ function PreacherApp({
                   setProfileMode("crear");
                   setProfileOpen(true);
                 }}
-                className="inline-flex h-10 items-center rounded-full bg-primary px-2.5 text-xs font-medium text-primary-foreground sm:h-11 sm:px-3.5 sm:text-sm"
+                className="hidden h-10 items-center rounded-full border border-border bg-card px-2.5 text-xs font-medium text-foreground min-[400px]:inline-flex sm:h-11 sm:px-3.5 sm:text-sm"
               >
                 <span className="sm:hidden">{t("signupShort")}</span>
                 <span className="hidden sm:inline">{t("signupLink")}</span>
@@ -254,7 +273,7 @@ function PreacherApp({
           </button>
         </div>
       </header>
-      <main className="flex-1 px-5 pt-2 pb-28">
+      <main className="flex-1 px-5 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
         {!ready ? (
           <div className="h-40 animate-pulse rounded-xl bg-card" />
         ) : null}
@@ -298,18 +317,6 @@ function PreacherApp({
         ) : null}
         {ready && tab === "admin" && admin ? <AdminView /> : null}
       </main>
-      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom)+0.75rem)] z-40">
-        <div className="mx-auto flex max-w-lg justify-end px-4">
-          <button
-            type="button"
-            onClick={() => setAskOpen(true)}
-            className="pointer-events-auto inline-flex h-11 items-center gap-2 rounded-full bg-primary pr-4 pl-3.5 text-sm font-medium text-primary-foreground shadow-lg transition-transform duration-150 active:scale-95"
-          >
-            <MessageCircleQuestion className="size-5" />
-            {t("askButton")}
-          </button>
-        </div>
-      </div>
       <nav
         className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background pb-[env(safe-area-inset-bottom)]"
         aria-label={t("sections")}

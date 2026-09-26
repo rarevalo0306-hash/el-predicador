@@ -58,6 +58,7 @@ const es = {
   askError: "No se pudo responder. Intenta de nuevo.",
   askErrorCode: "Código: {code}",
   askClose: "Cerrar",
+  close: "Cerrar",
   caseAiKicker: "A la medida",
   caseAiTitle: "Un mensaje para esta persona",
   caseAiHint:
@@ -563,6 +564,7 @@ const en: Record<keyof typeof es, string> = {
   askError: "Could not answer. Please try again.",
   askErrorCode: "Code: {code}",
   askClose: "Close",
+  close: "Close",
   caseAiKicker: "Tailored",
   caseAiTitle: "A message for this person",
   caseAiHint:

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { X } from "lucide-react";
 import { Drawer as DrawerPrimitive } from "vaul";
 import { cn } from "@/lib/utils";
 
@@ -49,8 +50,14 @@ function DrawerOverlay({
 function DrawerContent({
   className,
   children,
+  closeLabel,
+  onOpenAutoFocus,
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Content>) {
+}: React.ComponentProps<typeof DrawerPrimitive.Content> & {
+  /** Shows a visible close button (44×44) with this name, focused on open. */
+  closeLabel?: string;
+}) {
+  const closeRef = React.useRef<HTMLButtonElement>(null);
   return (
     <DrawerPortal>
       <DrawerOverlay />
@@ -60,9 +67,27 @@ function DrawerContent({
           "fixed inset-x-0 bottom-0 z-50 mx-auto mt-24 flex h-auto max-h-[92dvh] w-full max-w-lg flex-col rounded-t-xl bg-card text-card-foreground outline-none",
           className,
         )}
+        onOpenAutoFocus={(event) => {
+          onOpenAutoFocus?.(event);
+          // Focus goes into the panel, on the close button rather than a
+          // field, so a phone does not raise its keyboard on open.
+          if (closeLabel && !event.defaultPrevented && closeRef.current) {
+            event.preventDefault();
+            closeRef.current.focus({ preventScroll: true });
+          }
+        }}
         {...props}
       >
         <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-border" />
+        {closeLabel ? (
+          <DrawerPrimitive.Close
+            ref={closeRef}
+            aria-label={closeLabel}
+            className="absolute top-2 right-2 inline-flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            <X className="size-5" aria-hidden />
+          </DrawerPrimitive.Close>
+        ) : null}
         {children}
       </DrawerPrimitive.Content>
     </DrawerPortal>

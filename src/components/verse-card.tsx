@@ -49,7 +49,7 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
         <p className="mt-1 text-xs text-muted-foreground">{source}</p>
         <div className="mt-8 flex flex-col gap-2 sm:flex-row">
           <Button
-            className="flex-1"
+            className="sm:flex-1"
             size="lg"
             disabled={!shown}
             onClick={() => shown && onSend(shown)}
