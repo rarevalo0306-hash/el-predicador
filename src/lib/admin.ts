@@ -20,6 +20,11 @@ export type AdminOverview = {
   accounts: AdminAccount[];
   /** Whether the viewer is the owner (the AI lines are theirs only). */
   owner: boolean;
+  /**
+   * Managers get names only, shortened ("Ana M. L."): no email, phone or
+   * address ever leaves the server for them.
+   */
+  masked: boolean;
 };
 
 async function staffAccess(userId: string) {
@@ -42,6 +47,7 @@ export const getAdminStatus = createServerFn({ method: "GET" })
  * Everything the owner needs to see who is using the app: the registrations
  * from the "receive the word" form, and the accounts people created. Account
  * rows carry counts only — never another person's contacts or messages.
+ * Managers see shortened names only.
  */
 export const getAdminOverview = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
@@ -85,37 +91,21 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       ).map((row) => [row.user_id, row.count]),
     );
 
-    const iso = (value: string | Date) => new Date(value).toISOString();
-    return {
-      registrations: registrations.map((row) => ({
-        id: row.id,
-        name: row.name,
-        email: row.email,
-        phone: row.phone,
-        address: row.address,
-        locale: row.locale,
-        createdAt: iso(row.created_at),
-      })),
-      accounts: users.map((row) => ({
-        id: row.id,
-        name: row.name ?? "",
-        email: row.email,
-        createdAt: iso(row.createdAt),
-        people: peopleByUser.get(row.id) ?? 0,
-        schedules: schedulesByUser.get(row.id) ?? 0,
-        role: isAdminUser(row.id, process.env)
-          ? ("owner" as const)
-          : managers.has(row.id)
-            ? ("manager" as const)
-            : null,
-      })),
+    const { shapeOverview } = await import("./admin-shape.ts");
+    return shapeOverview({
       owner: access.owner,
-    };
+      registrations,
+      users,
+      peopleByUser,
+      schedulesByUser,
+      roleOf: (id) =>
+        isAdminUser(id, process.env) ? "owner" : managers.has(id) ? "manager" : null,
+    });
   });
 
 /**
- * Names or removes a manager. The owner and any manager may do it; the
- * owner's own role lives in the deployment settings and cannot be touched.
+ * Names or removes a manager. Only the owner may do it; the owner's own
+ * role lives in the deployment settings and cannot be touched.
  */
 export const setManager = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
@@ -124,8 +114,10 @@ export const setManager = createServerFn({ method: "POST" })
     manager: Boolean(data.manager),
   }))
   .handler(async ({ data, context }) => {
-    const { sql, staff } = await staffAccess(context.userId);
-    if (!staff) throw new Error("forbidden");
+    // Only the owner names or removes managers, so a manager cannot hand out
+    // access (or the owner's Twilio sending) to other accounts.
+    const { sql, access } = await staffAccess(context.userId);
+    if (!access.owner) throw new Error("forbidden");
     const { isAdminUser } = await import("./admin-access.ts");
     if (!data.userId || isAdminUser(data.userId, process.env)) throw new Error("owner");
     const [exists] = await sql<{ id: string }>`select id from "user" where id = ${data.userId}`;

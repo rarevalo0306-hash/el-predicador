@@ -8,8 +8,20 @@ export function fail(status: number, error: string) {
   return Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
 }
 
-/** The signed-in user id, or a ready 401 response. */
+/**
+ * Whether a browser sent this from somewhere else (another site, or a
+ * sibling app on the same domain). The app's own pages send
+ * "same-origin"; scripts and servers send no header at all. The same rule
+ * authMiddleware applies to server functions.
+ */
+export function crossSite(request: Request): boolean {
+  const site = request.headers.get("sec-fetch-site");
+  return Boolean(site) && site !== "same-origin" && site !== "none";
+}
+
+/** The signed-in user id, or a ready 401 (or 403) response. */
 export async function callerId(request: Request): Promise<string | Response> {
+  if (crossSite(request)) return fail(403, "forbidden");
   const { requireUserId, UnauthorizedError } = await import("@/lib/auth/verify.server");
   const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   try {

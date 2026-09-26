@@ -48,33 +48,36 @@ function parseInput(data: ContactInput) {
   return { name, email, phone, address, locale, origin };
 }
 
+/**
+ * The public "Quiero recibir la palabra" form. An email already on file is
+ * left as it was: nobody can change someone else's details by typing their
+ * email, and the answer is the same either way, so it does not reveal who
+ * has signed up. Limited per sender and per email so it cannot be flooded.
+ */
 export const submitContact = createServerFn({ method: "POST" })
   .validator((data: ContactInput) => data)
   .handler(async ({ data }) => {
-    if (clean(data.company, 80)) {
-      return { ok: true as const, duplicate: false };
-    }
+    if (clean(data.company, 80)) return { ok: true as const };
     const row = parseInput(data);
     const sql = await getSql();
-    const existing = await sql<{ id: number }>`
-      select id from contacts where lower(email) = ${row.email} limit 1
-    `;
-    if (existing[0]) {
-      await sql`
-        update contacts
-        set name = ${row.name},
-            phone = ${row.phone},
-            address = ${row.address},
-            locale = ${row.locale}
-        where id = ${existing[0].id}
-      `;
-      await forwardRegistration(row);
-      return { ok: true as const, duplicate: true };
-    }
-    await sql`
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const headers = getRequest()?.headers;
+    const ip =
+      headers?.get("x-forwarded-for")?.split(",")[0]?.trim() || headers?.get("x-real-ip") || "";
+    const { allowFormSubmission } = await import("@/lib/form-throttle.server");
+    const allowed = await allowFormSubmission(sql, {
+      ip,
+      email: row.email,
+      salt: process.env.BETTER_AUTH_SECRET || "preacher-form",
+    });
+    if (!allowed) throw new Error("too_many");
+    const inserted = await sql<{ id: number }>`
       insert into contacts (name, email, phone, address, locale)
       values (${row.name}, ${row.email}, ${row.phone}, ${row.address}, ${row.locale})
+      on conflict do nothing
+      returning id
     `;
-    await forwardRegistration(row);
-    return { ok: true as const, duplicate: false };
+    // Only a new sign-up is sent on to the owner's inbox.
+    if (inserted.length) await forwardRegistration(row);
+    return { ok: true as const };
   });
