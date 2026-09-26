@@ -31,6 +31,8 @@ type SettingsDrawerProps = {
   onOpenChange: (open: boolean) => void;
   onOpenProfile?: () => void;
   onOpenSignUp?: () => void;
+  /** Where focus goes when the panel closes (see `returnFocusTo`). */
+  onCloseAutoFocus?: (event: Event) => void;
 };
 
 export function SettingsDrawer({
@@ -38,6 +40,7 @@ export function SettingsDrawer({
   onOpenChange,
   onOpenProfile,
   onOpenSignUp,
+  onCloseAutoFocus,
 }: SettingsDrawerProps) {
   const { locale, t } = useI18n();
   const displayName = useAppStore((s) => s.displayName);
@@ -97,7 +100,7 @@ export function SettingsDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent closeLabel={t("close")}>
+      <DrawerContent closeLabel={t("close")} onCloseAutoFocus={onCloseAutoFocus}>
         <DrawerHeader className="pr-14">
           <DrawerTitle>{t("settingsTitle")}</DrawerTitle>
           <DrawerDescription>{t("settingsDesc")}</DrawerDescription>

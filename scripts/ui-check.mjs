@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
  * Layout and panel checks in a real browser, at the phone and desktop widths
- * the app has to hold: 320, 375, 390, 430, 768 and 1280.
+ * the app has to hold (WIDTHS below).
  *
- *   node scripts/ui-check.mjs [--url http://127.0.0.1:8081] [--shots]
+ *   node scripts/ui-check.mjs [--url http://127.0.0.1:8081] [--admin yes|no] [--shots]
  *
  * Run against a built preview with auth off (`VITE_AUTH_ENABLED=false npm run
  * build && npm run preview:restart`), where the preview's own user is signed
@@ -17,6 +17,12 @@
  *    scrolls to its last control, and closes by X, Escape, the backdrop and a
  *    swipe down, each time giving focus back to the Perfil button and leaving
  *    the page scrollable;
+ *  - the bottom bar holds Hoy, Biblia, Temas, Gente and Más, each at least
+ *    44×44 with its whole name; another section opens at its top;
+ *  - Más lists Doctrina, Guardados, Admin (only with --admin yes; never with
+ *    --admin no) and Ajustes; each opens its section or panel, Más stays lit
+ *    while one of its sections is open, and focus comes back to Más;
+ *  - Ajustes is no longer in the header;
  *  - nothing is logged as an error in the console.
  * Exits 1 on any failure. Screenshots (with --shots) go to screenshots/ui-check/.
  */
@@ -27,8 +33,11 @@ const args = process.argv.slice(2);
 const urlAt = args.indexOf("--url");
 const BASE = urlAt >= 0 ? args[urlAt + 1] : "http://127.0.0.1:8081";
 const SHOTS = args.includes("--shots");
+const adminAt = args.indexOf("--admin");
+const ADMIN = adminAt >= 0 ? args[adminAt + 1] : "";
 const WIDTHS = [
   { width: 320, height: 640 },
+  { width: 360, height: 740 },
   { width: 375, height: 667 },
   { width: 390, height: 844 },
   { width: 430, height: 932 },
@@ -64,37 +73,39 @@ async function uncovered(page, locator) {
   });
 }
 
-async function pageState(page) {
-  return page.evaluate(() => {
+async function pageState(page, trigger) {
+  return page.evaluate((attr) => {
     const active = document.activeElement;
     return {
-      focusOnTrigger: Boolean(active?.hasAttribute("data-profile-trigger")),
+      focusOnTrigger: Boolean(active?.hasAttribute(attr)),
       bodyPointer: getComputedStyle(document.body).pointerEvents,
       bodyOverflow: getComputedStyle(document.body).overflow,
       htmlOverflow: getComputedStyle(document.documentElement).overflow,
       scrollLocked: document.body.hasAttribute("data-scroll-locked"),
       dialogs: document.querySelectorAll("[role=dialog]").length,
     };
-  });
+  }, trigger);
 }
 
-async function checkClosed(page, width, how) {
+async function checkClosed(page, width, how, panel = "Perfil", trigger = "data-profile-trigger") {
   await page.waitForFunction(() => !document.querySelector("[data-vaul-drawer]"), null, {
     timeout: 3000,
   }).catch(() => undefined);
   await page.waitForTimeout(150);
-  const state = await pageState(page);
-  if (state.dialogs) fail(width, `Perfil panel still open after ${how}`);
-  if (!state.focusOnTrigger) fail(width, `focus did not return to Perfil after ${how}`);
+  const state = await pageState(page, trigger);
+  if (state.dialogs) fail(width, `${panel} panel still open after ${how}`);
+  if (!state.focusOnTrigger) fail(width, `focus did not return to its button after ${how} (${panel})`);
   if (state.bodyPointer === "none") fail(width, `page left unclickable after ${how}`);
   if (state.scrollLocked || state.bodyOverflow === "hidden" || state.htmlOverflow === "hidden") {
     fail(width, `page scroll still locked after ${how}`);
   }
+  // Probe that the page still scrolls, then put it back where it was.
   const scrolls = await page.evaluate(() => {
     if (document.documentElement.scrollHeight <= innerHeight + 4) return true;
-    window.scrollTo(0, 120);
-    const moved = window.scrollY > 0;
-    window.scrollTo(0, 0);
+    const before = window.scrollY;
+    window.scrollTo(0, before === 120 ? 240 : 120);
+    const moved = window.scrollY !== before;
+    window.scrollTo(0, before);
     return moved;
   });
   if (!scrolls) fail(width, `page does not scroll after ${how}`);
@@ -264,6 +275,122 @@ for (const size of WIDTHS) {
   }
   await page.mouse.up();
   await checkClosed(page, width, "a swipe down");
+
+  // Bottom bar: four sections and Más, each at least 44×44, names whole.
+  const bar = await page.evaluate(() =>
+    [...document.querySelectorAll("nav button")].map((button) => {
+      const box = button.getBoundingClientRect();
+      return {
+        name: button.textContent?.trim() ?? "",
+        width: box.width,
+        height: box.height,
+        clipped: button.scrollWidth > button.clientWidth + 1,
+      };
+    }),
+  );
+  const names = bar.map((item) => item.name).join(" | ");
+  if (names !== "Hoy | Biblia | Temas | Gente | Más") fail(width, `bottom bar reads "${names}"`);
+  for (const item of bar) {
+    if (item.width < 44 || item.height < 44) {
+      fail(width, `"${item.name}" in the bar is ${Math.round(item.width)}×${Math.round(item.height)}`);
+    }
+    if (item.clipped) fail(width, `"${item.name}" in the bar is cut off`);
+  }
+  if (await page.locator("header").getByRole("button", { name: "Ajustes" }).count()) {
+    fail(width, "Ajustes is still in the header");
+  }
+  const bottomBar = page.getByRole("navigation", { name: "Secciones" });
+
+  // Another section opens at its top.
+  await page.evaluate(() => window.scrollTo(0, 400));
+  await bottomBar.getByRole("button", { name: "Biblia", exact: true }).click();
+  await page.waitForTimeout(250);
+  if ((await page.evaluate(() => window.scrollY)) > 0) fail(width, "Biblia opened scrolled down");
+
+  // Más: its list, each row at least 44 tall.
+  const more = bottomBar.getByRole("button", { name: "Más", exact: true });
+  const openMore = async () => {
+    await more.click();
+    const sheet = page.getByRole("dialog", { name: "Más" });
+    await sheet.waitFor({ state: "visible", timeout: 3000 });
+    await page.waitForTimeout(550);
+    return sheet;
+  };
+  /** Scroll the section on screen down, so opening another one has something to undo. */
+  const scrollDown = async (where) => {
+    await page.evaluate(() => window.scrollTo(0, 400));
+    if ((await page.evaluate(() => window.scrollY)) === 0) fail(width, `could not scroll ${where}`);
+  };
+  /** Where the page sits once the sheet has gone, before anything else moves it. */
+  const scrollAfterSheet = async () => {
+    await page
+      .waitForFunction(() => !document.querySelector("[data-vaul-drawer]"), null, { timeout: 3000 })
+      .catch(() => undefined);
+    return page.evaluate(() => window.scrollY);
+  };
+  await scrollDown("Biblia");
+  let sheet = await openMore();
+  // The page behind a panel is hidden from screen readers, so find Más by its mark.
+  const moreMark = page.locator("[data-more-trigger]");
+  if ((await moreMark.getAttribute("aria-expanded")) !== "true") fail(width, "Más does not say it is open");
+  const barHidden = await page.evaluate(() =>
+    Boolean(document.querySelector("nav[aria-label=Secciones]")?.closest('[aria-hidden="true"]')),
+  );
+  if (!barHidden) {
+    fail(width, "the bottom bar is not hidden from screen readers behind Más");
+  }
+  const rows = await sheet.locator("nav button").evaluateAll((buttons) =>
+    buttons.map((button) => ({
+      name: button.querySelector("span span")?.textContent?.trim() ?? "",
+      height: button.getBoundingClientRect().height,
+      bottom: button.getBoundingClientRect().bottom,
+    })),
+  );
+  const rowNames = rows.map((row) => row.name);
+  const wanted = ["Doctrina", "Guardados", ...(ADMIN === "yes" ? ["Admin"] : []), "Ajustes"];
+  for (const name of wanted) {
+    if (!rowNames.includes(name)) fail(width, `Más is missing ${name}`);
+  }
+  if (ADMIN === "no" && rowNames.includes("Admin")) fail(width, "Más shows Admin to a non-admin");
+  for (const row of rows) {
+    if (row.height < 44) fail(width, `"${row.name}" in Más is ${Math.round(row.height)}px tall`);
+    if (row.bottom > size.height) fail(width, `"${row.name}" in Más is below the screen`);
+  }
+  if (SHOTS) await page.screenshot({ path: `screenshots/ui-check/${width}-mas.png` });
+
+  // Doctrina from Más: the sheet closes, Más stays lit, focus is back on Más.
+  await sheet.getByRole("button", { name: /^Doctrina/ }).click();
+  if ((await scrollAfterSheet()) > 0) fail(width, "Doctrina opened scrolled down");
+  await checkClosed(page, width, "choosing Doctrina", "Más", "data-more-trigger");
+  if ((await more.getAttribute("aria-current")) !== "page") fail(width, "Más is not lit on Doctrina");
+
+  // Guardados from Más, then marked as the current one in the list.
+  await scrollDown("Doctrina");
+  sheet = await openMore();
+  await sheet.getByRole("button", { name: /^Guardados/ }).click();
+  if ((await scrollAfterSheet()) > 0) fail(width, "Guardados opened scrolled down");
+  await checkClosed(page, width, "choosing Guardados", "Más", "data-more-trigger");
+  sheet = await openMore();
+  const current = await sheet.locator('nav [aria-current="page"]').allTextContents();
+  if (!current.join(" ").startsWith("Guardados")) fail(width, "Más does not mark Guardados as open");
+
+  // Ajustes from Más opens its panel; closing it gives focus back to Más.
+  await sheet.getByRole("button", { name: /^Ajustes/ }).click();
+  const settings = page.getByRole("dialog", { name: "Ajustes" });
+  await settings.waitFor({ state: "visible", timeout: 3000 }).catch(() => undefined);
+  if (!(await settings.isVisible())) fail(width, "Ajustes did not open from Más");
+  else {
+    await page.waitForTimeout(700);
+    if (!(await settings.evaluate((el) => el.contains(document.activeElement)))) {
+      fail(width, "focus is not inside Ajustes");
+    }
+    await page.keyboard.press("Escape");
+    await checkClosed(page, width, "closing Ajustes", "Ajustes", "data-more-trigger");
+  }
+
+  // Back to Hoy: Más goes dark again.
+  await bottomBar.getByRole("button", { name: "Hoy", exact: true }).click();
+  if ((await more.getAttribute("aria-current")) === "page") fail(width, "Más still lit on Hoy");
 
   for (const error of errors) fail(width, `console: ${error.slice(0, 160)}`);
   await context.close();
