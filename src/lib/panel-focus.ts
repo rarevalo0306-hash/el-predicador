@@ -17,3 +17,9 @@ export function returnFocusTo(selector: string) {
     target.focus({ preventScroll: true });
   };
 }
+
+/** Back to the Más button in the bottom bar (after Más, or Ajustes opened from it). */
+export const focusMoreButton = returnFocusTo("[data-more-trigger]");
+
+/** Back to Perfil in the header (or Entrar when signed out). */
+export const focusProfileButton = returnFocusTo("[data-profile-trigger]");

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   BookOpen,
   Ellipsis,
@@ -21,7 +21,7 @@ import { SendDrawer } from "@/components/send-drawer";
 import { SettingsDrawer } from "@/components/settings-drawer";
 import { MoreSheet } from "@/components/more-sheet";
 import { isMoreSection } from "@/lib/more-sections";
-import { returnFocusTo } from "@/lib/panel-focus";
+import { focusMoreButton, focusProfileButton } from "@/lib/panel-focus";
 import { ProfileDrawer } from "@/components/profile-drawer";
 import { AskDrawer, type AskPassage } from "@/components/ask-drawer";
 import { WELCOME_PARAM } from "@/components/invite-contacts";
@@ -54,8 +54,6 @@ const BAR_TABS: { id: Exclude<Tab, "evangelio" | "guardados" | "admin">; icon: t
 const BAR_BUTTON =
   "flex h-16 min-w-0 flex-col items-center justify-center gap-1 px-0.5 text-xs font-medium transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset";
 
-/** Settings now opens from Más, so closing it gives focus back to Más. */
-const focusMoreButton = returnFocusTo("[data-more-trigger]");
 
 export function AppShell() {
   const { user, isPending } = useCurrentUserState();
@@ -92,6 +90,9 @@ function PreacherApp({
   const [moreOpen, setMoreOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileMode, setProfileMode] = useState<"entrar" | "crear">("entrar");
+  // Perfil opened from Ajustes (itself inside Más) gives focus back to Más,
+  // which is always on screen, rather than to the header scrolled out of view.
+  const profileFromMore = useRef(false);
   const [askOpen, setAskOpen] = useState(false);
   const [jump, setJump] = useState<BibleJump | null>(null);
   const [askPassage, setAskPassage] = useState<AskPassage | null>(null);
@@ -194,6 +195,12 @@ function PreacherApp({
     setTab(next);
   }
 
+  function openProfile(mode?: "entrar" | "crear", fromMore = false) {
+    if (mode) setProfileMode(mode);
+    profileFromMore.current = fromMore;
+    setProfileOpen(true);
+  }
+
   function openSend(verse: Verse, draft?: SendDraft) {
     setSending(verse);
     setSendDraft(draft ?? {});
@@ -233,7 +240,7 @@ function PreacherApp({
           ) : user ? (
             <button
               type="button"
-              onClick={() => setProfileOpen(true)}
+              onClick={() => openProfile()}
               data-profile-trigger
               aria-haspopup="dialog"
               className="inline-flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -253,10 +260,7 @@ function PreacherApp({
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => {
-                  setProfileMode("entrar");
-                  setProfileOpen(true);
-                }}
+                onClick={() => openProfile("entrar")}
                 data-profile-trigger
                 aria-haspopup="dialog"
                 className="inline-flex h-11 items-center rounded-full border border-border bg-card px-2.5 text-xs font-medium text-foreground sm:px-3.5 sm:text-sm"
@@ -265,10 +269,7 @@ function PreacherApp({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setProfileMode("crear");
-                  setProfileOpen(true);
-                }}
+                onClick={() => openProfile("crear")}
                 className="hidden h-11 items-center rounded-full border border-border bg-card px-2.5 text-xs font-medium text-foreground min-[360px]:inline-flex sm:px-3.5 sm:text-sm"
               >
                 <span className="sm:hidden">{t("signupShort")}</span>
@@ -398,13 +399,11 @@ function PreacherApp({
         onCloseAutoFocus={focusMoreButton}
         onOpenProfile={() => {
           setSettingsOpen(false);
-          setProfileMode("entrar");
-          setProfileOpen(true);
+          openProfile("entrar", true);
         }}
         onOpenSignUp={() => {
           setSettingsOpen(false);
-          setProfileMode("crear");
-          setProfileOpen(true);
+          openProfile("crear", true);
         }}
       />
       <AskDrawer
@@ -416,8 +415,7 @@ function PreacherApp({
         passage={askPassage}
         onSignIn={() => {
           setAskOpen(false);
-          setProfileMode("entrar");
-          setProfileOpen(true);
+          openProfile("entrar");
         }}
       />
       <ProfileDrawer
@@ -428,6 +426,9 @@ function PreacherApp({
           if (!next) setWelcome(false);
         }}
         initialMode={profileMode}
+        onCloseAutoFocus={(event) =>
+          (profileFromMore.current ? focusMoreButton : focusProfileButton)(event)
+        }
       />
     </div>
   );

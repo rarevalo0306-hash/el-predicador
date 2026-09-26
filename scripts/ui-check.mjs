@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Layout and panel checks in a real browser, at the phone and desktop widths
- * the app has to hold: 320, 375, 390, 430, 768 and 1280.
+ * the app has to hold (WIDTHS below).
  *
  *   node scripts/ui-check.mjs [--url http://127.0.0.1:8081] [--admin yes|no] [--shots]
  *
@@ -99,11 +99,13 @@ async function checkClosed(page, width, how, panel = "Perfil", trigger = "data-p
   if (state.scrollLocked || state.bodyOverflow === "hidden" || state.htmlOverflow === "hidden") {
     fail(width, `page scroll still locked after ${how}`);
   }
+  // Probe that the page still scrolls, then put it back where it was.
   const scrolls = await page.evaluate(() => {
     if (document.documentElement.scrollHeight <= innerHeight + 4) return true;
-    window.scrollTo(0, 120);
-    const moved = window.scrollY > 0;
-    window.scrollTo(0, 0);
+    const before = window.scrollY;
+    window.scrollTo(0, before === 120 ? 240 : 120);
+    const moved = window.scrollY !== before;
+    window.scrollTo(0, before);
     return moved;
   });
   if (!scrolls) fail(width, `page does not scroll after ${how}`);
@@ -314,6 +316,19 @@ for (const size of WIDTHS) {
     await page.waitForTimeout(550);
     return sheet;
   };
+  /** Scroll the section on screen down, so opening another one has something to undo. */
+  const scrollDown = async (where) => {
+    await page.evaluate(() => window.scrollTo(0, 400));
+    if ((await page.evaluate(() => window.scrollY)) === 0) fail(width, `could not scroll ${where}`);
+  };
+  /** Where the page sits once the sheet has gone, before anything else moves it. */
+  const scrollAfterSheet = async () => {
+    await page
+      .waitForFunction(() => !document.querySelector("[data-vaul-drawer]"), null, { timeout: 3000 })
+      .catch(() => undefined);
+    return page.evaluate(() => window.scrollY);
+  };
+  await scrollDown("Biblia");
   let sheet = await openMore();
   // The page behind a panel is hidden from screen readers, so find Más by its mark.
   const moreMark = page.locator("[data-more-trigger]");
@@ -345,13 +360,15 @@ for (const size of WIDTHS) {
 
   // Doctrina from Más: the sheet closes, Más stays lit, focus is back on Más.
   await sheet.getByRole("button", { name: /^Doctrina/ }).click();
+  if ((await scrollAfterSheet()) > 0) fail(width, "Doctrina opened scrolled down");
   await checkClosed(page, width, "choosing Doctrina", "Más", "data-more-trigger");
   if ((await more.getAttribute("aria-current")) !== "page") fail(width, "Más is not lit on Doctrina");
-  if ((await page.evaluate(() => window.scrollY)) > 0) fail(width, "Doctrina opened scrolled down");
 
   // Guardados from Más, then marked as the current one in the list.
+  await scrollDown("Doctrina");
   sheet = await openMore();
   await sheet.getByRole("button", { name: /^Guardados/ }).click();
+  if ((await scrollAfterSheet()) > 0) fail(width, "Guardados opened scrolled down");
   await checkClosed(page, width, "choosing Guardados", "Más", "data-more-trigger");
   sheet = await openMore();
   const current = await sheet.locator('nav [aria-current="page"]').allTextContents();

@@ -6,13 +6,10 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { returnFocusTo } from "@/lib/panel-focus";
+import { focusMoreButton } from "@/lib/panel-focus";
 import { useI18n } from "@/components/language-switch";
 import { cn } from "@/lib/utils";
 import type { MoreSection } from "@/lib/more-sections";
-
-/** On close (of Más, or of Ajustes opened from it), focus goes back to the Más button. */
-const focusMoreButton = returnFocusTo("[data-more-trigger]");
 
 const ROW =
   "flex min-h-14 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors duration-150 hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
@@ -43,7 +40,14 @@ export function MoreSheet({
     { id: "evangelio", icon: Flame, label: t("tabEvangelio"), hint: t("moreDoctrinaHint") },
     { id: "guardados", icon: Heart, label: t("tabGuardados"), hint: t("savedSub") },
     ...(admin
-      ? [{ id: "admin" as const, icon: ShieldCheck, label: t("tabAdmin"), hint: t("moreAdminHint") }]
+      ? [
+          {
+            id: "admin" as const,
+            icon: ShieldCheck,
+            label: t("tabAdmin"),
+            hint: t("moreAdminHint"),
+          },
+        ]
       : []),
   ];
 
@@ -79,9 +83,7 @@ export function MoreSheet({
                       aria-hidden
                     />
                     <span className="min-w-0 flex-1">
-                      <span
-                        className={cn("block text-sm font-medium", active && "text-primary")}
-                      >
+                      <span className={cn("block text-sm font-medium", active && "text-primary")}>
                         {item.label}
                       </span>
                       <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
