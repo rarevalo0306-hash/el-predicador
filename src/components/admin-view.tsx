@@ -12,6 +12,7 @@ import {
 } from "@/lib/admin-notes";
 import { useAppStore } from "@/lib/store";
 import { normalizePhone, formatPhone } from "@/lib/phone";
+import { csvCell, maskPhone } from "@/lib/privacy";
 import { cn } from "@/lib/utils";
 import { FileSpreadsheet } from "lucide-react";
 import { REGISTRATION_SHEET_URL } from "@/lib/sheet";
@@ -19,8 +20,8 @@ import { REGISTRATION_SHEET_URL } from "@/lib/sheet";
 type Pane = "registrations" | "accounts" | "notes";
 
 function csvOf(header: string[], rows: (string | number)[][]) {
-  const line = (cells: (string | number)[]) =>
-    cells.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",");
+  // Cells come from a public form: never let a spreadsheet run one as a formula.
+  const line = (cells: (string | number)[]) => cells.map((cell) => csvCell(String(cell))).join(",");
   return [line(header), ...rows.map(line)].join("\n");
 }
 
@@ -39,6 +40,15 @@ export function AdminView() {
   const [pane, setPane] = useState<Pane>("registrations");
   const [data, setData] = useState<AdminOverview | null>(null);
   const [error, setError] = useState(false);
+  // Registrations whose phone, email and address the owner chose to see.
+  const [revealed, setRevealed] = useState<Set<number>>(() => new Set());
+  const toggleReveal = (id: number) =>
+    setRevealed((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   const recipients = useAppStore((s) => s.recipients);
   const upsertRecipient = useAppStore((s) => s.upsertRecipient);
   const [notes, setNotes] = useState<NotesStatus | null>(null);
@@ -169,16 +179,28 @@ export function AdminView() {
       ) : null}
       {!data && !error ? <p role="status">{t("wait")}</p> : null}
 
+      {data?.masked ? (
+        <p className="rounded-lg bg-secondary px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+          {t("adminMaskedNote")}
+        </p>
+      ) : null}
+
       {data && pane === "registrations" ? (
         <div className="space-y-3">
-          <Button asChild variant="outline" className="w-full">
-            <a href={REGISTRATION_SHEET_URL} target="_blank" rel="noreferrer">
-              <FileSpreadsheet className="size-4" />
-              {t("sheetsOpen")}
-            </a>
-          </Button>
-          <p className="text-xs leading-relaxed text-muted-foreground">{t("sheetsHint")}</p>
-          {data.registrations.length ? (
+          {data.masked ? null : (
+            <>
+              <Button asChild variant="outline" className="w-full">
+                <a href={REGISTRATION_SHEET_URL} target="_blank" rel="noreferrer">
+                  <FileSpreadsheet className="size-4" />
+                  {t("sheetsOpen")}
+                </a>
+              </Button>
+              <p className="text-xs leading-relaxed text-muted-foreground">{t("sheetsHint")}</p>
+            </>
+          )}
+          {!data.registrations.length ? (
+            <p className="text-sm text-muted-foreground">{t("adminNoRegistrations")}</p>
+          ) : data.masked ? null : (
             <Button
               variant="outline"
               onClick={() =>
@@ -200,11 +222,10 @@ export function AdminView() {
             >
               {t("peopleCsv")}
             </Button>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t("adminNoRegistrations")}</p>
           )}
           {data.registrations.map((row) => {
             const added = known.has(normalizePhone(row.phone));
+            const open = revealed.has(row.id);
             return (
               <article
                 key={row.id}
@@ -212,31 +233,49 @@ export function AdminView() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <h3 className="font-medium">{row.name}</h3>
-                    <p className="text-sm text-muted-foreground break-words">
-                      {formatPhone(row.phone)} · {row.email}
-                    </p>
-                    <p className="text-sm text-muted-foreground break-words">{row.address}</p>
+                    <h3 className="font-medium break-words">{row.name}</h3>
+                    {data.masked ? null : open ? (
+                      <>
+                        <p className="text-sm text-muted-foreground break-words">
+                          {formatPhone(row.phone)} · {row.email}
+                        </p>
+                        <p className="text-sm text-muted-foreground break-words">{row.address}</p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">{maskPhone(row.phone)}</p>
+                    )}
                   </div>
                   <span className="shrink-0 text-xs text-muted-foreground">
                     {dateLabel(row.createdAt)}
                   </span>
                 </div>
-                <Button
-                  type="button"
-                  variant={added ? "outline" : "default"}
-                  disabled={added}
-                  onClick={() => {
-                    const saved = upsertRecipient({
-                      name: row.name,
-                      phone: row.phone,
-                      messageLocale: row.locale === "en" ? "en" : "es",
-                    });
-                    toast(saved ? t("adminAdded", { name: row.name }) : t("contactBadPhone"));
-                  }}
-                >
-                  {added ? t("adminAlreadyAdded") : t("adminAddToPeople")}
-                </Button>
+                {data.masked ? null : (
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      aria-expanded={open}
+                      onClick={() => toggleReveal(row.id)}
+                    >
+                      {open ? t("hideDetails") : t("showDetails")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={added ? "outline" : "default"}
+                      disabled={added}
+                      onClick={() => {
+                        const saved = upsertRecipient({
+                          name: row.name,
+                          phone: row.phone,
+                          messageLocale: row.locale === "en" ? "en" : "es",
+                        });
+                        toast(saved ? t("adminAdded", { name: row.name }) : t("contactBadPhone"));
+                      }}
+                    >
+                      {added ? t("adminAlreadyAdded") : t("adminAddToPeople")}
+                    </Button>
+                  </div>
+                )}
               </article>
             );
           })}
@@ -245,7 +284,9 @@ export function AdminView() {
 
       {data && pane === "accounts" ? (
         <div className="space-y-3">
-          {data.accounts.length ? (
+          {!data.accounts.length ? (
+            <p className="text-sm text-muted-foreground">{t("adminNoAccounts")}</p>
+          ) : data.masked ? null : (
             <Button
               variant="outline"
               onClick={() =>
@@ -260,8 +301,6 @@ export function AdminView() {
             >
               {t("peopleCsv")}
             </Button>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t("adminNoAccounts")}</p>
           )}
           {data.accounts.map((row) => (
             <article
@@ -270,8 +309,10 @@ export function AdminView() {
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <h3 className="font-medium">{row.name || row.email}</h3>
-                  <p className="text-sm text-muted-foreground break-words">{row.email}</p>
+                  <h3 className="font-medium break-words">{row.name || row.email || "—"}</h3>
+                  {row.email ? (
+                    <p className="text-sm text-muted-foreground break-words">{row.email}</p>
+                  ) : null}
                 </div>
                 <span className="shrink-0 text-xs text-muted-foreground">
                   {dateLabel(row.createdAt)}
@@ -289,13 +330,16 @@ export function AdminView() {
                 ) : (
                   <span />
                 )}
-                {row.role !== "owner" ? (
+                {/* Only the owner names or removes managers. */}
+                {data.owner && row.role !== "owner" ? (
                   <Button
                     type="button"
                     size="sm"
                     variant={row.role === "manager" ? "outline" : "default"}
                     disabled={changingRole === row.id}
-                    onClick={() => void toggleManager(row.id, row.role !== "manager", row.name || row.email)}
+                    onClick={() =>
+                      void toggleManager(row.id, row.role !== "manager", row.name || row.email)
+                    }
                   >
                     {row.role === "manager" ? t("roleRemoveManager") : t("roleMakeManager")}
                   </Button>

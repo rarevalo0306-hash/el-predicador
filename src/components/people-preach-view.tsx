@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { normalizePhone, formatPhone } from "@/lib/phone";
+import { maskPhone } from "@/lib/privacy";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/components/language-switch";
@@ -124,6 +125,15 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   const removeTrigger = useRef<{ id: string; removed: boolean } | null>(null);
   const listHeadingRef = useRef<HTMLHeadingElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  // Numbers show as "+1 ••• ••• ••01" in the list; "Mostrar" reveals one.
+  const [shownPhones, setShownPhones] = useState<Set<string>>(() => new Set());
+  const togglePhone = (id: string) =>
+    setShownPhones((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   // The last removal, undone from a line in the list itself (reachable by
   // keyboard and screen readers, unlike a notice that fades away).
   const [lastRemoved, setLastRemoved] = useState<{ row: Recipient; index: number } | null>(null);
@@ -738,7 +748,22 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="font-medium break-words">{row.name}</p>
-                      <p className="text-xs text-muted-foreground">{formatPhone(row.phone)}</p>
+                      <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+                        <span>
+                          {shownPhones.has(row.id) ? formatPhone(row.phone) : maskPhone(row.phone)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => togglePhone(row.id)}
+                          aria-pressed={shownPhones.has(row.id)}
+                          aria-label={t(shownPhones.has(row.id) ? "hidePhoneOf" : "showPhoneOf", {
+                            name: row.name,
+                          })}
+                          className="-my-2 inline-flex min-h-11 items-center px-1 font-medium text-primary underline-offset-2 hover:underline"
+                        >
+                          {shownPhones.has(row.id) ? t("hideDetails") : t("showDetails")}
+                        </button>
+                      </p>
                       <p className="mt-1 text-xs text-primary">
                         {themeNames(row, locale)} ·{" "}
                         {messageLanguageName(row.messageLocale ?? locale)} ·{" "}

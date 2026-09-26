@@ -9,14 +9,11 @@ async function handleAuth(request: Request) {
     await ensureDbReady();
     return await auth.handler(request);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[auth] handler failed:", err);
+    // The details stay in the server log; the browser gets no database text.
+    const message = err instanceof Error ? `${err.name}: ${err.message}` : "error";
+    console.error("[auth] handler failed:", message.replace(/[^\s@]+@[^\s@]+/g, "[email]").slice(0, 300));
     return Response.json(
-      {
-        message: "Auth request failed",
-        code: "AUTH_HANDLER_ERROR",
-        detail: message.slice(0, 500),
-      },
+      { message: "Auth request failed", code: "AUTH_HANDLER_ERROR" },
       { status: 500 },
     );
   }

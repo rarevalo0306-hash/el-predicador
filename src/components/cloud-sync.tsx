@@ -15,6 +15,19 @@ function readGuest(): CloudPayload | null {
   }
 }
 
+/**
+ * Contacts kept on this phone without an account go into the first account
+ * that signs in with nothing saved yet, then leave the phone, so on a shared
+ * phone they cannot follow into someone else's account later.
+ */
+function clearGuest() {
+  try {
+    localStorage.removeItem(GUEST_KEY);
+  } catch {
+    /* private mode */
+  }
+}
+
 function writeGuest(payload: CloudPayload) {
   try {
     localStorage.setItem(GUEST_KEY, JSON.stringify(payload));
@@ -66,9 +79,9 @@ export function useCloudSync(userId: string | undefined, sessionReady: boolean) 
         if (isEmptyCloud(cloud) && local && !isEmptyCloud(local)) {
           useAppStore.getState().hydrateFromCloud(local);
           useAppStore.getState().ensureToday();
-          void saveMyState({ data: useAppStore.getState().snapshotCloud() }).catch(
-            () => {},
-          );
+          void saveMyState({ data: useAppStore.getState().snapshotCloud() })
+            .then(clearGuest)
+            .catch(() => {});
         } else {
           useAppStore.getState().hydrateFromCloud(cloud);
           useAppStore.getState().ensureToday();
