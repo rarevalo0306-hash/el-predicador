@@ -61,11 +61,14 @@ export function EvangelismoView({ onSend, onReadVerse }: EvangelismoViewProps) {
         <p className="text-xs font-medium tracking-[0.18em] text-primary uppercase">
           {t("preachFor")}
         </p>
-        <h1 className="mt-2 font-serif text-3xl tracking-tight">{t("evangelism")}</h1>
+        {/* The title names the part on screen, so Doctrina never reads "Evangelismo". */}
+        <h1 className="mt-2 font-serif text-3xl tracking-tight">
+          {pane === "doctrina" ? t("doctrine") : pane === "casos" ? t("cases") : t("theWay")}
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("evangelismSub")}</p>
       </header>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-2" role="tablist" aria-label={t("preachFor")}>
         <PaneButton
           active={pane === "doctrina"}
           label={t("doctrine")}
@@ -129,6 +132,8 @@ function PaneButton({
   return (
     <button
       type="button"
+      role="tab"
+      aria-selected={active}
       onClick={onClick}
       className={cn(
         "h-11 rounded-full border px-2 text-sm font-medium transition-colors duration-150",

@@ -363,6 +363,17 @@ for (const size of WIDTHS) {
   if ((await scrollAfterSheet()) > 0) fail(width, "Doctrina opened scrolled down");
   await checkClosed(page, width, "choosing Doctrina", "Más", "data-more-trigger");
   if ((await more.getAttribute("aria-current")) !== "page") fail(width, "Más is not lit on Doctrina");
+  // Doctrina's title says Doctrina, and follows the tab that is open.
+  const doctrinaTitle = (await page.locator("main h1").first().textContent())?.trim();
+  if (doctrinaTitle !== "Doctrina") fail(width, `Doctrina opens with the title "${doctrinaTitle}"`);
+  const partTabs = page.getByRole("tablist", { name: "Para predicar" });
+  await partTabs.getByRole("tab", { name: "Evangelismo" }).click();
+  const casesTitle = (await page.locator("main h1").first().textContent())?.trim();
+  if (casesTitle !== "Evangelismo") fail(width, `the Evangelismo tab shows the title "${casesTitle}"`);
+  if ((await partTabs.getByRole("tab", { name: "Evangelismo" }).getAttribute("aria-selected")) !== "true") {
+    fail(width, "the open tab is not marked as selected");
+  }
+  await partTabs.getByRole("tab", { name: "Doctrina" }).click();
 
   // Guardados from Más, then marked as the current one in the list.
   await scrollDown("Doctrina");
