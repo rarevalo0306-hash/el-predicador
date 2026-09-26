@@ -25,6 +25,7 @@ const EMPTY: CloudPayload = {
   bookmarks: [],
   highlights: [],
   fontScale: 1,
+  bibleVersions: { es: "recovery", en: "recovery" },
 };
 
 test("an untouched visit is empty, and so is a payload that is not there", () => {
@@ -81,6 +82,7 @@ test("preferences alone are not work", () => {
   // own stored state would stop loading over it.
   assert.equal(isEmptyCloud({ ...EMPTY, fontScale: 3 }), true);
   assert.equal(isEmptyCloud({ ...EMPTY, locale: "en" }), true);
+  assert.equal(isEmptyCloud({ ...EMPTY, bibleVersions: { es: "lbla", en: "nasb20" } }), true);
   assert.equal(isEmptyCloud({ ...EMPTY, notify: true, notifyHour: 21 }), true);
   assert.equal(
     isEmptyCloud({ ...EMPTY, readingPlace: { bookId: "jn", chapter: 3, verse: 16, at: 1 } }),

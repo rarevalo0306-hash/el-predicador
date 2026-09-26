@@ -2,6 +2,19 @@ import type { Locale } from "@/lib/i18n";
 
 export type Testament = "at" | "nt";
 
+export type BibleVersion = "recovery" | "lbla" | "nasb20";
+
+export type BibleVersionPreferences = {
+  es: "recovery" | "lbla";
+  en: "recovery" | "nasb20";
+};
+
+export type BibleVersionChoice = {
+  id: BibleVersion;
+  label: string;
+  shortLabel: string;
+};
+
 export type BibleBook = {
   id: string;
   name: string;
@@ -21,6 +34,62 @@ export const RECOBRO_COPYRIGHT =
   "Santa Biblia Versión Recobro © Living Stream Ministry";
 export const RECOBRO_COPYRIGHT_EN =
   "Holy Bible Recovery Version © Living Stream Ministry";
+
+/**
+ * LBLA and NASB 2020 (API.Bible) until Living Stream Ministry's official
+ * access (LSM_APPID, LSM_TOKEN) is set up; Recobro shows as "Próximamente".
+ */
+export const DEFAULT_BIBLE_VERSIONS: BibleVersionPreferences = {
+  es: "lbla",
+  en: "nasb20",
+};
+
+const SPANISH_BIBLE_VERSIONS: BibleVersionChoice[] = [
+  { id: "recovery", label: "Santa Biblia Versión Recobro", shortLabel: "Recobro" },
+  { id: "lbla", label: "La Biblia de las Américas", shortLabel: "LBLA" },
+];
+
+const ENGLISH_BIBLE_VERSIONS: BibleVersionChoice[] = [
+  { id: "recovery", label: "Holy Bible Recovery Version", shortLabel: "Recovery" },
+  {
+    id: "nasb20",
+    label: "New American Standard Bible 2020",
+    shortLabel: "NASB 2020",
+  },
+];
+
+export function bibleVersionsFor(locale: Locale): BibleVersionChoice[] {
+  return locale === "en" ? ENGLISH_BIBLE_VERSIONS : SPANISH_BIBLE_VERSIONS;
+}
+
+export function isBibleVersionForLocale(
+  value: unknown,
+  locale: Locale,
+): value is BibleVersion {
+  return bibleVersionsFor(locale).some((item) => item.id === value);
+}
+
+export function normalizeBibleVersion(value: unknown, locale: Locale): BibleVersion {
+  return isBibleVersionForLocale(value, locale) ? value : DEFAULT_BIBLE_VERSIONS[locale];
+}
+
+export function bibleSource(version: BibleVersion, locale: Locale): string {
+  // Also the line under shared verses, so it names the publisher.
+  if (version === "lbla") return "La Biblia de las Américas (LBLA) © The Lockman Foundation";
+  if (version === "nasb20") return "New American Standard Bible (NASB 2020) © The Lockman Foundation";
+  return recobroSource(locale);
+}
+
+export function bibleVerseId(
+  version: BibleVersion,
+  bookId: string,
+  chapter: number,
+  verse: number,
+  locale: Locale,
+) {
+  if (version === "recovery") return recobroVerseId(bookId, chapter, verse, locale);
+  return `${version}-${bookId}-${chapter}-${verse}`;
+}
 
 export const BIBLE_BOOKS: BibleBook[] = [
   book("gen", "Génesis", "Gn", "at", 50, "01", "Genesis", ["genesis", "gn", "gen"]),

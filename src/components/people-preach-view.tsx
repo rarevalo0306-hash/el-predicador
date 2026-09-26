@@ -90,6 +90,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   const setChurch = useAppStore((s) => s.setChurch);
   const displayName = useAppStore((s) => s.displayName);
   const notifyHour = useAppStore((s) => s.notifyHour);
+  const bibleVersions = useAppStore((s) => s.bibleVersions);
   // Two drafts, so opening Editar never wipes a half-typed new person and a
   // half-done edit comes back when the same person is opened again.
   const [newForm, setNewForm] = useState<RecipientInput>(() => ({
@@ -348,7 +349,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
     const pool = versesForTheme(themeId);
     const base = pool[Math.floor(Math.random() * Math.max(pool.length, 1))] ?? getDailyVerse();
     try {
-      const verse = await hydrateVerse(base, messageLocale);
+      const verse = await hydrateVerse(base, messageLocale, bibleVersions[messageLocale]);
       const theme = localizedTheme(themeId, messageLocale);
       const note =
         messageLocale === "en"

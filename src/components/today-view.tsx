@@ -30,6 +30,7 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
   const { locale, t } = useI18n();
   const dailyOffset = useAppStore((s) => s.dailyOffset);
   const bumpOffset = useAppStore((s) => s.bumpOffset);
+  const bibleVersion = useAppStore((s) => s.bibleVersions[locale]);
   const [showContact, setShowContact] = useState(false);
   const [asked, setAsked] = useState(true);
   const [reflection, setReflection] = useState<DailyReflection | null>(null);
@@ -69,8 +70,12 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
       : daily;
 
   useEffect(() => {
-    prefetchVerses(mood ? versesForTheme(mood) : [getDailyVerse(dailyOffset)], locale);
-  }, [dailyOffset, locale, mood]);
+    prefetchVerses(
+      mood ? versesForTheme(mood) : [getDailyVerse(dailyOffset)],
+      locale,
+      bibleVersion,
+    );
+  }, [dailyOffset, locale, mood, bibleVersion]);
   const now = new Date();
   const dateLabel =
     locale === "en"

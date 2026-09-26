@@ -19,6 +19,9 @@ import { useI18n } from "@/components/language-switch";
 import { cn } from "@/lib/utils";
 import {
   BIBLE_BOOKS,
+  bibleSource,
+  bibleVerseId,
+  bibleVersionsFor,
   bookAbbr,
   bookById,
   bookName,
@@ -28,8 +31,7 @@ import {
   recobroChapterUrl,
   recobroCopyright,
   recobroOrigin,
-  recobroSource,
-  recobroVerseId,
+  type BibleVersion,
   type BibleBook,
 } from "@/lib/bible";
 import { chapterToVerses, loadCachedChapter, type RecobroChapter } from "@/lib/recobro";
@@ -40,6 +42,8 @@ import { ConcordanceView } from "@/components/concordance-view";
 import { cleanWords } from "@/lib/concordance";
 import { combineVerses, formatVerseRange } from "@/lib/reader-prefs";
 import { copyText, formatVerseMessage } from "@/lib/share";
+import { trackApiBibleFums } from "@/lib/api-bible-fums";
+import { useRecoveryAvailable } from "@/lib/bible-availability";
 
 /** A place to open as soon as the Bible shows, e.g. a verse tapped in a chat. */
 export type BibleJump = { bookId: string; chapter: number; verse?: number; at: number };
@@ -86,6 +90,8 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
   const readingPlace = useAppStore((s) => s.readingPlace);
   const setReadingPlace = useAppStore((s) => s.setReadingPlace);
   const bookmarks = useAppStore((s) => s.bookmarks);
+  const bibleVersion = useAppStore((s) => s.bibleVersions[locale]);
+  const setBibleVersion = useAppStore((s) => s.setBibleVersion);
   const [testament, setTestament] = useState<Testament>(
     () =>
       savedTestament() ??
@@ -131,7 +137,7 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
     setLoading(true);
     setError(null);
     setData(null);
-    void loadCachedChapter(book.id, chapter, locale)
+    void loadCachedChapter(book.id, chapter, locale, bibleVersion)
       .then((result) => {
         if (cancelled) return;
         setData(result);
@@ -147,7 +153,11 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
     return () => {
       cancelled = true;
     };
-  }, [book, chapter, locale, t]);
+  }, [book, chapter, locale, bibleVersion, t]);
+
+  useEffect(() => {
+    void trackApiBibleFums(data?.fumsId).catch(() => undefined);
+  }, [data?.fumsId]);
 
   function openBook(next: BibleBook) {
     setBookId(next.id);
@@ -219,6 +229,8 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
         }}
         onSend={onSend}
         onAsk={onAsk}
+        version={bibleVersion}
+        onVersion={(version) => setBibleVersion(locale, version)}
       />
     );
   }
@@ -261,9 +273,14 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
           <p className="mt-1 text-sm text-muted-foreground">
             {book.chapters}{" "}
             {book.chapters === 1 ? t("chapterOne") : t("chapters")} ·{" "}
-            {recobroSource(locale)}
+            {bibleSource(bibleVersion, locale)}
           </p>
         </header>
+        <BibleVersionPicker
+          locale={locale}
+          value={bibleVersion}
+          onChange={(version) => setBibleVersion(locale, version)}
+        />
         <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
           {Array.from({ length: book.chapters }, (_, index) => {
             const n = index + 1;
@@ -310,6 +327,11 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
           {t("bibleSub")}
         </p>
       </header>
+      <BibleVersionPicker
+        locale={locale}
+        value={bibleVersion}
+        onChange={(version) => setBibleVersion(locale, version)}
+      />
       <form
         className="flex gap-2"
         onSubmit={(event) => {
@@ -445,19 +467,75 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
           <BookGrid books={testament === "at" ? at : nt} onOpen={openBook} />
         </section>
       )}
-      <p className="text-center text-[0.7rem] leading-relaxed text-muted-foreground">
-        {t("recobroFooter")}{" "}
-        <a
-          href={recobroOrigin(locale)}
-          target="_blank"
-          rel="noreferrer"
-          className="underline decoration-primary/40 underline-offset-2"
-        >
-          {locale === "en" ? "text.recoveryversion.bible" : "texto.versionrecobro.org"}
-        </a>
-        .
-      </p>
+      {bibleVersion === "recovery" ? (
+        <p className="text-center text-[0.7rem] leading-relaxed text-muted-foreground">
+          {t("recobroFooter")}{" "}
+          <a
+            href={recobroOrigin(locale)}
+            target="_blank"
+            rel="noreferrer"
+            className="underline decoration-primary/40 underline-offset-2"
+          >
+            {locale === "en" ? "text.recoveryversion.bible" : "texto.versionrecobro.org"}
+          </a>
+          .
+        </p>
+      ) : null}
     </div>
+  );
+}
+
+function BibleVersionPicker({
+  locale,
+  value,
+  onChange,
+}: {
+  locale: "es" | "en";
+  value: BibleVersion;
+  onChange: (version: BibleVersion) => void;
+}) {
+  const { t } = useI18n();
+  const recoveryAvailable = useRecoveryAvailable();
+  const choices = bibleVersionsFor(locale);
+  return (
+    <section className="rounded-xl bg-card p-3 shadow-paper">
+      <div className="px-1 pb-2">
+        <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
+          {t("bibleVersion")}
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{t("bibleVersionHelp")}</p>
+      </div>
+      <div role="radiogroup" aria-label={t("bibleVersion")} className="grid grid-cols-2 gap-1">
+        {choices.map((choice) => {
+          const active = choice.id === value;
+          // Recobro waits for Living Stream Ministry's official access.
+          const soon = choice.id === "recovery" && !recoveryAvailable;
+          return (
+            <button
+              key={choice.id}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              disabled={soon}
+              onClick={() => onChange(choice.id)}
+              className={cn(
+                "flex min-h-11 flex-col items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed",
+                active
+                  ? "bg-primary text-primary-foreground"
+                  : soon
+                    ? "bg-secondary/60 text-muted-foreground"
+                    : "bg-secondary text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <span>{choice.shortLabel}</span>
+              {soon ? (
+                <span className="text-[0.7rem] font-normal">{t("bibleVersionSoon")}</span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -578,6 +656,8 @@ function ChapterReader({
   onChapter,
   onSend,
   onAsk,
+  version,
+  onVersion,
 }: {
   book: BibleBook;
   chapter: number;
@@ -590,6 +670,8 @@ function ChapterReader({
   onChapter: (chapter: number) => void;
   onSend: (verse: Verse) => void;
   onAsk?: (ref: string, text: string) => void;
+  version: BibleVersion;
+  onVersion: (version: BibleVersion) => void;
 }) {
   const { locale, t } = useI18n();
   const favorites = useAppStore((s) => s.favorites);
@@ -622,18 +704,20 @@ function ChapterReader({
       pickedSorted
         .map((n) =>
           verses.find(
-            (item) => item.id === recobroVerseId(book.id, chapter, n, locale),
+            (item) => item.id === bibleVerseId(version, book.id, chapter, n, locale),
           ),
         )
         .filter((item): item is Verse => Boolean(item)),
-    [pickedSorted, verses, book.id, chapter, locale],
+    [pickedSorted, verses, book.id, chapter, locale, version],
   );
   const combined = useMemo(
     () => combineVerses(pickedVerses, bookAbbr(book, locale), chapter),
     [pickedVerses, book, chapter, locale],
   );
   const rangeLabel = formatVerseRange(pickedSorted);
-  const officialUrl = recobroChapterUrl(book, chapter, locale);
+  const officialUrl =
+    data?.url ??
+    (version === "recovery" ? recobroChapterUrl(book, chapter, locale) : "https://www.lockman.org/");
   const lastPicked = pickedSorted.at(-1) ?? null;
   const currentPlace: ReadingPlace = {
     bookId: book.id,
@@ -754,9 +838,10 @@ function ChapterReader({
           {name} {chapter}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {recobroSource(locale)}
+          {bibleSource(version, locale)}
         </p>
       </header>
+      <BibleVersionPicker locale={locale} value={version} onChange={onVersion} />
       {loading ? (
         <p className="rounded-lg bg-card px-4 py-10 text-center text-sm text-muted-foreground shadow-paper">
           {t("openingChapter")}
@@ -768,7 +853,7 @@ function ChapterReader({
           <p className="max-w-xs text-sm text-muted-foreground">{error}</p>
           <Button asChild>
             <a href={officialUrl} target="_blank" rel="noreferrer">
-              {t("openRecobro")}
+              {t("source")}
             </a>
           </Button>
         </div>
@@ -920,7 +1005,8 @@ function ChapterReader({
         <p className="text-center text-xs text-muted-foreground">{t("tapVerse")}</p>
       )}
       <p className="pb-2 text-center text-[0.7rem] leading-relaxed text-muted-foreground">
-        {data?.copyright ?? recobroCopyright(locale)}.{" "}
+        {data?.copyright ??
+          (version === "recovery" ? recobroCopyright(locale) : bibleSource(version, locale))}.{" "}
         <a
           href={officialUrl}
           target="_blank"
