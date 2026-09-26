@@ -11,7 +11,14 @@ import {
 } from "@/lib/bible";
 import { t, type Locale } from "@/lib/i18n";
 import { rangeOf, type VerseRange } from "@/lib/verse-memory";
-import { catalogSpan, getVerseById, isComposedVerse, type Verse } from "@/lib/verses";
+import {
+  catalogSpan,
+  getVerseById,
+  isComposedVerse,
+  localizeVerse,
+  type Verse,
+} from "@/lib/verses";
+import { formatVerseRange } from "@/lib/reader-prefs";
 
 export type RecobroVerse = {
   n: number;
@@ -248,6 +255,27 @@ function rangeFromChapter(
     source: bibleSource(version, locale),
     copyright: chapter.copyright,
   };
+}
+
+/**
+ * A verse from its id alone, with no text: what a schedule keeps. Catalog
+ * verses, verses from a chapter ("rcv-jhn-3-16", "lbla-jhn-3-16"), ranges
+ * picked in the reader and the app's composed messages all come back; the
+ * text is then read with hydrateVerse. Null for an id the app cannot read.
+ */
+export function verseFromId(id: string, locale: Locale): Verse | null {
+  const catalog = getVerseById(id);
+  if (catalog) return { ...localizeVerse(catalog, locale), text: "" };
+  if (isComposedVerse(id)) return { id, ref: "", book: "", text: "", themes: [] };
+  const range = rangeOf(id);
+  const single = id.match(/-([a-z0-9]+)-(\d+)-(\d+)$/);
+  const bookId = range?.bookId ?? single?.[1];
+  const book = bookId ? bookById(bookId) : undefined;
+  if (!book) return null;
+  const chapter = range?.chapter ?? Number(single![2]);
+  const verses = range ? formatVerseRange(range.numbers) : single![3];
+  const name = bookName(book, locale);
+  return { id, ref: `${name} ${chapter}:${verses}`, book: name, text: "", themes: [] };
 }
 
 export function canChangeMessageLanguage(verse: Verse): boolean {

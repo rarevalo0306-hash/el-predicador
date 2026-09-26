@@ -12,7 +12,8 @@ import {
   localizeVerse,
   type ThemeId,
 } from "@/lib/verses";
-import { hydrateVerse } from "@/lib/recobro";
+import { hydrateVerse, verseFromId } from "@/lib/recobro";
+import type { Verse } from "@/lib/verses";
 import { formatVerseMessage } from "@/lib/share";
 import { useEffect, useId, useState, useRef } from "react";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
@@ -56,6 +57,7 @@ function newForm(
   person?: { name: string; phone: string; channel?: MessageChannel },
   messageLocale: Locale = "es",
   verseId?: string,
+  senderName?: string,
 ): ScheduleInput {
   return {
     recipientName: person?.name ?? "",
@@ -63,6 +65,7 @@ function newForm(
     message,
     messageLocale,
     verseId,
+    senderName: senderName?.trim() || undefined,
     // The person's own preference when we came from their card.
     channel: person?.channel ?? "whatsapp",
     days: [1, 2, 3, 4, 5],
@@ -92,7 +95,9 @@ const COMMON_ZONES = [
 type MessageSchedulePanelProps = {
   initialMessage?: string;
   initialLocale?: Locale;
+  /** A verse to send: only its id is kept, and its text is read at each send. */
   initialVerseId?: string;
+  initialSenderName?: string;
   initialPerson?: { name: string; phone: string; channel?: MessageChannel };
 };
 export function MessageSchedulePanel(props: MessageSchedulePanelProps) {
@@ -108,6 +113,7 @@ function MessageScheduleForm({
   initialPerson,
   initialLocale,
   initialVerseId,
+  initialSenderName,
 }: MessageSchedulePanelProps) {
   const { locale, t } = useI18n();
   const copy = scheduleCopy(locale);
@@ -117,13 +123,16 @@ function MessageScheduleForm({
   const bibleChoice = useAppStore((s) => s.bibleChoice);
   const id = useId();
   const [form, setForm] = useState(() =>
-    newForm(initialMessage, initialPerson, initialLocale ?? locale, initialVerseId),
+    newForm(initialMessage, initialPerson, initialLocale ?? locale, initialVerseId, initialSenderName),
   );
   const languageCopy = messageLanguageCopy(locale);
   const [pickerTheme, setPickerTheme] = useState<ThemeId | "">(
     () => getVerseById(initialVerseId ?? "")?.themes[0] ?? "",
   );
   const [preparing, setPreparing] = useState(false);
+  // The chosen verse, read live to show how the message would look. Never
+  // saved: the schedule keeps the verse's id and the sender's note.
+  const [versePreview, setVersePreview] = useState<Verse | null>(null);
   const requestVersion = useRef(0);
   const [busy, setBusy] = useState(false);
   // The form sits above the list, so editing a schedule further down filled it
@@ -156,24 +165,38 @@ function MessageScheduleForm({
   const update = (patch: Partial<ScheduleInput>) =>
     setForm((current) => ({ ...current, ...patch }));
   async function chooseVerse(verseId: string, messageLocale = form.messageLocale ?? "es") {
-    const base = getVerseById(verseId);
-    if (!base) return;
     const version = ++requestVersion.current;
+    if (!verseId) {
+      setVersePreview(null);
+      setPreparing(false);
+      update({ verseId: undefined });
+      return;
+    }
+    const base = verseFromId(verseId, messageLocale);
+    if (!base) return;
+    update({ verseId, messageLocale });
     setPreparing(true);
     try {
-      const verse = await hydrateVerse(base, messageLocale, normalizeBibleVersion(bibleChoice[messageLocale], messageLocale));
-      if (version !== requestVersion.current) return;
-      update({
-        verseId,
+      const verse = await hydrateVerse(
+        base,
         messageLocale,
-        message: formatVerseMessage(verse, undefined, undefined, messageLocale),
-      });
+        normalizeBibleVersion(bibleChoice[messageLocale], messageLocale),
+      );
+      if (version === requestVersion.current) setVersePreview(verse);
     } catch {
-      if (version === requestVersion.current) toast.error(languageCopy.error);
+      if (version === requestVersion.current) {
+        setVersePreview(null);
+        toast.error(languageCopy.error);
+      }
     } finally {
       if (version === requestVersion.current) setPreparing(false);
     }
   }
+  // A verse passed in (from the send screen) is shown like a chosen one.
+  useEffect(() => {
+    if (initialVerseId) void chooseVerse(initialVerseId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   function changeLanguage(messageLocale: Locale, patch: Partial<ScheduleInput> = {}) {
     // Apply the language up front: a verse that fails to load must not leave the
     // selector showing the previous language.
@@ -189,12 +212,15 @@ function MessageScheduleForm({
     setPreparing(false);
     setPickerTheme(getVerseById(row.verseId ?? "")?.themes[0] ?? "");
     setForm({ ...row });
+    setVersePreview(null);
+    if (row.verseId && !row.themeId) void chooseVerse(row.verseId, row.messageLocale ?? "es");
     setEditRequest((n) => n + 1);
   }
   function resetForm() {
     requestVersion.current++;
     setPreparing(false);
     setPickerTheme("");
+    setVersePreview(null);
     setForm(newForm("", undefined, locale));
   }
   const [saveFailure, setSaveFailure] = useState<string | null>(null);
@@ -413,6 +439,8 @@ function MessageScheduleForm({
             onChange={(e) => {
               const theme = e.target.value as ThemeId | "";
               setPickerTheme(theme);
+              requestVersion.current++;
+              setVersePreview(null);
               update({ verseId: undefined, themeId: form.themeId ? theme || null : null });
             }}
           >
@@ -489,9 +517,9 @@ function MessageScheduleForm({
                 const first = versesForTheme(form.themeId)[0];
                 const shown = first ? localizeVerse(first, messageLocale) : null;
                 return composeVerseMessage({
-                  text: shown?.text.trim() || "…",
+                  // The text is read at each send; the app keeps none to show here.
+                  text: copy.verseTextAtSend,
                   ref: shown?.ref ?? "",
-                  source: shown?.source,
                   note: fallbackNotes(messageLocale)[0],
                   senderName: form.senderName,
                   locale: messageLocale,
@@ -511,6 +539,11 @@ function MessageScheduleForm({
               onChange={(e) => void chooseVerse(e.target.value)}
             >
               <option value="">{languageCopy.choose}</option>
+              {form.verseId && !versesForTheme(pickerTheme).some((v) => v.id === form.verseId) ? (
+                <option value={form.verseId}>
+                  {versePreview?.ref || verseFromId(form.verseId, form.messageLocale ?? "es")?.ref}
+                </option>
+              ) : null}
               {versesForTheme(pickerTheme).map((verse) => (
                 <option key={verse.id} value={verse.id}>
                   {verse.ref}
@@ -524,7 +557,40 @@ function MessageScheduleForm({
             {languageCopy.loading}
           </p>
         ) : null}
-        {form.themeId ? null : (
+        {!form.themeId && form.verseId ? (
+          <div className="space-y-1.5">
+            <p className="text-xs text-muted-foreground">{copy.versePreview}</p>
+            <pre className="rounded-md border border-border bg-secondary p-3 text-xs whitespace-pre-wrap break-words">
+              {versePreview
+                ? formatVerseMessage(versePreview, form.message, form.senderName, form.messageLocale ?? "es")
+                : preparing
+                  ? languageCopy.loading
+                  : copy.verseTextAtSend}
+            </pre>
+            <Label htmlFor={`${id}-message`}>{copy.note}</Label>
+            <Textarea
+              id={`${id}-message`}
+              value={form.message}
+              onChange={(e) => update({ message: e.target.value })}
+              lang={form.messageLocale ?? "es"}
+              maxLength={600}
+              className="min-h-20"
+              aria-describedby={`${id}-message-hint`}
+            />
+            <p id={`${id}-message-hint`} className="text-xs text-muted-foreground">
+              {copy.noteHint}
+            </p>
+            <Label htmlFor={`${id}-sender-verse`}>{copy.senderName}</Label>
+            <Input
+              id={`${id}-sender-verse`}
+              value={form.senderName ?? ""}
+              maxLength={80}
+              onChange={(e) => update({ senderName: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground">{copy.senderNameHint}</p>
+          </div>
+        ) : null}
+        {form.themeId || form.verseId ? null : (
           <div className="space-y-1.5">
             <Label htmlFor={`${id}-message`}>{copy.message}</Label>
             <Textarea
@@ -680,6 +746,19 @@ function MessageScheduleForm({
                 <p className="text-sm">
                   {copy.cardTheme.replace("{theme}", localizedTheme(row.themeId, locale).name)}
                 </p>
+              ) : row.verseId ? (
+                <>
+                  <p className="text-sm">
+                    {copy.cardVerse.replace(
+                      "{ref}",
+                      verseFromId(row.verseId, row.messageLocale ?? "es")?.ref ||
+                        copy.verseTextAtSend,
+                    )}
+                  </p>
+                  {row.message ? (
+                    <p className="whitespace-pre-wrap break-words text-sm">{row.message}</p>
+                  ) : null}
+                </>
               ) : (
                 <p className="whitespace-pre-wrap break-words text-sm">{row.message}</p>
               )}

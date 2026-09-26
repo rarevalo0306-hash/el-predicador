@@ -27,7 +27,7 @@ function deps(answers: (string | null | Error)[], overrides: Partial<ReflectionD
   const state = { calls: 0 };
   const value: ReflectionDeps = {
     configured: true,
-    verseText: async () => ({ ref: "Test 1:1", text: "Texto del versículo." }),
+    ref: "Test 1:1",
     write: async () => {
       const answer = answers[state.calls] ?? null;
       state.calls += 1;
@@ -117,12 +117,12 @@ test("after a failure the day waits a few minutes before asking again", async ()
   assert.equal((await reflectionFor(sql, DAY, "es", VERSE, later.value))?.text, WHOLE);
 });
 
-test("without DeepSeek, or without the verse's words, nothing is requested", async () => {
+test("without DeepSeek, or without the verse's reference, nothing is requested", async () => {
   const off = deps([WHOLE], { configured: false });
   assert.equal(await reflectionFor(sql, DAY, "es", VERSE, off.value), null);
   assert.equal(off.state.calls, 0);
 
-  const noText = deps([WHOLE], { verseText: async () => ({ ref: "", text: " " }) });
+  const noText = deps([WHOLE], { ref: " " });
   assert.equal(await reflectionFor(sql, DAY, "es", VERSE, noText.value), null);
   assert.equal(noText.state.calls, 0);
 });

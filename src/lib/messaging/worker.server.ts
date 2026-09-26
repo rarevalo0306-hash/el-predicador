@@ -4,10 +4,13 @@ import { nextMessageOccurrence } from "../message-schedule.ts";
 import { deliverMessage, messagingStatus, type DeliveryOutcome } from "./provider.server.ts";
 import {
   defaultNoteWriter,
+  liveTextReader,
   resolveThemeMessage,
   type NoteWriter,
+  type TextReader,
   type VerseSource,
 } from "./theme-delivery.server.ts";
+import { composeVerseMessage } from "./compose.ts";
 import type { ScheduleRow } from "./schedules.server";
 
 export function validCronAuthorization(header: string | null, secret: string | undefined): boolean {
@@ -34,6 +37,7 @@ export async function runScheduledMessages(
   ready = messagingStatus,
   verses?: VerseSource,
   writer?: NoteWriter | null,
+  read: TextReader = liveTextReader,
 ) {
   const token = randomUUID();
   // Fresh lines are written while the run is young; past this point the
@@ -94,10 +98,23 @@ export async function runScheduledMessages(
             {
               write: Date.now() < freshUntil ? write : null,
               themeName: await themeName(row.theme_id, row.message_locale),
+              read,
             },
           );
           message = "message" in composed ? composed.message : null;
           if ("error" in composed) result = { status: "failed", errorCode: composed.error };
+        } else if (row.verse_id) {
+          // A chosen verse keeps only its id and the sender's own note; its
+          // text is read now, with its edition's copyright line.
+          const text = await read({ id: row.verse_id, ref: "" }, row.message_locale);
+          message = text
+            ? composeVerseMessage({
+                ...text,
+                note: row.message,
+                senderName: row.sender_name,
+                locale: row.message_locale,
+              })
+            : null;
         }
         if (message === null) {
           result = result ?? { status: "failed", errorCode: "verse_unavailable" };

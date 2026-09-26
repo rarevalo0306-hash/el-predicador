@@ -7,7 +7,7 @@ const input: ComposeInput = {
   issue: "Dios no comparte su gloria.",
   approach: "No pelees por la estatuilla.",
   points: ["Un solo Dios.", "Un solo mediador."],
-  verses: [{ ref: "1 Timoteo 2:5", text: "Hay un solo Dios, y un solo mediador…" }],
+  verses: [{ ref: "1 Timoteo 2:5" }],
   details: "  Mi tía Rosa, tiene un altar en casa y está enferma  ",
   locale: "es",
 };
@@ -28,7 +28,7 @@ test("the case and the person are laid out in full", () => {
   const brief = composeBrief(input);
   assert.match(brief, /Caso: Idolatría/);
   assert.match(brief, /- Un solo Dios\./);
-  assert.match(brief, /- 1 Timoteo 2:5: Hay un solo Dios/);
+  assert.match(brief, /- 1 Timoteo 2:5$/m);
   assert.match(brief, /Sobre la persona: Mi tía Rosa/);
   assert.match(composeBrief({ ...input, details: "" }), /\(sin detalles\)/);
 });
