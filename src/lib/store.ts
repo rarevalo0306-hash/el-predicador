@@ -5,6 +5,7 @@ import { persistLocale, type Locale } from "@/lib/i18n";
 import { todayKey, type ThemeId, type Verse } from "@/lib/verses";
 import { EMPTY_CHURCH, isThemeId, normalizeChurch, type ChurchInfo } from "@/lib/church";
 import { recipientThemes } from "@/lib/recipient-themes";
+import { keptVerse, keptVerses } from "@/lib/verse-memory";
 import type { MessageChannel } from "@/lib/message-schedule";
 import {
   isBibleVersionForLocale,
@@ -188,7 +189,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     })),
   rememberVerse: (verse) =>
     set((state) => ({
-      verseMemory: { ...state.verseMemory, [verse.id]: verse },
+      verseMemory: { ...state.verseMemory, [verse.id]: keptVerse(verse) },
     })),
   toggleFavorite: (id, verse) =>
     set((state) => {
@@ -199,7 +200,9 @@ export const useAppStore = create<AppState>()((set, get) => ({
         favorites: saved ? state.favorites.filter((item) => item !== id) : [...state.favorites, id],
         favoriteKinds: nextKinds,
         verseMemory:
-          verse && !saved ? { ...state.verseMemory, [verse.id]: verse } : state.verseMemory,
+          verse && !saved
+            ? { ...state.verseMemory, [verse.id]: keptVerse(verse) }
+            : state.verseMemory,
       };
     }),
   saveMessage: (item) => {
@@ -351,7 +354,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
         highlights: on
           ? state.highlights.filter((id) => id !== verseId)
           : [verseId, ...state.highlights].slice(0, 200),
-        verseMemory: verse && !on ? { ...state.verseMemory, [verse.id]: verse } : state.verseMemory,
+        verseMemory:
+          verse && !on ? { ...state.verseMemory, [verse.id]: keptVerse(verse) } : state.verseMemory,
       };
     }),
   setFontScale: (fontScale) => set({ fontScale }),
@@ -386,6 +390,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
         ? payload.recipients.map((row) => ({ ...row, phone: restorePhone(row.phone) }))
         : [],
       church: normalizeChurch(payload.church),
+      // Text saved before references alone were kept is dropped here.
+      verseMemory: keptVerses(payload.verseMemory),
       highlights: Array.isArray(payload.highlights) ? payload.highlights : [],
       fontScale: scale,
       bibleChoice: parseBibleVersionChoices(payload.bibleChoice),

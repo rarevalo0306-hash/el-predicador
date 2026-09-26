@@ -28,10 +28,16 @@ type AskDrawerProps = {
   passage?: AskPassage | null;
 };
 
-const STORAGE_KEY = "preacher-ask";
+const STORAGE_KEY = "preacher-ask-v2";
+/**
+ * The history kept before questions stopped carrying the passage's text. It
+ * held Bible text the editions do not allow storing, so it is dropped.
+ */
+const OLD_STORAGE_KEY = "preacher-ask";
 
 function loadTurns(): AskTurn[] {
   try {
+    window.localStorage.removeItem(OLD_STORAGE_KEY);
     const raw = window.localStorage.getItem(STORAGE_KEY);
     const parsed: unknown = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed)
@@ -146,7 +152,7 @@ export function AskDrawer({
     const raw = typed.trim();
     if (!raw || busy) return;
     const about = attached;
-    const text = about ? passageQuestion(about.ref, about.text, raw) : raw;
+    const text = about ? passageQuestion(about.ref, raw) : raw;
     setAttached(null);
     const history = turns;
     const asked = [...turns, { role: "user" as const, content: text }];

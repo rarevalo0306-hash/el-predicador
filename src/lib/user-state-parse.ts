@@ -4,6 +4,7 @@ import { isThemeId, normalizeChurch } from "./church.ts";
 import { recipientThemes } from "./recipient-themes.ts";
 import type { CloudPayload, Recipient } from "./store.ts";
 import { parseBibleVersionChoices } from "./bible.ts";
+import { keptVerses } from "./verse-memory.ts";
 
 /**
  * Normalization for the state an account stores in the cloud.
@@ -57,8 +58,8 @@ export function parsePayload(raw: string | null | undefined): CloudPayload | nul
       favorites: Array.isArray(value.favorites) ? value.favorites : [],
       favoriteKinds:
         value.favoriteKinds && typeof value.favoriteKinds === "object" ? value.favoriteKinds : {},
-      verseMemory:
-        value.verseMemory && typeof value.verseMemory === "object" ? value.verseMemory : {},
+      // References only: the Bible text is read again each time it is shown.
+      verseMemory: keptVerses(value.verseMemory),
       savedMessages: Array.isArray(value.savedMessages) ? value.savedMessages : [],
       displayName: typeof value.displayName === "string" ? value.displayName : "",
       notify: Boolean(value.notify),

@@ -10,6 +10,7 @@ import {
   type BibleBook,
 } from "@/lib/bible";
 import { t, type Locale } from "@/lib/i18n";
+import { rangeOf, type VerseRange } from "@/lib/verse-memory";
 import { catalogSpan, getVerseById, isComposedVerse, type Verse } from "@/lib/verses";
 
 export type RecobroVerse = {
@@ -226,6 +227,29 @@ function builtFromChapter(
   };
 }
 
+/** A picked range rebuilt from its chapter, numbered the way the reader shows it. */
+function rangeFromChapter(
+  verse: Verse,
+  range: VerseRange,
+  chapter: RecobroChapter,
+  locale: Locale,
+  version: BibleVersion,
+): Verse | null {
+  reportApiBibleUse(chapter);
+  const wanted = new Set(range.numbers);
+  const text = chapter.verses
+    .filter((item) => wanted.has(item.n))
+    .map((item) => `${item.n} ${item.text}`)
+    .join("\n");
+  if (!text) return null;
+  return {
+    ...verse,
+    text,
+    source: bibleSource(version, locale),
+    copyright: chapter.copyright,
+  };
+}
+
 export function canChangeMessageLanguage(verse: Verse): boolean {
   return !isComposedVerse(verse.id) || verse.id.startsWith("doctrina-") ||
     (verse.id.startsWith("caso-") && verse.id !== "caso-testigos-nwt") ||
@@ -238,13 +262,25 @@ export function peekHydratedVerse(
   version?: BibleVersion,
 ): Verse | null {
   const selected = normalizeBibleVersion(version, locale);
+  // A saved verse keeps only its reference; its text is read again.
+  const hasText = Boolean(verse.text.trim());
   if (isComposedVerse(verse.id)) {
-    if (!canChangeMessageLanguage(verse) || verse.source === bibleSource(selected, locale)) {
+    if (
+      hasText &&
+      (!canChangeMessageLanguage(verse) || verse.source === bibleSource(selected, locale))
+    ) {
       return verse;
     }
     return null;
   }
+  const range = rangeOf(verse.id);
+  if (range) {
+    const hit = chapterMemory.get(chapterKey(range.bookId, range.chapter, locale, selected));
+    if (!hit || hit instanceof Promise) return null;
+    return rangeFromChapter(verse, range, hit, locale, selected);
+  }
   if (
+    hasText &&
     (verse.id.startsWith("rcv-") || verse.id.startsWith(`${selected}-`)) &&
     verse.source === bibleSource(selected, locale)
   ) {
@@ -281,6 +317,19 @@ export async function hydrateVerse(
     const { PREACH_CASES, caseMessageVerse } = await import("./preach-cases");
     const topic = PREACH_CASES.find((item) => `caso-${item.id}` === verse.id);
     if (topic) return caseMessageVerse(topic, locale);
+  }
+  if (verse.id.startsWith("nvi-")) {
+    const { NVI_ROWS, nviDigestVerse, nviRowVerse } = await import("./nvi-compare");
+    if (verse.id === "nvi-digest") return nviDigestVerse(locale);
+    const row = NVI_ROWS.find((item) => `nvi-${item.id}` === verse.id);
+    if (row) return nviRowVerse(row, locale);
+  }
+  const range = rangeOf(verse.id);
+  if (range) {
+    const chapter = await loadCachedChapter(range.bookId, range.chapter, locale, selected);
+    const built = rangeFromChapter(verse, range, chapter, locale, selected);
+    if (!built) throw new Error(t(locale, "chapterEmpty"));
+    return built;
   }
   const span = catalogSpan(getVerseById(verse.id) ?? verse);
   if (!span) {

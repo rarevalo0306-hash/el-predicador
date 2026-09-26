@@ -2,16 +2,11 @@
 export const PASSAGE_QUESTION_MAX = 500;
 
 /**
- * A question about a passage the reader picked: the reference, its text in
- * quotes, then the question. The text is shortened first when it would not
- * fit, so the reference and the question always arrive whole.
+ * A question about a passage the reader picked: its reference, then the
+ * question. The Bible text itself never goes along: the editions do not
+ * allow sending it to the AI or keeping it in the chat history, and the
+ * reference is enough for the answer.
  */
-export function passageQuestion(ref: string, text: string, question: string): string {
-  const head = ref.trim();
-  const ask = question.trim();
-  const body = text.replace(/\s+/g, " ").trim();
-  const room = PASSAGE_QUESTION_MAX - head.length - ask.length - 6;
-  if (room < 20) return `${head}\n\n${ask}`.slice(0, PASSAGE_QUESTION_MAX);
-  const quoted = body.length > room ? `${body.slice(0, room - 1).trimEnd()}…` : body;
-  return `${head}\n«${quoted}»\n\n${ask}`;
+export function passageQuestion(ref: string, question: string): string {
+  return `${ref.trim()}\n\n${question.trim()}`.slice(0, PASSAGE_QUESTION_MAX);
 }
