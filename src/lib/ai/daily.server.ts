@@ -87,7 +87,7 @@ async function chat(
   timeoutMs: number,
   config: Config,
   request: typeof fetch,
-): Promise<string> {
+): Promise<{ text: string; cutOff: boolean }> {
   if (!config.DEEPSEEK_API_KEY) throw new Error("deepseek_not_configured");
   const response = await request(
     `${config.DEEPSEEK_BASE_URL || "https://api.deepseek.com"}/chat/completions`,
@@ -110,25 +110,39 @@ async function chat(
     },
   );
   if (!response.ok) throw new Error(`deepseek_${response.status}`);
-  const body = (await response.json()) as { choices?: { message?: { content?: string } }[] };
-  return body.choices?.[0]?.message?.content ?? "";
+  const body = (await response.json()) as {
+    choices?: { message?: { content?: string }; finish_reason?: string }[];
+  };
+  const choice = body.choices?.[0];
+  // "length" means the model ran out of room mid-sentence.
+  return { text: choice?.message?.content ?? "", cutOff: choice?.finish_reason === "length" };
+}
+
+const SENTENCE_END = /[.!?…]["”»')\]]*$/;
+
+/** Whether a text ends on a finished sentence ("…por ti." yes, "Vuélvete a tu espíritu" no). */
+export function endsComplete(text: string): boolean {
+  return SENTENCE_END.test(text.trim());
 }
 
 /**
- * A reflection that ran long keeps its first whole sentences up to `max`
- * instead of being thrown away; a single overlong sentence is left as is
- * (and the filter drops it).
+ * Only whole sentences, up to `max` characters: a trailing piece without its
+ * final stop (the model was cut off) is dropped, never shown or stored.
+ * Returns "" when not even one whole sentence fits.
  */
-export function fitSentences(text: string, max: number): string {
-  const clean = text.replace(/\s+/g, " ").trim();
-  if (clean.length <= max) return clean;
-  const sentences = clean.match(/[^.!?…]+[.!?…]+["”»']?\s*/g) ?? [clean];
+export function completeSentences(text: string, max: number): string {
+  const clean = text
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^["“«']+|["”»']+$/g, (quote, at: number) => (at === 0 ? "" : quote))
+    .trim();
+  const sentences = clean.match(/[^.!?…]+[.!?…]+["”»')\]]*\s*/g) ?? [];
   let out = "";
   for (const sentence of sentences) {
     if ((out + sentence).trim().length > max) break;
     out += sentence;
   }
-  return out.trim() || clean;
+  return out.trim();
 }
 
 /** Today's reflection on a verse, or null when it misses the brief. */
@@ -140,12 +154,13 @@ export async function writeReflection(
   const raw = await chat(
     reflectionPrompt(input.locale),
     JSON.stringify({ ref: input.ref, text: input.text.slice(0, 800) }),
-    400,
+    900,
     15_000,
     config,
     request,
   );
-  return cleanNote(fitSentences(raw, 440), input.text, { min: 60, max: 440 });
+  const whole = completeSentences(raw.text, 440);
+  return whole ? cleanNote(whole, input.text, { min: 60, max: 440 }) : null;
 }
 
 /** A fresh line for one scheduled send, or null (the caller uses a prepared one). */
@@ -164,10 +179,11 @@ export async function writeSendNote(
       theme: input.theme,
       ...(name ? { name } : {}),
     }),
-    200,
+    400,
     timeoutMs,
     config,
     request,
   );
-  return cleanNote(raw, input.text);
+  const whole = completeSentences(raw.text, 220);
+  return whole ? cleanNote(whole, input.text) : null;
 }

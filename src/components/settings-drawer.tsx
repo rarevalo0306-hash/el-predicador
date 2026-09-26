@@ -97,12 +97,12 @@ export function SettingsDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
-        <DrawerHeader>
+      <DrawerContent closeLabel={t("close")}>
+        <DrawerHeader className="pr-14">
           <DrawerTitle>{t("settingsTitle")}</DrawerTitle>
           <DrawerDescription>{t("settingsDesc")}</DrawerDescription>
         </DrawerHeader>
-        <div className="flex flex-col gap-5 overflow-y-auto px-5 pb-8">
+        <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain px-5 pb-[calc(2rem+env(safe-area-inset-bottom))]">
           <div className="rounded-lg bg-secondary px-4 py-4">
             <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
               {t("installTitle")}

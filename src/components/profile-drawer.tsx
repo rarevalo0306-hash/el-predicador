@@ -13,6 +13,19 @@ import { useI18n } from "@/components/language-switch";
 import { InviteContacts } from "@/components/invite-contacts";
 import { useEffect, useState } from "react";
 
+/**
+ * Where focus lands when the panel closes: the header button that opens it
+ * (Perfil, or Entrar when signed out), whichever is on screen now.
+ */
+function returnFocus(event: Event) {
+  const trigger = document.querySelector<HTMLElement>("[data-profile-trigger]");
+  if (!trigger) return;
+  event.preventDefault();
+  trigger.focus({ preventScroll: true });
+}
+
+const BODY = "min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[calc(2rem+env(safe-area-inset-bottom))]";
+
 type ProfileDrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -43,12 +56,12 @@ export function ProfileDrawer({
   if (justJoined && user) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
-          <DrawerHeader>
+        <DrawerContent closeLabel={t("close")} onCloseAutoFocus={returnFocus}>
+          <DrawerHeader className="pr-14">
             <DrawerTitle>{t("inviteTitle")}</DrawerTitle>
             <DrawerDescription>{t("inviteDesc")}</DrawerDescription>
           </DrawerHeader>
-          <div className="px-5 pb-8">
+          <div className={BODY}>
             <InviteContacts onDone={() => onOpenChange(false)} />
           </div>
         </DrawerContent>
@@ -58,14 +71,14 @@ export function ProfileDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
-        <DrawerHeader>
+      <DrawerContent closeLabel={t("close")} onCloseAutoFocus={returnFocus}>
+        <DrawerHeader className="pr-14">
           <DrawerTitle>{user ? t("profileTitle") : guestTitle}</DrawerTitle>
           <DrawerDescription>
             {user ? t("profileHello", { name: greeting }) : guestDesc}
           </DrawerDescription>
         </DrawerHeader>
-        <div className="flex flex-col gap-5 px-5 pb-8">
+        <div className={`${BODY} flex flex-col gap-5`}>
           {isPending ? (
             <div className="h-36 animate-pulse rounded-xl bg-card" />
           ) : null}
