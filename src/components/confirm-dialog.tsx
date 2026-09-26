@@ -33,10 +33,10 @@ export function ConfirmDialog({
           onCloseAutoFocus={onCloseAutoFocus}
           className="fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl bg-card px-5 py-5 text-card-foreground shadow-paper outline-none"
         >
-          <AlertDialog.Title className="font-serif text-xl font-medium tracking-tight">
+          <AlertDialog.Title className="font-serif text-xl font-medium tracking-tight break-words">
             {title}
           </AlertDialog.Title>
-          <AlertDialog.Description className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          <AlertDialog.Description className="mt-2 text-sm leading-relaxed break-words text-muted-foreground">
             {description}
           </AlertDialog.Description>
           <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

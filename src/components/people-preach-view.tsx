@@ -82,14 +82,24 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   const recipients = useAppStore((s) => s.recipients);
   const upsertRecipient = useAppStore((s) => s.upsertRecipient);
   const removeRecipient = useAppStore((s) => s.removeRecipient);
+  const restoreRecipient = useAppStore((s) => s.restoreRecipient);
   const markRecipientDailySent = useAppStore((s) => s.markRecipientDailySent);
   const markRecipientCultoSent = useAppStore((s) => s.markRecipientCultoSent);
   const church = useAppStore((s) => s.church);
   const setChurch = useAppStore((s) => s.setChurch);
   const displayName = useAppStore((s) => s.displayName);
   const notifyHour = useAppStore((s) => s.notifyHour);
-  const [form, setForm] = useState<RecipientInput>(() => ({ ...emptyForm, messageLocale: locale }));
-  const [editingId, setEditingId] = useState<string | null>(null);
+  // Two drafts, so opening Editar never wipes a half-typed new person and a
+  // half-done edit comes back when the same person is opened again.
+  const [newForm, setNewForm] = useState<RecipientInput>(() => ({
+    ...emptyForm,
+    messageLocale: locale,
+  }));
+  const [editForm, setEditForm] = useState<RecipientInput>(emptyForm);
+  // Whose edit is in editForm; null when there is none.
+  const [editDraftId, setEditDraftId] = useState<string | null>(null);
+  // Which draft the panel shows.
+  const [mode, setMode] = useState<"new" | "edit">("new");
   const [section, setSection] = useState<"people" | "church" | "schedules">("people");
   // Settled after mount: the server has no navigator, and deciding during the
   // first render would make the markup disagree with what the phone supports.
@@ -112,6 +122,12 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   // focus goes back to that button on Cancelar, to the list after removing.
   const removeTrigger = useRef<{ id: string; removed: boolean } | null>(null);
   const listHeadingRef = useRef<HTMLHeadingElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  // The last removal, undone from a line in the list itself (reachable by
+  // keyboard and screen readers, unlike a notice that fades away).
+  const [lastRemoved, setLastRemoved] = useState<{ row: Recipient; index: number } | null>(null);
+  // After "Mostrar más", focus moves to the first contact it revealed.
+  const revealFrom = useRef<number | null>(null);
 
   useEffect(() => setCanPickContacts(canPickDeviceContacts()), []);
 
@@ -124,12 +140,24 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       ),
     [recipients],
   );
+  // A theme nobody follows any more is no longer a filter (its option is gone).
+  const activeTheme: ThemeId | "all" =
+    theme !== "all" && themeOptions.includes(theme) ? theme : "all";
   const matches = useMemo(
-    () => filterPeople(recipients, query, filter, theme),
-    [recipients, query, filter, theme],
+    () => filterPeople(recipients, query, filter, activeTheme),
+    [recipients, query, filter, activeTheme],
   );
   const shown = matches.slice(0, limit);
-  const narrowed = query.trim() !== "" || filter !== "all" || theme !== "all";
+  const narrowed = query.trim() !== "" || filter !== "all" || activeTheme !== "all";
+
+  useEffect(() => {
+    const from = revealFrom.current;
+    revealFrom.current = null;
+    const id = from === null ? undefined : shown[from]?.id;
+    if (id) document.querySelector<HTMLElement>(`[data-person-edit="${CSS.escape(id)}"]`)?.focus();
+    // Only when "Mostrar más" changed the limit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [limit]);
 
   const due = useMemo(
     () => allDueItems(recipients, church, notifyHour),
@@ -137,8 +165,13 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   );
 
   function startEdit(row: Recipient) {
-    setEditingId(row.id);
-    setForm({
+    setMode("edit");
+    formOpener.current = `[data-person-edit="${row.id}"]`;
+    setSection("people");
+    setFormOpen(true);
+    if (editDraftId === row.id) return;
+    setEditDraftId(row.id);
+    setEditForm({
       id: row.id,
       name: row.name,
       phone: normalizePhone(row.phone) ?? row.phone,
@@ -150,19 +183,11 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       dailyHour: row.dailyHour ?? 9,
       cultoEnabled: row.cultoEnabled ?? false,
     });
-    setSection("people");
-    formOpener.current = `[data-person-edit="${row.id}"]`;
-    setFormOpen(true);
   }
 
-  function resetForm() {
-    setEditingId(null);
-    setForm({ ...emptyForm, messageLocale: locale });
-  }
-
-  /** A new person; a half-typed one comes back, a half-done edit does not. */
+  /** A new person; a half-typed one comes back. */
   function openNew() {
-    if (editingId) resetForm();
+    setMode("new");
     formOpener.current = "[data-person-new]";
     setFormOpen(true);
   }
@@ -174,23 +199,36 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
     setLimit(PEOPLE_PAGE);
   }
 
-  /** Removes after the confirmation, with a way back from the notice. */
+  /** Removes after the confirmation; "Deshacer" stays in the list until the next change. */
   function confirmRemove(row: Recipient) {
     if (removeTrigger.current) removeTrigger.current.removed = true;
     const index = recipients.findIndex((item) => item.id === row.id);
     removeRecipient(row.id);
-    toast(t("personRemoved", { name: row.name }), {
-      action: {
-        label: t("undo"),
-        onClick: () =>
-          useAppStore.setState((state) => {
-            if (state.recipients.some((item) => item.id === row.id)) return state;
-            const next = [...state.recipients];
-            next.splice(Math.max(0, Math.min(index, next.length)), 0, row);
-            return { recipients: next };
-          }),
-      },
-    });
+    if (editDraftId === row.id) setEditDraftId(null);
+    setLastRemoved({ row, index });
+  }
+
+  /** Back where it was, unless the list filled up or the number was saved again. */
+  function undoRemove() {
+    if (!lastRemoved) return;
+    const result = restoreRecipient(lastRemoved.row, lastRemoved.index);
+    setLastRemoved(null);
+    if (!result.ok) {
+      toast.error(
+        result.reason === "full"
+          ? t("personImportFull")
+          : t("personUndoTaken", { name: result.name }),
+      );
+      listHeadingRef.current?.focus();
+      return;
+    }
+    const id = lastRemoved.row.id;
+    requestAnimationFrame(() =>
+      (
+        document.querySelector<HTMLElement>(`[data-person-edit="${CSS.escape(id)}"]`) ??
+        listHeadingRef.current
+      )?.focus(),
+    );
   }
 
   /** Send by the channel this person chose; contacts saved before it exist
@@ -207,6 +245,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
 
   async function importFromPhone() {
     setImporting(true);
+    setLastRemoved(null);
     try {
       const { contacts, skipped } = await pickDeviceContacts();
       if (!contacts.length) {
@@ -259,11 +298,14 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   }
 
   function handleSave() {
+    const editing = mode === "edit" && editDraftId !== null;
+    const form = editing ? editForm : newForm;
     // The list holds MAX_RECIPIENTS; a new number past that would push the
     // oldest contact out without a word.
     const phone = normalizePhone(form.phone);
     const known = recipients.some(
-      (row) => row.id === editingId || (phone && normalizePhone(row.phone) === phone),
+      (row) =>
+        (editing && row.id === editDraftId) || (phone && normalizePhone(row.phone) === phone),
     );
     if (!known && recipients.length >= MAX_RECIPIENTS) {
       toast.error(t("personImportFull"));
@@ -274,13 +316,15 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       toast(t("recipientNeedPhone"));
       return;
     }
-    toast(editingId ? t("personUpdated") : t("personSaved"));
-    // Someone new goes to the top of the list; make sure no search hides them.
-    if (!editingId) {
+    toast(editing ? t("personUpdated") : t("personSaved"));
+    setLastRemoved(null);
+    if (editing) {
+      setEditDraftId(null);
+    } else {
+      // Someone new goes to the top of the list; make sure no search hides them.
       clearFilters();
-      formOpener.current = "[data-person-new]";
+      setNewForm({ ...emptyForm, messageLocale: locale });
     }
-    resetForm();
     setFormOpen(false);
   }
 
@@ -290,10 +334,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       return;
     }
     const messageLocale = row.messageLocale ?? locale;
-    const themeId = themeForDay(
-      recipientThemes(row),
-      Math.floor(Date.now() / 86_400_000),
-    );
+    const themeId = themeForDay(recipientThemes(row), Math.floor(Date.now() / 86_400_000));
     const pool = versesForTheme(themeId);
     const base = pool[Math.floor(Math.random() * Math.max(pool.length, 1))] ?? getDailyVerse();
     try {
@@ -562,6 +603,26 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
             </Button>
           </div>
 
+          {lastRemoved ? (
+            <div
+              role="status"
+              className="flex items-center justify-between gap-3 rounded-lg bg-secondary px-3 py-2 text-sm"
+            >
+              <span className="min-w-0 break-words">
+                {t("personRemoved", { name: lastRemoved.row.name })}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                className="shrink-0"
+                data-person-undo
+                onClick={undoRemove}
+              >
+                {t("undo")}
+              </Button>
+            </div>
+          ) : null}
+
           {recipients.length > 0 ? (
             <>
               <div className="relative">
@@ -570,6 +631,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                   aria-hidden
                 />
                 <Input
+                  ref={searchRef}
                   type="search"
                   value={query}
                   onChange={(event) => {
@@ -582,7 +644,11 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                   className="pl-9 text-base"
                 />
               </div>
-              <div className="flex flex-wrap gap-2" role="group" aria-label={t("peopleFilterLabel")}>
+              <div
+                className="flex flex-wrap gap-2"
+                role="group"
+                aria-label={t("peopleFilterLabel")}
+              >
                 {PEOPLE_FILTERS.map((id) => {
                   const on = filter === id;
                   const label = {
@@ -624,7 +690,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                   </Label>
                   <select
                     id="people-theme"
-                    value={theme}
+                    value={activeTheme}
                     onChange={(event) => {
                       setTheme(event.target.value as ThemeId | "all");
                       setLimit(PEOPLE_PAGE);
@@ -650,7 +716,14 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
           ) : matches.length === 0 ? (
             <div className="flex flex-col items-center gap-3 rounded-xl bg-card px-4 py-6 text-center shadow-paper">
               <p className="text-sm text-muted-foreground">{t("peopleNoMatch")}</p>
-              <Button type="button" variant="outline" onClick={clearFilters}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  clearFilters();
+                  requestAnimationFrame(() => searchRef.current?.focus());
+                }}
+              >
                 {t("peopleClearFilters")}
               </Button>
             </div>
@@ -746,7 +819,10 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                 type="button"
                 variant="outline"
                 className="w-full"
-                onClick={() => setLimit((n) => n + PEOPLE_PAGE)}
+                onClick={() => {
+                  revealFrom.current = shown.length;
+                  setLimit((n) => n + PEOPLE_PAGE);
+                }}
               >
                 {t("peopleShowMore", {
                   n: Math.min(PEOPLE_PAGE, matches.length - shown.length),
@@ -772,14 +848,26 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       <PersonFormDrawer
         open={formOpen}
         onOpenChange={setFormOpen}
-        editing={Boolean(editingId)}
-        form={form}
-        setForm={setForm}
+        editing={mode === "edit"}
+        form={mode === "edit" ? editForm : newForm}
+        setForm={mode === "edit" ? setEditForm : setNewForm}
         onSave={handleSave}
         canPickContacts={canPickContacts}
         importing={importing}
         onImport={() => void importFromPhone()}
-        onCloseAutoFocus={(event) => returnFocusTo(formOpener.current)(event)}
+        onCloseAutoFocus={(event) => {
+          // The card may be gone (an edit that no longer matches the search):
+          // then the list itself.
+          if (
+            !document.querySelector('[role="dialog"]') &&
+            !document.querySelector(formOpener.current)
+          ) {
+            event.preventDefault();
+            listHeadingRef.current?.focus();
+            return;
+          }
+          returnFocusTo(formOpener.current)(event);
+        }}
       />
       <ConfirmDialog
         open={Boolean(removing)}
@@ -800,9 +888,11 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
             returnFocusTo(`[data-person-remove="${trigger.id}"]`)(event);
             return;
           }
-          // The card is gone after a removal; land on the list instead.
+          // The card is gone after a removal; land on its "Deshacer".
           event.preventDefault();
-          listHeadingRef.current?.focus();
+          (
+            document.querySelector<HTMLElement>("[data-person-undo]") ?? listHeadingRef.current
+          )?.focus();
         }}
       />
     </div>

@@ -115,9 +115,20 @@ for (const size of WIDTHS) {
   }
 
   // "Mostrar más" adds 20 at a time, then goes away.
+  // Focus lands on the first contact each click reveals.
   let rounds = 0;
   while (await list.getByRole("button", { name: /^Mostrar \d+ más$/ }).count()) {
+    const before = await cards.count();
     await list.getByRole("button", { name: /^Mostrar \d+ más$/ }).click();
+    await page.waitForTimeout(150);
+    const focusedIndex = await page.evaluate(() => {
+      const items = [
+        ...document.querySelectorAll("section[aria-labelledby=people-list-title] ul > li"),
+      ];
+      return items.findIndex((li) => li.contains(document.activeElement));
+    });
+    if (focusedIndex !== before)
+      fail(width, `after "Mostrar más" focus is on card ${focusedIndex}, not ${before}`);
     rounds += 1;
     if (rounds > 5) break;
   }
@@ -142,9 +153,14 @@ for (const size of WIDTHS) {
   await search.fill("zzzz");
   if (!(await list.getByText("Nadie coincide con la búsqueda.").isVisible()))
     fail(width, "no empty-search message");
+  await search.fill("jose 0101");
+  if ((await cards.count()) !== 0) fail(width, 'search "jose 0101" ignores the name');
   await list.getByRole("button", { name: "Quitar filtros" }).click();
+  await page.waitForTimeout(100);
   if ((await search.inputValue()) !== "" || (await cards.count()) !== 20)
     fail(width, '"Quitar filtros" does not reset');
+  if (!(await search.evaluate((el) => el === document.activeElement)))
+    fail(width, 'focus is lost after "Quitar filtros"');
 
   // Filters.
   const filters = list.getByRole("group", { name: "Mostrar" });
@@ -194,6 +210,14 @@ for (const size of WIDTHS) {
   if (!(await page.evaluate(() => document.activeElement?.hasAttribute("data-person-new")))) {
     fail(width, "focus did not return to Nueva persona");
   }
+  // Opening Editar on someone else must not wipe the half-typed new person.
+  await cards.first().getByRole("button", { name: "Editar" }).click();
+  await page.getByRole("dialog", { name: "Editar persona" }).waitFor({ timeout: 3000 });
+  await page.waitForTimeout(550);
+  await page.keyboard.press("Escape");
+  await page
+    .waitForFunction(() => !document.querySelector("[data-vaul-drawer]"), null, { timeout: 3000 })
+    .catch(() => {});
   await newPerson.click();
   panel = page.getByRole("dialog", { name: "Nueva persona" });
   await panel.waitFor({ timeout: 3000 });
@@ -267,17 +291,21 @@ for (const size of WIDTHS) {
   await page.waitForTimeout(300);
   if ((await cards.first().textContent())?.includes(name))
     fail(width, "Sí, quitar did not remove the person");
-  if (!(await page.evaluate(() => document.activeElement?.id === "people-list-title"))) {
-    fail(width, "focus is lost after removing");
-  }
-  const undo = page.getByRole("button", { name: "Deshacer" });
+  const undo = list.getByRole("button", { name: "Deshacer" });
   await undo.waitFor({ timeout: 3000 }).catch(() => {});
-  if (!(await undo.count())) fail(width, "no Deshacer after removing");
+  if (!(await undo.count())) fail(width, "no Deshacer in the list after removing");
   else {
+    if (!(await undo.evaluate((el) => el === document.activeElement)))
+      fail(width, "focus is not on Deshacer after removing");
+    const undoBox = await undo.boundingBox();
+    if (!undoBox || undoBox.height < 44)
+      fail(width, `Deshacer is ${Math.round(undoBox?.height ?? 0)}px tall`);
     await undo.click();
     await page.waitForTimeout(300);
     if (!(await cards.first().textContent())?.includes(name))
       fail(width, "Deshacer did not bring the person back");
+    if (!(await page.evaluate(() => document.activeElement?.hasAttribute("data-person-edit"))))
+      fail(width, "focus is lost after Deshacer");
     // Leave the preview as it was for the next width.
     await cards
       .first()

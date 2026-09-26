@@ -67,3 +67,9 @@ test("filters by theme, including the single theme older contacts carry", () => 
     "paz",
   ]);
 });
+
+test("words and digits together must both match", () => {
+  assert.deepEqual(ids(filterPeople(PEOPLE, "jose 0101", "all")), ["1"]);
+  assert.deepEqual(ids(filterPeople(PEOPLE, "ana 0101", "all")), []);
+  assert.deepEqual(ids(filterPeople(PEOPLE, "+1 (201) 555-0104", "all")), ["4"]);
+});

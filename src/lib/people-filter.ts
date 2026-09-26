@@ -43,18 +43,32 @@ export function matchesFilter(row: PersonRow, filter: PeopleFilter): boolean {
   }
 }
 
+const PHONE_LIKE = /^[\d\s()+.-]+$/;
+const digitsOf = (text: string) => text.replace(/\D/g, "");
+
 /**
- * Whether a contact matches what was typed: every word must appear in the
- * name or the notes (accents and case ignored), or the digits typed must
- * appear in the phone number.
+ * Whether a contact matches what was typed. A number typed on its own
+ * ("+1 (201) 555") is looked for in the phone, from three digits. Otherwise
+ * every word must match: letters in the name or the notes (accents and case
+ * ignored), digits (three or more) in the phone, so "jose 555" finds only
+ * José's numbers.
  */
 export function matchesSearch(row: PersonRow, query: string): boolean {
-  const words = fold(query).split(/\s+/).filter(Boolean);
-  if (!words.length) return true;
+  if (!query.trim()) return true;
+  const phone = digitsOf(row.phone);
+  if (PHONE_LIKE.test(query.trim())) {
+    const digits = digitsOf(query);
+    return digits.length >= 3 && phone.includes(digits);
+  }
   const text = fold(`${row.name} ${row.notes ?? ""}`);
-  if (words.every((word) => text.includes(word))) return true;
-  const digits = query.replace(/\D/g, "");
-  return digits.length >= 3 && row.phone.replace(/\D/g, "").includes(digits);
+  return fold(query)
+    .split(/\s+/)
+    .filter(Boolean)
+    .every((word) => {
+      if (text.includes(word)) return true;
+      const digits = digitsOf(word);
+      return PHONE_LIKE.test(word) && digits.length >= 3 && phone.includes(digits);
+    });
 }
 
 export function filterPeople<T extends PersonRow>(

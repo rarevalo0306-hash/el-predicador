@@ -145,6 +145,12 @@ type AppState = CloudPayload & {
   setNotifyHour: (hour: number) => void;
   upsertRecipient: (item: RecipientInput) => Recipient | null;
   removeRecipient: (id: string) => void;
+  /** Puts a removed contact back where it was, unless the list is full or
+   *  its number has been saved again since (then the other contact's name). */
+  restoreRecipient: (
+    row: Recipient,
+    index: number,
+  ) => { ok: true } | { ok: false; reason: "full" } | { ok: false; reason: "taken"; name: string };
   markRecipientDailySent: (id: string, date?: string) => void;
   markRecipientCultoSent: (id: string, date?: string) => void;
   setChurch: (church: Partial<ChurchInfo>) => void;
@@ -270,6 +276,18 @@ export const useAppStore = create<AppState>()((set, get) => ({
     set((state) => ({
       recipients: state.recipients.filter((row) => row.id !== id),
     })),
+  restoreRecipient: (row, index) => {
+    const list = get().recipients;
+    if (list.some((item) => item.id === row.id)) return { ok: true };
+    const phone = normalizePhone(row.phone);
+    const other = list.find((item) => phone && normalizePhone(item.phone) === phone);
+    if (other) return { ok: false, reason: "taken", name: other.name };
+    if (list.length >= MAX_RECIPIENTS) return { ok: false, reason: "full" };
+    const next = [...list];
+    next.splice(Math.max(0, Math.min(index, next.length)), 0, row);
+    set({ recipients: next });
+    return { ok: true };
+  },
   markRecipientDailySent: (id, date) =>
     set((state) => ({
       recipients: state.recipients.map((row) =>
