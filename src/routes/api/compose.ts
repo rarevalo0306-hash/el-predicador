@@ -28,13 +28,15 @@ export const Route = createFileRoute("/api/compose")({
           .trim()
           .slice(0, DETAILS_MAX);
 
-        const { ASK_DAILY_LIMIT, consumeAskQuota, failureCode, releaseAskQuota } =
+        const { consumeAskQuota, failureCode, releaseAskQuota } =
           await import("@/lib/ai/ask");
         const { deepseekConfigured } = await import("@/lib/ai/deepseek.server");
         if (!deepseekConfigured()) return fail(503, "ask_unavailable");
         const { getSql } = await import("@/lib/db");
         const sql = await getSql();
-        const quota = await consumeAskQuota(sql, userId, ASK_DAILY_LIMIT);
+        const { accessFor, askLimit } = await import("@/lib/roles.server");
+        const limit = askLimit(await accessFor(sql, userId));
+        const quota = await consumeAskQuota(sql, userId, limit);
         if (!quota.allowed) return fail(429, "ask_quota");
 
         try {
@@ -52,7 +54,7 @@ export const Route = createFileRoute("/api/compose")({
             details,
             locale,
           });
-          return textStream(words, sql, userId, ASK_DAILY_LIMIT - quota.used, "compose");
+          return textStream(words, sql, userId, limit - quota.used, "compose");
         } catch (error) {
           const code = failureCode(error);
           console.error("[compose] failed:", code, error instanceof Error ? error.message : error);

@@ -102,6 +102,7 @@ const es = {
   cardTheme: "Tema: {theme} · versículo distinto cada envío",
   verse_unavailable: "No había texto para el versículo; se preparan en Admin → Frases.",
   theme_empty: "El tema no tiene versículos.",
+  monthly_limit: "Llegaste al tope de 300 envíos automáticos de este mes; vuelve a salir el mes que viene.",
 };
 const en: Record<keyof typeof es, string> = {
   title: "Schedule messages",
@@ -206,6 +207,7 @@ const en: Record<keyof typeof es, string> = {
   cardTheme: "Theme: {theme} · a different verse each send",
   verse_unavailable: "No text was ready for the verse; prepare them in Admin → Lines.",
   theme_empty: "The theme has no verses.",
+  monthly_limit: "You reached this month's cap of 300 automatic sends; sending resumes next month.",
 };
 export type ScheduleCopy = typeof es;
 export const scheduleCopy = (locale: "es" | "en"): ScheduleCopy => (locale === "es" ? es : en);

@@ -39,6 +39,11 @@ export async function runScheduledMessages(
   // Fresh lines are written while the run is young; past this point the
   // prepared ones are used so a busy minute never outlives its function.
   const freshUntil = Date.now() + 30_000;
+  // Managers named in the app send too, each within a monthly cap.
+  const { messagingConfig, cappedSender, sendsThisMonth, MANAGER_MONTHLY_SMS } = await import(
+    "../roles.server.ts"
+  );
+  const config = await messagingConfig(sql);
   const write = writer === undefined ? await defaultNoteWriter() : writer;
   const rows = await sql<ScheduleRow>`with due as (
     select id from message_schedules where enabled and next_run_at <= ${now.toISOString()}
@@ -59,8 +64,7 @@ export async function runScheduledMessages(
       await sql`update message_deliveries set status = 'unknown', error_code = 'interrupted_request'
         where schedule_id = ${row.id} and scheduled_for = ${scheduledFor} and status = 'sending'`;
     }
-    const configured =
-      ready(row.user_id, undefined, row.message_locale)[row.channel] && row.consent;
+    const configured = ready(row.user_id, config, row.message_locale)[row.channel] && row.consent;
     const next = configured
       ? nextMessageOccurrence({ days: row.days, time: row.send_time, timeZone: row.time_zone }, now)
       : null;
@@ -73,6 +77,11 @@ export async function runScheduledMessages(
       if (!configured) result = { status: "failed", errorCode: "not_configured" };
       else if (now.getTime() - new Date(scheduledFor).getTime() > 15 * 60_000)
         result = { status: "skipped", errorCode: "missed_time" };
+      else if (
+        cappedSender(row.user_id) &&
+        (await sendsThisMonth(sql, row.user_id, now)) >= MANAGER_MONTHLY_SMS
+      )
+        result = { status: "failed", errorCode: "monthly_limit" };
       else {
         // A theme schedule takes its next verse and line now; the receipt
         // row already exists, so the rotation counts this attempt.
@@ -94,14 +103,17 @@ export async function runScheduledMessages(
           result = result ?? { status: "failed", errorCode: "verse_unavailable" };
         } else {
           try {
-            result = await send({
-              userId: row.user_id,
-              channel: row.channel,
-              phone: row.phone,
-              recipientName: row.recipient_name,
-              message,
-              messageLocale: row.message_locale,
-            });
+            result = await send(
+              {
+                userId: row.user_id,
+                channel: row.channel,
+                phone: row.phone,
+                recipientName: row.recipient_name,
+                message,
+                messageLocale: row.message_locale,
+              },
+              config,
+            );
           } catch {
             result = { status: "unknown", errorCode: "unconfirmed_request" };
           }

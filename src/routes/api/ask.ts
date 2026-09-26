@@ -25,13 +25,15 @@ export const Route = createFileRoute("/api/ask")({
         const history = Array.isArray(data.history) ? data.history.slice(-12) : [];
         const locale = data.locale === "en" ? ("en" as const) : ("es" as const);
 
-        const { ASK_DAILY_LIMIT, consumeAskQuota, failureCode, releaseAskQuota, streamAnswer } =
+        const { consumeAskQuota, failureCode, releaseAskQuota, streamAnswer } =
           await import("@/lib/ai/ask");
         const { deepseekConfigured } = await import("@/lib/ai/deepseek.server");
         if (!deepseekConfigured()) return fail(503, "ask_unavailable");
         const { getSql } = await import("@/lib/db");
         const sql = await getSql();
-        const quota = await consumeAskQuota(sql, userId, ASK_DAILY_LIMIT);
+        const { accessFor, askLimit } = await import("@/lib/roles.server");
+        const limit = askLimit(await accessFor(sql, userId));
+        const quota = await consumeAskQuota(sql, userId, limit);
         if (!quota.allowed) return fail(429, "ask_quota");
 
         let words: AsyncGenerator<string>;
@@ -47,7 +49,7 @@ export const Route = createFileRoute("/api/ask")({
           await releaseAskQuota(sql, userId).catch(() => undefined);
           return fail(502, `ask_failed:${code}`);
         }
-        return textStream(words, sql, userId, ASK_DAILY_LIMIT - quota.used, "ask");
+        return textStream(words, sql, userId, limit - quota.used, "ask");
       },
     },
   },

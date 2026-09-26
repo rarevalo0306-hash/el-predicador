@@ -70,13 +70,19 @@ export async function listSchedules(userId: string, providedSql?: Sql) {
     from message_schedules s left join lateral (
       select status, created_at, error_code, error_message, provider_status, provider_error_code from message_deliveries where schedule_id = s.id order by scheduled_for desc limit 1
     ) d on true where s.user_id = ${userId} order by s.created_at desc limit 20`;
+  // Managers named in the app send like the accounts listed in the settings.
+  const { messagingConfig } = await import("../roles.server.ts");
+  const config = await messagingConfig(sql);
   return {
     schedules: rows.map(scheduleFromRow),
-    channels: messagingStatus(userId),
-    channelsByLocale: { es: messagingStatus(userId), en: messagingStatus(userId, undefined, "en") },
+    channels: messagingStatus(userId, config),
+    channelsByLocale: {
+      es: messagingStatus(userId, config),
+      en: messagingStatus(userId, config, "en"),
+    },
     // Booleans only, so the panel can name what is missing instead of just
     // saying "not connected". See messagingRequirements for why it is shown.
-    requirements: messagingRequirements(userId),
+    requirements: messagingRequirements(userId, config),
   };
 }
 export async function saveSchedule(userId: string, raw: ScheduleInput, providedSql?: Sql) {
@@ -124,7 +130,9 @@ export async function setScheduleEnabled(
     ScheduleRow & { revision: string }
   >`select *, updated_at::text as revision from message_schedules where id = ${id} and user_id = ${userId}`;
   if (!row) throw new Error("scheduleBusy");
-  if (enabled && !ready(userId, undefined, row.message_locale)[row.channel])
+  const { messagingConfig } = await import("../roles.server.ts");
+  const config = await messagingConfig(sql);
+  if (enabled && !ready(userId, config, row.message_locale)[row.channel])
     throw new Error("scheduleNotConnected");
   if (enabled && !row.consent) throw new Error("scheduleConsentRequired");
   const next = enabled ? nextMessageOccurrence(scheduleFromRow(row)) : null;

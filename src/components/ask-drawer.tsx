@@ -293,7 +293,7 @@ export function AskDrawer({
         {notice ? (
           <p role="alert" className="text-sm text-destructive">
             {notice === "quota"
-              ? t("askQuota", { n: 20 })
+              ? t("askQuota")
               : notice === "unavailable"
                 ? t("askUnavailable")
                 : t("askError")}
