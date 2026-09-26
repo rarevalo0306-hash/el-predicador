@@ -7,22 +7,15 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { returnFocusTo } from "@/lib/panel-focus";
 import { SignInPanel } from "@/components/sign-in-panel";
 import { ContactForm } from "@/components/contact-form";
 import { useI18n } from "@/components/language-switch";
 import { InviteContacts } from "@/components/invite-contacts";
 import { useEffect, useState } from "react";
 
-/**
- * Where focus lands when the panel closes: the header button that opens it
- * (Perfil, or Entrar when signed out), whichever is on screen now.
- */
-function returnFocus(event: Event) {
-  const trigger = document.querySelector<HTMLElement>("[data-profile-trigger]");
-  if (!trigger) return;
-  event.preventDefault();
-  trigger.focus({ preventScroll: true });
-}
+/** On close, focus goes back to Perfil (or Entrar when signed out), whichever is on screen. */
+const returnFocus = returnFocusTo("[data-profile-trigger]");
 
 const BODY = "min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[calc(2rem+env(safe-area-inset-bottom))]";
 
