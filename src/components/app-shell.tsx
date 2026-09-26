@@ -1,12 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   BookOpen,
-  Flame,
-  Heart,
+  Ellipsis,
   Layers,
   MessageCircleQuestion,
-  Settings,
-  ShieldCheck,
   Sun,
   UserRound,
   Users,
@@ -22,6 +19,9 @@ import { SavedView } from "@/components/saved-view";
 import { PeoplePreachView } from "@/components/people-preach-view";
 import { SendDrawer } from "@/components/send-drawer";
 import { SettingsDrawer } from "@/components/settings-drawer";
+import { MoreSheet } from "@/components/more-sheet";
+import { isMoreSection } from "@/lib/more-sections";
+import { focusMoreButton, focusProfileButton } from "@/lib/panel-focus";
 import { ProfileDrawer } from "@/components/profile-drawer";
 import { AskDrawer, type AskPassage } from "@/components/ask-drawer";
 import { WELCOME_PARAM } from "@/components/invite-contacts";
@@ -39,16 +39,21 @@ import type { VerseLink } from "@/lib/verse-links";
 
 type Tab = "hoy" | "biblia" | "evangelio" | "temas" | "personas" | "guardados" | "admin";
 
-const TAB_ICONS: { id: Tab; icon: typeof Sun }[] = [
+/**
+ * The bottom bar: four sections and "Más", which holds Doctrina, Guardados,
+ * Admin (for the team only; the server decides who that is, useIsAdmin)
+ * and Ajustes.
+ */
+const BAR_TABS: { id: Exclude<Tab, "evangelio" | "guardados" | "admin">; icon: typeof Sun }[] = [
   { id: "hoy", icon: Sun },
   { id: "biblia", icon: BookOpen },
-  { id: "evangelio", icon: Flame },
   { id: "temas", icon: Layers },
   { id: "personas", icon: Users },
-  { id: "guardados", icon: Heart },
-  // Shown to the owner only; the server decides who that is (useIsAdmin).
-  { id: "admin", icon: ShieldCheck },
 ];
+
+const BAR_BUTTON =
+  "flex h-16 min-w-0 flex-col items-center justify-center gap-1 px-0.5 text-xs font-medium transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset";
+
 
 export function AppShell() {
   const { user, isPending } = useCurrentUserState();
@@ -82,8 +87,12 @@ function PreacherApp({
   const [sending, setSending] = useState<Verse | null>(null);
   const [sendDraft, setSendDraft] = useState<SendDraft>({});
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileMode, setProfileMode] = useState<"entrar" | "crear">("entrar");
+  // Perfil opened from Ajustes (itself inside Más) gives focus back to Más,
+  // which is always on screen, rather than to the header scrolled out of view.
+  const profileFromMore = useRef(false);
   const [askOpen, setAskOpen] = useState(false);
   const [jump, setJump] = useState<BibleJump | null>(null);
   const [askPassage, setAskPassage] = useState<AskPassage | null>(null);
@@ -101,7 +110,6 @@ function PreacherApp({
   }, []);
   const ready = useCloudSync(userId, sessionReady);
   const admin = useIsAdmin(userId);
-  const tabs = admin ? TAB_ICONS : TAB_ICONS.filter((item) => item.id !== "admin");
   const notify = useAppStore((s) => s.notify);
   const notifyHour = useAppStore((s) => s.notifyHour);
   const fontScale = useAppStore((s) => s.fontScale);
@@ -182,6 +190,18 @@ function PreacherApp({
     };
   }, [ready, notify, notifyHour, locale, bibleVersion, t]);
 
+  /** Another section starts at its top, not where the last one was scrolled to. */
+  function openTab(next: Tab) {
+    if (next !== tab) window.scrollTo({ top: 0 });
+    setTab(next);
+  }
+
+  function openProfile(mode?: "entrar" | "crear", fromMore = false) {
+    if (mode) setProfileMode(mode);
+    profileFromMore.current = fromMore;
+    setProfileOpen(true);
+  }
+
   function openSend(verse: Verse, draft?: SendDraft) {
     setSending(verse);
     setSendDraft(draft ?? {});
@@ -197,16 +217,33 @@ function PreacherApp({
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col">
-      <header className="flex items-center justify-between gap-2 px-4 pt-5 pb-3 sm:gap-3 sm:px-5">
-        <Logo />
+      <header className="flex items-center justify-between gap-2 px-3 pt-5 pb-3 min-[360px]:px-4 sm:gap-3 sm:px-5">
+        <Logo fit />
         <div className="flex min-w-0 shrink-0 items-center gap-1">
           <LanguageSwitch compact />
+          {/* In the bar, not floating over the page, so it never covers a button. */}
+          <button
+            type="button"
+            onClick={() => setAskOpen(true)}
+            aria-label={t("askButton")}
+            title={t("askButton")}
+            className="inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full bg-primary px-2.5 text-sm font-medium text-primary-foreground transition-transform duration-150 active:scale-95"
+          >
+            <MessageCircleQuestion className="size-5 shrink-0" aria-hidden />
+            {/* Named only where the bar has room: signed in, on a phone.
+                Wider screens show the app's name there instead. */}
+            <span className={user ? "hidden pr-1 min-[360px]:inline sm:hidden" : "hidden"}>
+              {t("askButton")}
+            </span>
+          </button>
           {isPending ? (
             <span className="inline-flex h-11 w-16 animate-pulse rounded-full bg-secondary" />
           ) : user ? (
             <button
               type="button"
-              onClick={() => setProfileOpen(true)}
+              onClick={() => openProfile()}
+              data-profile-trigger
+              aria-haspopup="dialog"
               className="inline-flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
               aria-label={t("profile")}
             >
@@ -224,38 +261,26 @@ function PreacherApp({
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => {
-                  setProfileMode("entrar");
-                  setProfileOpen(true);
-                }}
-                className="inline-flex h-10 items-center rounded-full border border-border bg-card px-2.5 text-xs font-medium text-foreground sm:h-11 sm:px-3.5 sm:text-sm"
+                onClick={() => openProfile("entrar")}
+                data-profile-trigger
+                aria-haspopup="dialog"
+                className="inline-flex h-11 items-center rounded-full border border-border bg-card px-2.5 text-xs font-medium text-foreground sm:px-3.5 sm:text-sm"
               >
                 {t("logIn")}
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setProfileMode("crear");
-                  setProfileOpen(true);
-                }}
-                className="inline-flex h-10 items-center rounded-full bg-primary px-2.5 text-xs font-medium text-primary-foreground sm:h-11 sm:px-3.5 sm:text-sm"
+                onClick={() => openProfile("crear")}
+                className="hidden h-11 items-center rounded-full border border-border bg-card px-2.5 text-xs font-medium text-foreground min-[360px]:inline-flex sm:px-3.5 sm:text-sm"
               >
                 <span className="sm:hidden">{t("signupShort")}</span>
                 <span className="hidden sm:inline">{t("signupLink")}</span>
               </button>
             </div>
           )}
-          <button
-            type="button"
-            onClick={() => setSettingsOpen(true)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
-            aria-label={t("settings")}
-          >
-            <Settings className="size-5" />
-          </button>
         </div>
       </header>
-      <main className="flex-1 px-5 pt-2 pb-28">
+      <main className="flex-1 px-5 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
         {!ready ? (
           <div className="h-40 animate-pulse rounded-xl bg-card" />
         ) : null}
@@ -292,60 +317,56 @@ function PreacherApp({
           <SavedView
             onSend={openSend}
             onExplore={() => {
-              setTab("temas");
+              openTab("temas");
               setThemeId(null);
             }}
           />
         ) : null}
         {ready && tab === "admin" && admin ? <AdminView /> : null}
       </main>
-      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom)+0.75rem)] z-40">
-        <div className="mx-auto flex max-w-lg justify-end px-4">
-          <button
-            type="button"
-            onClick={() => setAskOpen(true)}
-            className="pointer-events-auto inline-flex h-11 items-center gap-2 rounded-full bg-primary pr-4 pl-3.5 text-sm font-medium text-primary-foreground shadow-lg transition-transform duration-150 active:scale-95"
-          >
-            <MessageCircleQuestion className="size-5" />
-            {t("askButton")}
-          </button>
-        </div>
-      </div>
       <nav
         className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background pb-[env(safe-area-inset-bottom)]"
         aria-label={t("sections")}
       >
-        <div className={cn("mx-auto grid max-w-lg", admin ? "grid-cols-7" : "grid-cols-6")}>
-          {tabs.map((item) => {
+        <div className="mx-auto grid max-w-lg grid-cols-5">
+          {BAR_TABS.map((item) => {
             const active = tab === item.id;
             const Icon = item.icon;
             const labels = {
               hoy: t("tabHoy"),
               biblia: t("tabBiblia"),
-              evangelio: t("tabEvangelio"),
               temas: t("tabTemas"),
               personas: t("tabPersonas"),
-              guardados: t("tabGuardados"),
-              admin: t("tabAdmin"),
             } as const;
             return (
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setTab(item.id)}
-                className={cn(
-                  "flex h-16 flex-col items-center justify-center gap-1 px-0.5 text-[0.65rem] font-medium transition-colors duration-150",
-                  active ? "text-primary" : "text-muted-foreground",
-                )}
+                onClick={() => openTab(item.id)}
+                className={cn(BAR_BUTTON, active ? "text-primary" : "text-muted-foreground")}
                 aria-current={active ? "page" : undefined}
               >
-                <Icon
-                  className={cn("size-5", active && item.id === "guardados" && "fill-primary")}
-                />
+                <Icon className="size-5" aria-hidden />
                 {labels[item.id]}
               </button>
             );
           })}
+          {/* Doctrina, Guardados, Admin and Ajustes; lit while one of them is open. */}
+          <button
+            type="button"
+            onClick={() => setMoreOpen(true)}
+            data-more-trigger
+            aria-haspopup="dialog"
+            aria-expanded={moreOpen}
+            aria-current={isMoreSection(tab) ? "page" : undefined}
+            className={cn(
+              BAR_BUTTON,
+              isMoreSection(tab) || moreOpen ? "text-primary" : "text-muted-foreground",
+            )}
+          >
+            <Ellipsis className="size-5" aria-hidden />
+            {t("tabMore")}
+          </button>
         </div>
       </nav>
       <SendDrawer
@@ -359,18 +380,31 @@ function PreacherApp({
           }
         }}
       />
+      <MoreSheet
+        open={moreOpen}
+        onOpenChange={setMoreOpen}
+        current={tab}
+        admin={admin}
+        onSection={(section) => {
+          setMoreOpen(false);
+          openTab(section);
+        }}
+        onSettings={() => {
+          setMoreOpen(false);
+          setSettingsOpen(true);
+        }}
+      />
       <SettingsDrawer
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
+        onCloseAutoFocus={focusMoreButton}
         onOpenProfile={() => {
           setSettingsOpen(false);
-          setProfileMode("entrar");
-          setProfileOpen(true);
+          openProfile("entrar", true);
         }}
         onOpenSignUp={() => {
           setSettingsOpen(false);
-          setProfileMode("crear");
-          setProfileOpen(true);
+          openProfile("crear", true);
         }}
       />
       <AskDrawer
@@ -382,8 +416,7 @@ function PreacherApp({
         passage={askPassage}
         onSignIn={() => {
           setAskOpen(false);
-          setProfileMode("entrar");
-          setProfileOpen(true);
+          openProfile("entrar");
         }}
       />
       <ProfileDrawer
@@ -394,6 +427,9 @@ function PreacherApp({
           if (!next) setWelcome(false);
         }}
         initialMode={profileMode}
+        onCloseAutoFocus={(event) =>
+          (profileFromMore.current ? focusMoreButton : focusProfileButton)(event)
+        }
       />
     </div>
   );

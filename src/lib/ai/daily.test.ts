@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  completeSentences,
+  endsComplete,
   firstName,
   reflectionPrompt,
   sendNotePrompt,
@@ -71,4 +73,24 @@ test("a reflection that runs long keeps its first whole sentences", async () => 
   );
   assert.ok(out && out.length <= 440 && out.endsWith("."), String(out?.length));
   assert.ok(out!.startsWith("Amigo mío, Dios no esperó"));
+});
+
+test("a reflection cut off mid-sentence never comes back as it was", async () => {
+  const input = { ref: "Marcos 11:24", text: "Todo lo que pidiereis orando…", locale: "es" as const };
+  // Real case: stored in production ending in "Vuélvete a tu espíritu".
+  const cut =
+    "Amigo mío, cuando oras no hablas al aire: el Padre te escucha porque estás en Él. Vuélvete a tu espíritu";
+  const out = await writeReflection(input, config, fakeFetch(cut));
+  assert.equal(out, "Amigo mío, cuando oras no hablas al aire: el Padre te escucha porque estás en Él.");
+  // Nothing whole enough left: no reflection at all rather than half of one.
+  assert.equal(await writeReflection(input, config, fakeFetch("Amigo mío, cuando oras no hablas al aire y")), null);
+});
+
+test("sentence helpers", () => {
+  assert.equal(endsComplete("…la obra ya está terminada por ti."), true);
+  assert.equal(endsComplete("…and let His Word be enough for today.\""), true);
+  assert.equal(endsComplete("¿Lo crees?"), true);
+  assert.equal(endsComplete("Vuélvete a tu espíritu"), false);
+  assert.equal(completeSentences("Uno. Dos tres", 100), "Uno.");
+  assert.equal(completeSentences("Sin punto final", 100), "");
 });

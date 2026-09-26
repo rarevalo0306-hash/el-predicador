@@ -7,11 +7,15 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { focusProfileButton } from "@/lib/panel-focus";
 import { SignInPanel } from "@/components/sign-in-panel";
 import { ContactForm } from "@/components/contact-form";
 import { useI18n } from "@/components/language-switch";
 import { InviteContacts } from "@/components/invite-contacts";
 import { useEffect, useState } from "react";
+
+
+const BODY = "min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[calc(2rem+env(safe-area-inset-bottom))]";
 
 type ProfileDrawerProps = {
   open: boolean;
@@ -19,6 +23,8 @@ type ProfileDrawerProps = {
   initialMode?: "entrar" | "crear";
   /** Open straight on "share the app", for an account just created elsewhere. */
   welcome?: boolean;
+  /** Where focus goes on close; by default Perfil (or Entrar) in the header. */
+  onCloseAutoFocus?: (event: Event) => void;
 };
 
 export function ProfileDrawer({
@@ -26,6 +32,7 @@ export function ProfileDrawer({
   onOpenChange,
   initialMode = "entrar",
   welcome = false,
+  onCloseAutoFocus = focusProfileButton,
 }: ProfileDrawerProps) {
   const { t } = useI18n();
   const { user, isPending } = useCurrentUserState();
@@ -43,12 +50,12 @@ export function ProfileDrawer({
   if (justJoined && user) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
-          <DrawerHeader>
+        <DrawerContent closeLabel={t("close")} onCloseAutoFocus={onCloseAutoFocus}>
+          <DrawerHeader className="pr-14">
             <DrawerTitle>{t("inviteTitle")}</DrawerTitle>
             <DrawerDescription>{t("inviteDesc")}</DrawerDescription>
           </DrawerHeader>
-          <div className="px-5 pb-8">
+          <div className={BODY}>
             <InviteContacts onDone={() => onOpenChange(false)} />
           </div>
         </DrawerContent>
@@ -58,14 +65,14 @@ export function ProfileDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
-        <DrawerHeader>
+      <DrawerContent closeLabel={t("close")} onCloseAutoFocus={onCloseAutoFocus}>
+        <DrawerHeader className="pr-14">
           <DrawerTitle>{user ? t("profileTitle") : guestTitle}</DrawerTitle>
           <DrawerDescription>
             {user ? t("profileHello", { name: greeting }) : guestDesc}
           </DrawerDescription>
         </DrawerHeader>
-        <div className="flex flex-col gap-5 px-5 pb-8">
+        <div className={`${BODY} flex flex-col gap-5`}>
           {isPending ? (
             <div className="h-36 animate-pulse rounded-xl bg-card" />
           ) : null}
