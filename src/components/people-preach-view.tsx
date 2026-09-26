@@ -1,29 +1,37 @@
-import { MessageLanguageSelect } from "@/components/message-language-select";
 import { messageLanguageName } from "@/lib/message-language";
 import { MessageSchedulePanel } from "@/components/message-schedule-panel";
 import { scheduleCopy } from "@/lib/schedule-copy";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bell,
-  Check,
   CalendarClock,
   Church,
-  ContactRound,
   MessageCircle,
   Plus,
+  Search,
   Trash2,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PhoneInput } from "@/components/phone-input";
 import { normalizePhone, formatPhone } from "@/lib/phone";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/components/language-switch";
 import { cn } from "@/lib/utils";
 import { canPickDeviceContacts, pickDeviceContacts } from "@/lib/device-contacts";
+import { PersonFormDrawer } from "@/components/person-form-drawer";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { returnFocusTo } from "@/lib/panel-focus";
+import {
+  PEOPLE_FILTERS,
+  PEOPLE_PAGE,
+  filterCounts,
+  filterPeople,
+  themesInUse,
+  type PeopleFilter,
+} from "@/lib/people-filter";
 import {
   MAX_RECIPIENTS,
   useAppStore,
@@ -38,12 +46,13 @@ import {
   getDailyVerse,
   localizedTheme,
   versesForTheme,
+  type ThemeId,
   type Verse,
 } from "@/lib/verses";
 import { hydrateVerse } from "@/lib/recobro";
 import { formatVerseMessage, openSms, openWhatsApp } from "@/lib/share";
 import { showDailyNotification } from "@/lib/notify";
-import { recipientThemes, themeForDay, toggleTheme } from "@/lib/recipient-themes";
+import { recipientThemes, themeForDay } from "@/lib/recipient-themes";
 import type { Locale } from "@/lib/i18n";
 
 /** "Amor · Fe · Paz": every theme a contact cares about, in their order. */
@@ -89,17 +98,38 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   const [schedulePerson, setSchedulePerson] = useState<Recipient | null>(null);
   const [canPickContacts, setCanPickContacts] = useState(false);
   const [importing, setImporting] = useState(false);
-  // The form sits above the list, so editing someone further down filled it
-  // off screen and looked like the button had done nothing. A counter, not
-  // editingId, so re-editing the same person scrolls back to it too.
-  const formRef = useRef<HTMLDivElement>(null);
-  const [editRequest, setEditRequest] = useState(0);
+  // The list comes first; "Nueva persona" and "Editar" open the form in a panel.
+  const [formOpen, setFormOpen] = useState(false);
+  // The button that opened the form, so focus goes back to it on close.
+  const formOpener = useRef("[data-person-new]");
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<PeopleFilter>("all");
+  const [theme, setTheme] = useState<ThemeId | "all">("all");
+  const [limit, setLimit] = useState(PEOPLE_PAGE);
+  // Who "Quitar" was tapped for, waiting on the confirmation.
+  const [removing, setRemoving] = useState<Recipient | null>(null);
+  // Whose "Quitar" opened the confirmation, and whether it went through:
+  // focus goes back to that button on Cancelar, to the list after removing.
+  const removeTrigger = useRef<{ id: string; removed: boolean } | null>(null);
+  const listHeadingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => setCanPickContacts(canPickDeviceContacts()), []);
 
-  useEffect(() => {
-    if (editRequest) formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [editRequest]);
+  const counts = useMemo(() => filterCounts(recipients), [recipients]);
+  const themeOptions = useMemo(
+    () =>
+      themesInUse(
+        recipients,
+        THEMES.map((item) => item.id),
+      ),
+    [recipients],
+  );
+  const matches = useMemo(
+    () => filterPeople(recipients, query, filter, theme),
+    [recipients, query, filter, theme],
+  );
+  const shown = matches.slice(0, limit);
+  const narrowed = query.trim() !== "" || filter !== "all" || theme !== "all";
 
   const due = useMemo(
     () => allDueItems(recipients, church, notifyHour),
@@ -121,12 +151,46 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       cultoEnabled: row.cultoEnabled ?? false,
     });
     setSection("people");
-    setEditRequest((n) => n + 1);
+    formOpener.current = `[data-person-edit="${row.id}"]`;
+    setFormOpen(true);
   }
 
   function resetForm() {
     setEditingId(null);
     setForm({ ...emptyForm, messageLocale: locale });
+  }
+
+  /** A new person; a half-typed one comes back, a half-done edit does not. */
+  function openNew() {
+    if (editingId) resetForm();
+    formOpener.current = "[data-person-new]";
+    setFormOpen(true);
+  }
+
+  function clearFilters() {
+    setQuery("");
+    setFilter("all");
+    setTheme("all");
+    setLimit(PEOPLE_PAGE);
+  }
+
+  /** Removes after the confirmation, with a way back from the notice. */
+  function confirmRemove(row: Recipient) {
+    if (removeTrigger.current) removeTrigger.current.removed = true;
+    const index = recipients.findIndex((item) => item.id === row.id);
+    removeRecipient(row.id);
+    toast(t("personRemoved", { name: row.name }), {
+      action: {
+        label: t("undo"),
+        onClick: () =>
+          useAppStore.setState((state) => {
+            if (state.recipients.some((item) => item.id === row.id)) return state;
+            const next = [...state.recipients];
+            next.splice(Math.max(0, Math.min(index, next.length)), 0, row);
+            return { recipients: next };
+          }),
+      },
+    });
   }
 
   /** Send by the channel this person chose; contacts saved before it exist
@@ -195,13 +259,29 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   }
 
   function handleSave() {
+    // The list holds MAX_RECIPIENTS; a new number past that would push the
+    // oldest contact out without a word.
+    const phone = normalizePhone(form.phone);
+    const known = recipients.some(
+      (row) => row.id === editingId || (phone && normalizePhone(row.phone) === phone),
+    );
+    if (!known && recipients.length >= MAX_RECIPIENTS) {
+      toast.error(t("personImportFull"));
+      return;
+    }
     const saved = upsertRecipient(form);
     if (!saved) {
       toast(t("recipientNeedPhone"));
       return;
     }
     toast(editingId ? t("personUpdated") : t("personSaved"));
+    // Someone new goes to the top of the list; make sure no search hides them.
+    if (!editingId) {
+      clearFilters();
+      formOpener.current = "[data-person-new]";
+    }
     resetForm();
+    setFormOpen(false);
   }
 
   async function sendDaily(row: Recipient) {
@@ -359,18 +439,6 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
         </div>
       ) : null}
 
-      {section !== "schedules" ? (
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={() => void enableReminders()}
-        >
-          <Bell className="size-4" />
-          {t("preachEnableAlerts")}
-        </Button>
-      ) : null}
-
       {section === "schedules" ? (
         <MessageSchedulePanel
           key={schedulePerson?.id ?? "nuevo"}
@@ -474,177 +542,128 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
           </div>
         </div>
       ) : (
-        <>
-          <div
-            ref={formRef}
-            className="flex flex-col gap-3 scroll-mt-4 rounded-xl bg-card px-4 py-5 shadow-paper"
-          >
-            <p className="text-sm font-medium">{editingId ? t("personEdit") : t("personAdd")}</p>
-            {canPickContacts && !editingId ? (
-              <div className="grid gap-1.5">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 w-full"
-                  disabled={importing}
-                  onClick={() => void importFromPhone()}
-                >
-                  <ContactRound className="size-4" />
-                  {importing ? t("wait") : t("personFromPhone")}
-                </Button>
-                <p className="text-xs text-muted-foreground">{t("personFromPhoneHint")}</p>
-              </div>
-            ) : null}
-            <div className="grid items-start gap-2 sm:grid-cols-2">
-              <div className="grid gap-1.5">
-                <Label htmlFor="p-name">{t("recipientName")}</Label>
+        <section className="flex flex-col gap-3" aria-labelledby="people-list-title">
+          <h2 id="people-list-title" ref={listHeadingRef} tabIndex={-1} className="sr-only">
+            {t("preachPeople")}
+          </h2>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground" aria-live="polite">
+              {recipients.length === 0
+                ? ""
+                : narrowed
+                  ? t("peopleFound", { n: matches.length, total: recipients.length })
+                  : recipients.length === 1
+                    ? t("peopleCountOne")
+                    : t("peopleCount", { n: recipients.length })}
+            </p>
+            <Button type="button" className="shrink-0" data-person-new onClick={openNew}>
+              <Plus className="size-4" />
+              {t("personAdd")}
+            </Button>
+          </div>
+
+          {recipients.length > 0 ? (
+            <>
+              <div className="relative">
+                <Search
+                  className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden
+                />
                 <Input
-                  id="p-name"
-                  value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  placeholder={t("recipientNamePh")}
+                  type="search"
+                  value={query}
+                  onChange={(event) => {
+                    setQuery(event.target.value);
+                    setLimit(PEOPLE_PAGE);
+                  }}
+                  placeholder={t("peopleSearchPh")}
+                  aria-label={t("peopleSearch")}
+                  enterKeyHint="search"
+                  className="pl-9 text-base"
                 />
               </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="p-phone">{t("contactPhone")}</Label>
-                <PhoneInput
-                  id="p-phone"
-                  value={form.phone}
-                  onChange={(phone) => setForm((f) => ({ ...f, phone }))}
-                />
-              </div>
-            </div>
-            <MessageLanguageSelect
-              value={form.messageLocale ?? locale}
-              onChange={(messageLocale) => setForm((f) => ({ ...f, messageLocale }))}
-            />
-            <div className="grid gap-1.5">
-              <Label>{t("personChannel")}</Label>
-              <div className="flex gap-2">
-                {(["whatsapp", "sms"] as const).map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    aria-pressed={(form.channel ?? "whatsapp") === option}
-                    onClick={() => setForm((f) => ({ ...f, channel: option }))}
-                    className={cn(
-                      "h-11 flex-1 rounded-md border text-sm font-medium",
-                      (form.channel ?? "whatsapp") === option
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-background",
-                    )}
-                  >
-                    {option === "sms" ? t("personChannelSms") : t("personChannelWhatsApp")}
-                  </button>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">{t("personChannelHint")}</p>
-            </div>
-            <div className="grid gap-1.5">
-              <Label>{t("personTheme")}</Label>
-              <p className="text-xs text-muted-foreground">{t("personThemeHint")}</p>
-              <div className="flex flex-wrap gap-2">
-                {THEMES.map((theme) => {
-                  const label = localizedTheme(theme.id, locale).name;
-                  const chosen = form.themeIds ?? ["amor"];
-                  const on = chosen.includes(theme.id);
+              <div className="flex flex-wrap gap-2" role="group" aria-label={t("peopleFilterLabel")}>
+                {PEOPLE_FILTERS.map((id) => {
+                  const on = filter === id;
+                  const label = {
+                    all: t("peopleFilterAll"),
+                    whatsapp: t("personChannelWhatsApp"),
+                    sms: t("personChannelSms"),
+                    daily: t("peopleFilterDaily"),
+                    culto: t("peopleFilterCulto"),
+                  }[id];
                   return (
                     <button
-                      key={theme.id}
+                      key={id}
                       type="button"
                       aria-pressed={on}
-                      onClick={() =>
-                        setForm((f) => ({
-                          ...f,
-                          themeIds: toggleTheme(f.themeIds ?? ["amor"], theme.id),
-                        }))
-                      }
+                      disabled={!on && id !== "all" && counts[id] === 0}
+                      onClick={() => {
+                        setFilter(id);
+                        setLimit(PEOPLE_PAGE);
+                      }}
                       className={cn(
-                        "inline-flex h-9 items-center gap-1 rounded-full border px-3 text-sm font-medium",
+                        "inline-flex h-10 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors duration-150 disabled:opacity-40",
                         on
                           ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border bg-background",
+                          : "border-border bg-card",
                       )}
                     >
-                      {on ? <Check className="size-3.5" /> : null}
                       {label}
+                      <span className={cn("text-xs", on ? "opacity-80" : "text-muted-foreground")}>
+                        {counts[id]}
+                      </span>
                     </button>
                   );
                 })}
               </div>
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="p-notes">{t("personNotes")}</Label>
-              <Textarea
-                id="p-notes"
-                value={form.notes ?? ""}
-                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                placeholder={t("personNotesPh")}
-                className="min-h-16"
-              />
-            </div>
-            <label className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-3 text-sm">
-              <span>
-                <span className="block font-medium">{t("personDaily")}</span>
-                <span className="text-xs text-muted-foreground">{t("personDailyHint")}</span>
-              </span>
-              <input
-                type="checkbox"
-                checked={Boolean(form.dailyEnabled)}
-                onChange={(e) => setForm((f) => ({ ...f, dailyEnabled: e.target.checked }))}
-                className="size-5 accent-[var(--color-primary)]"
-              />
-            </label>
-            {form.dailyEnabled ? (
-              <div className="grid gap-1.5">
-                <Label htmlFor="p-hour">{t("personDailyHour")}</Label>
-                <Input
-                  id="p-hour"
-                  type="number"
-                  min={0}
-                  max={23}
-                  value={form.dailyHour ?? 9}
-                  onChange={(e) => setForm((f) => ({ ...f, dailyHour: Number(e.target.value) }))}
-                />
-              </div>
-            ) : null}
-            <label className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-3 text-sm">
-              <span>
-                <span className="block font-medium">{t("personCulto")}</span>
-                <span className="text-xs text-muted-foreground">{t("personCultoHint")}</span>
-              </span>
-              <input
-                type="checkbox"
-                checked={Boolean(form.cultoEnabled)}
-                onChange={(e) => setForm((f) => ({ ...f, cultoEnabled: e.target.checked }))}
-                className="size-5 accent-[var(--color-primary)]"
-              />
-            </label>
-            <div className="flex gap-2">
-              {editingId ? (
-                <Button type="button" variant="outline" className="flex-1" onClick={resetForm}>
-                  {t("clearSelection")}
-                </Button>
+              {themeOptions.length > 1 ? (
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="people-theme" className="shrink-0 text-sm">
+                    {t("peopleThemeLabel")}
+                  </Label>
+                  <select
+                    id="people-theme"
+                    value={theme}
+                    onChange={(event) => {
+                      setTheme(event.target.value as ThemeId | "all");
+                      setLimit(PEOPLE_PAGE);
+                    }}
+                    className="h-11 min-w-0 flex-1 rounded-md border border-input bg-card px-3 text-base"
+                  >
+                    <option value="all">{t("peopleThemeAll")}</option>
+                    {themeOptions.map((id) => (
+                      <option key={id} value={id}>
+                        {localizedTheme(id, locale).name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               ) : null}
-              <Button type="button" className="flex-1" onClick={handleSave}>
-                <Plus className="size-4" />
-                {editingId ? t("personUpdate") : t("personSave")}
-              </Button>
-            </div>
-          </div>
+            </>
+          ) : null}
 
           {recipients.length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground">{t("recipientsEmpty")}</p>
+            <p className="rounded-xl bg-card px-4 py-6 text-center text-sm text-muted-foreground shadow-paper">
+              {t("peopleEmpty")}
+            </p>
+          ) : matches.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 rounded-xl bg-card px-4 py-6 text-center shadow-paper">
+              <p className="text-sm text-muted-foreground">{t("peopleNoMatch")}</p>
+              <Button type="button" variant="outline" onClick={clearFilters}>
+                {t("peopleClearFilters")}
+              </Button>
+            </div>
           ) : (
             <ul className="flex flex-col gap-3">
-              {recipients.map((row) => (
+              {shown.map((row) => (
                 <li
                   key={row.id}
                   className="rounded-xl border border-border bg-card px-4 py-4 shadow-paper"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="font-medium">{row.name}</p>
+                      <p className="font-medium break-words">{row.name}</p>
                       <p className="text-xs text-muted-foreground">{formatPhone(row.phone)}</p>
                       <p className="mt-1 text-xs text-primary">
                         {themeNames(row, locale)} ·{" "}
@@ -656,15 +675,23 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                         {row.cultoEnabled ? ` · ${t("personCultoOn")}` : ""}
                       </p>
                       {row.notes ? (
-                        <p className="mt-2 text-sm text-muted-foreground">{row.notes}</p>
+                        <p className="mt-2 text-sm break-words text-muted-foreground">
+                          {row.notes}
+                        </p>
                       ) : null}
                     </div>
                     <Button
                       type="button"
                       size="icon"
                       variant="ghost"
-                      aria-label={t("recipientRemove")}
-                      onClick={() => removeRecipient(row.id)}
+                      className="-mt-2 -mr-2 shrink-0"
+                      aria-label={t("personRemoveAria", { name: row.name })}
+                      aria-haspopup="dialog"
+                      data-person-remove={row.id}
+                      onClick={() => {
+                        removeTrigger.current = { id: row.id, removed: false };
+                        setRemoving(row);
+                      }}
                     >
                       <Trash2 className="size-4" />
                     </Button>
@@ -674,6 +701,8 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                       type="button"
                       size="sm"
                       variant="secondary"
+                      data-person-edit={row.id}
+                      aria-haspopup="dialog"
                       onClick={() => startEdit(row)}
                     >
                       {t("personEdit")}
@@ -707,8 +736,75 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
               ))}
             </ul>
           )}
-        </>
+
+          {matches.length > shown.length ? (
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-xs text-muted-foreground">
+                {t("peopleShowing", { shown: shown.length, total: matches.length })}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => setLimit((n) => n + PEOPLE_PAGE)}
+              >
+                {t("peopleShowMore", {
+                  n: Math.min(PEOPLE_PAGE, matches.length - shown.length),
+                })}
+              </Button>
+            </div>
+          ) : null}
+        </section>
       )}
+
+      {section !== "schedules" ? (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={() => void enableReminders()}
+        >
+          <Bell className="size-4" />
+          {t("preachEnableAlerts")}
+        </Button>
+      ) : null}
+
+      <PersonFormDrawer
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        editing={Boolean(editingId)}
+        form={form}
+        setForm={setForm}
+        onSave={handleSave}
+        canPickContacts={canPickContacts}
+        importing={importing}
+        onImport={() => void importFromPhone()}
+        onCloseAutoFocus={(event) => returnFocusTo(formOpener.current)(event)}
+      />
+      <ConfirmDialog
+        open={Boolean(removing)}
+        onOpenChange={(open) => {
+          if (!open) setRemoving(null);
+        }}
+        title={t("personRemoveTitle", { name: removing?.name ?? "" })}
+        description={t("personRemoveBody")}
+        confirmLabel={t("personRemoveYes")}
+        cancelLabel={t("cancel")}
+        onConfirm={() => {
+          if (removing) confirmRemove(removing);
+        }}
+        onCloseAutoFocus={(event) => {
+          const trigger = removeTrigger.current;
+          removeTrigger.current = null;
+          if (trigger && !trigger.removed) {
+            returnFocusTo(`[data-person-remove="${trigger.id}"]`)(event);
+            return;
+          }
+          // The card is gone after a removal; land on the list instead.
+          event.preventDefault();
+          listHeadingRef.current?.focus();
+        }}
+      />
     </div>
   );
 }
