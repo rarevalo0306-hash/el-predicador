@@ -40,6 +40,8 @@ import { ConcordanceView } from "@/components/concordance-view";
 import { cleanWords } from "@/lib/concordance";
 import { combineVerses, formatVerseRange } from "@/lib/reader-prefs";
 import { copyText, formatVerseMessage } from "@/lib/share";
+import { TextSkeleton } from "@/components/text-skeleton";
+import { friendlyError } from "@/lib/friendly-error";
 
 /** A place to open as soon as the Bible shows, e.g. a verse tapped in a chat. */
 export type BibleJump = { bookId: string; chapter: number; verse?: number; at: number };
@@ -71,6 +73,8 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
   const [bookId, setBookId] = useState<string | null>(null);
   const [chapter, setChapter] = useState<number | null>(null);
   const [data, setData] = useState<RecobroChapter | null>(null);
+  // Bumped by "Reintentar" to read the same chapter again.
+  const [reload, setReload] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
@@ -136,18 +140,23 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
         if (cancelled) return;
         setData(result);
         setLoading(false);
+        // The chapters on either side are fetched now, so "next" and
+        // "previous" open at once. A failure here is only a missed head start.
+        for (const near of [chapter + 1, chapter - 1]) {
+          if (near >= 1 && near <= book.chapters) {
+            void loadCachedChapter(book.id, near, locale).catch(() => undefined);
+          }
+        }
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setError(
-          err instanceof Error ? err.message : t("chapterOpenFail"),
-        );
+        setError(friendlyError(err, t("chapterOpenFail")));
         setLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [book, chapter, locale, t]);
+  }, [book, chapter, locale, t, reload]);
 
   function openBook(next: BibleBook) {
     setBookId(next.id);
@@ -203,6 +212,7 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
         data={data}
         loading={loading}
         error={error}
+        onRetry={() => setReload((n) => n + 1)}
         selected={selected}
         onSelected={setSelected}
         onBack={() => {
@@ -572,6 +582,7 @@ function ChapterReader({
   data,
   loading,
   error,
+  onRetry,
   selected,
   onSelected,
   onBack,
@@ -584,6 +595,7 @@ function ChapterReader({
   data: RecobroChapter | null;
   loading: boolean;
   error: string | null;
+  onRetry: () => void;
   selected: number | null;
   onSelected: (n: number | null) => void;
   onBack: () => void;
@@ -758,19 +770,24 @@ function ChapterReader({
         </p>
       </header>
       {loading ? (
-        <p className="rounded-lg bg-card px-4 py-10 text-center text-sm text-muted-foreground shadow-paper">
-          {t("openingChapter")}
-        </p>
+        <div className="rounded-xl bg-card px-4 py-5 shadow-paper">
+          <TextSkeleton label={t("openingChapter")} lines={8} lineClassName="h-5" />
+        </div>
       ) : null}
       {error ? (
         <div className="flex flex-col items-center gap-3 rounded-xl bg-card px-6 py-10 text-center shadow-paper">
           <p className="font-serif text-xl">{t("couldNotRead")}</p>
           <p className="max-w-xs text-sm text-muted-foreground">{error}</p>
-          <Button asChild>
-            <a href={officialUrl} target="_blank" rel="noreferrer">
-              {t("openRecobro")}
-            </a>
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button type="button" onClick={onRetry}>
+              {t("retry")}
+            </Button>
+            <Button asChild variant="outline">
+              <a href={officialUrl} target="_blank" rel="noreferrer">
+                {t("openRecobro")}
+              </a>
+            </Button>
+          </div>
         </div>
       ) : null}
       {verses.length > 0 ? (

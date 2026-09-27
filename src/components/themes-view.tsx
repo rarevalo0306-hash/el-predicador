@@ -35,8 +35,15 @@ export function ThemesView({
   const results = reply?.verses ?? [];
 
   useEffect(() => {
-    if (themeId) prefetchVerses(versesForTheme(themeId), locale);
-    else if (results.length) prefetchVerses(results, locale);
+    if (themeId) {
+      prefetchVerses(versesForTheme(themeId), locale);
+      return;
+    }
+    if (!results.length) return;
+    // While typing, the verses are asked for once the words settle, not on
+    // every letter.
+    const timer = setTimeout(() => prefetchVerses(results, locale), 350);
+    return () => clearTimeout(timer);
   }, [locale, query, themeId]);
 
   if (themeId) {
