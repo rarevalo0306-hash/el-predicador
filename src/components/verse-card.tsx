@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { recobroSource } from "@/lib/bible";
 import { localizeVerse, type Verse } from "@/lib/verses";
 import { useAppStore } from "@/lib/store";
+import { TextSkeleton } from "@/components/text-skeleton";
 
 type VerseCardProps = {
   verse: Verse;
@@ -35,9 +36,7 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
             </Button>
           </div>
         ) : loading || !shown ? (
-          <p className="font-serif text-2xl leading-snug tracking-tight text-muted-foreground">
-            {t("loadingVerse")}
-          </p>
+          <TextSkeleton label={t("loadingVerse")} lines={3} lineClassName="h-7" />
         ) : (
           <blockquote className="reader-verse-text tracking-tight text-foreground sm:text-[1.15em]">
             {shown.text}
@@ -84,9 +83,7 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
           </Button>
         </div>
       ) : loading || !shown ? (
-        <p className="font-serif text-lg leading-snug text-muted-foreground">
-          {t("loadingVerse")}
-        </p>
+        <TextSkeleton label={t("loadingVerse")} lines={2} lineClassName="h-5" />
       ) : (
         <p className="font-serif text-lg leading-snug text-foreground">{shown.text}</p>
       )}
