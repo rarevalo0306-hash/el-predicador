@@ -24,6 +24,7 @@ import { searchConcordance } from "@/lib/concordance-fn";
 import type { Locale } from "@/lib/i18n";
 import type { Verse } from "@/lib/verses";
 import { plainNotice } from "@/lib/bible-notice";
+import { TextSkeleton } from "@/components/text-skeleton";
 
 type Filter = "all" | "at" | "nt";
 
@@ -67,9 +68,14 @@ export function ConcordanceView({
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
+  // Bumped by searching the same words again or by "Reintentar", so a search
+  // that failed can be tried again without changing a letter.
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     setFailed(false);
+    // A search still on its way is left behind; this one decides what shows.
+    setLoading(false);
     if (words.replace(/\s/g, "").length < 3) {
       setResult(null);
       return;
@@ -98,12 +104,14 @@ export function ConcordanceView({
     return () => {
       cancelled = true;
     };
-  }, [words, locale]);
+  }, [words, locale, attempt]);
 
   function submit() {
     const next = cleanWords(draft);
     setFilter("all");
     setWords(next);
+    // The same words again still search again (after a failure, say).
+    if (next === words) setAttempt((n) => n + 1);
     onWordsChange(next);
   }
 
@@ -157,17 +165,17 @@ export function ConcordanceView({
       </form>
       {tooShort ? <p className="text-sm text-muted-foreground">{t("concordanceShort")}</p> : null}
       {loading ? (
-        <p
-          role="status"
-          className="rounded-lg bg-card px-4 py-8 text-center text-sm text-muted-foreground shadow-paper"
-        >
-          {t("concordanceSearching")}
-        </p>
+        <div className="rounded-xl bg-card px-4 py-5 shadow-paper">
+          <TextSkeleton label={t("concordanceSearching")} lines={4} />
+        </div>
       ) : null}
       {failed ? (
-        <p role="alert" className="text-sm text-destructive">
-          {t("concordanceFail")}
-        </p>
+        <div role="alert" className="flex flex-wrap items-center gap-3">
+          <p className="text-sm text-destructive">{t("concordanceFail")}</p>
+          <Button type="button" variant="outline" size="sm" onClick={() => setAttempt((n) => n + 1)}>
+            {t("retry")}
+          </Button>
+        </div>
       ) : null}
       {result?.status === "unavailable" ? (
         <div className="flex flex-col gap-3 rounded-xl bg-card px-4 py-5 shadow-paper">

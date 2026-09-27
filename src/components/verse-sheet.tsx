@@ -9,6 +9,7 @@ import type { VerseLink } from "@/lib/verse-links";
 import type { Verse } from "@/lib/verses";
 import { useBibleVersion } from "@/lib/use-bible-version";
 import { BibleNotice } from "@/components/bible-notice";
+import { TextSkeleton } from "@/components/text-skeleton";
 
 type VerseSheetProps = {
   link: VerseLink | null;
@@ -27,6 +28,8 @@ export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
   const bibleVersion = useBibleVersion(locale);
   const [verses, setVerses] = useState<Verse[] | null>(null);
   const [failed, setFailed] = useState(false);
+  // Bumped by "Reintentar" to read the passage again.
+  const [attempt, setAttempt] = useState(0);
   const book = link ? bookById(link.bookId) : undefined;
 
   useEffect(() => {
@@ -50,7 +53,7 @@ export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
     return () => {
       cancelled = true;
     };
-  }, [link, book, locale, bibleVersion]);
+  }, [link, book, locale, bibleVersion, attempt]);
 
   useEffect(() => {
     if (!link) return;
@@ -108,13 +111,14 @@ export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-3">
           {failed ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              {t("chapterOpenFail")}
-            </p>
+            <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <p className="text-sm text-muted-foreground">{t("chapterOpenFail")}</p>
+              <Button type="button" variant="outline" size="sm" onClick={() => setAttempt((n) => n + 1)}>
+                {t("retry")}
+              </Button>
+            </div>
           ) : !verses ? (
-            <p role="status" className="py-6 text-center text-sm text-muted-foreground">
-              {t("openingChapter")}
-            </p>
+            <TextSkeleton label={t("openingChapter")} lines={3} className="py-2" lineClassName="h-5" />
           ) : (
             <div className="flex flex-col gap-2">
               {verses.map((verse) => (
