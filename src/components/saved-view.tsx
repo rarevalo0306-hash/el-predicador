@@ -8,6 +8,7 @@ import { kindLabel, messageKinds, type MessageKind } from "@/lib/messages";
 import { useAppStore, type SavedMessage, type SendDraft } from "@/lib/store";
 import { getVerseById, type Verse } from "@/lib/verses";
 import { useHydratedVerse } from "@/components/use-hydrated-verse";
+import { TextSkeleton } from "@/components/text-skeleton";
 
 type FilterId = "todos" | "versos" | MessageKind;
 
@@ -154,7 +155,7 @@ function SavedMessageCard({
   onRemove: (id: string) => void;
 }) {
   const { locale, t } = useI18n();
-  const { verse: shown, loading, error } = useHydratedVerse(verse, item.messageLocale ?? locale);
+  const { verse: shown, loading, error, retry } = useHydratedVerse(verse, item.messageLocale ?? locale);
   return (
     <article className="rounded-lg bg-card px-4 py-4 shadow-paper">
       <div className="flex items-center justify-between gap-2">
@@ -174,11 +175,14 @@ function SavedMessageCard({
         <p className="text-sm leading-relaxed text-foreground">{item.note}</p>
       ) : null}
       {error ? (
-        <p className="mt-3 text-sm text-muted-foreground">{t("couldNotRead")}</p>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">{t("couldNotRead")}</p>
+          <Button type="button" variant="ghost" size="sm" onClick={retry}>
+            {t("retry")}
+          </Button>
+        </div>
       ) : loading || !shown ? (
-        <p className="mt-3 font-serif text-lg leading-snug text-muted-foreground">
-          {t("loadingVerse")}
-        </p>
+        <TextSkeleton label={t("loadingVerse")} lines={2} className="mt-3" lineClassName="h-5" />
       ) : (
         <>
           <p className="mt-3 font-serif text-lg leading-snug text-foreground">

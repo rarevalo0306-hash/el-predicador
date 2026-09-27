@@ -37,8 +37,15 @@ export function ThemesView({
   const results = reply?.verses ?? [];
 
   useEffect(() => {
-    if (themeId) prefetchVerses(versesForTheme(themeId), locale, bibleVersion);
-    else if (results.length) prefetchVerses(results, locale, bibleVersion);
+    if (themeId) {
+      prefetchVerses(versesForTheme(themeId), locale, bibleVersion);
+      return;
+    }
+    if (!results.length) return;
+    // While typing, the verses are asked for once the words settle, not on
+    // every letter.
+    const timer = setTimeout(() => prefetchVerses(results, locale, bibleVersion), 350);
+    return () => clearTimeout(timer);
   }, [locale, query, themeId, bibleVersion]);
 
   if (themeId) {
