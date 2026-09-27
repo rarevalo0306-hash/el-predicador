@@ -364,19 +364,22 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
           {t("concordanceSearchFor", { q: cleanWords(query) })}
         </button>
       ) : null}
-      <button
-        type="button"
-        onClick={() => setCompare(true)}
-        className="flex w-full items-center gap-3 rounded-xl bg-card px-4 py-4 text-left shadow-paper transition-transform duration-150 ease-out active:scale-[0.98]"
-      >
-        <Languages className="size-5 shrink-0 text-primary" />
-        <span className="min-w-0">
-          <span className="block font-medium">{t("nviTitle")}</span>
-          <span className="mt-0.5 block text-sm text-muted-foreground">
-            {t("nviCardLine")}
+      {/* The comparison reads the Recovery Version live, so it waits for LSM's access. */}
+      {isRecoveryReady() ? (
+        <button
+          type="button"
+          onClick={() => setCompare(true)}
+          className="flex w-full items-center gap-3 rounded-xl bg-card px-4 py-4 text-left shadow-paper transition-transform duration-150 ease-out active:scale-[0.98]"
+        >
+          <Languages className="size-5 shrink-0 text-primary" />
+          <span className="min-w-0">
+            <span className="block font-medium">{t("nviTitle")}</span>
+            <span className="mt-0.5 block text-sm text-muted-foreground">
+              {t("nviCardLine")}
+            </span>
           </span>
-        </span>
-      </button>
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={() => setConcordance("")}

@@ -348,9 +348,15 @@ export async function hydrateVerse(
   }
   if (verse.id.startsWith("nvi-")) {
     const { NVI_ROWS, nviDigestVerse, nviRowVerse } = await import("./nvi-compare");
-    if (verse.id === "nvi-digest") return nviDigestVerse(locale);
     const row = NVI_ROWS.find((item) => `nvi-${item.id}` === verse.id);
-    if (row) return nviRowVerse(row, locale);
+    const built =
+      verse.id === "nvi-digest"
+        ? await nviDigestVerse(locale)
+        : row
+          ? await nviRowVerse(row, locale)
+          : null;
+    if (built) return built;
+    throw new Error(t(locale, "chapterOpenFail"));
   }
   const range = rangeOf(verse.id);
   if (range) {
