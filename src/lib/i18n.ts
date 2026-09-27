@@ -358,6 +358,9 @@ const es = {
   openingChapter: "Abriendo el capítulo…",
   loadingVerse: "Abriendo el verso…",
   retry: "Reintentar",
+  syncLoadFailed:
+    "No pudimos cargar lo que tienes guardado. Lo que cambies ahora no se guardará hasta que se cargue.",
+  syncSaveFailed: "No pudimos guardar tus últimos cambios. Revisa tu conexión y vuelve a intentarlo.",
   couldNotRead: "No se pudo leer aquí",
   openRecobro: "Abrir en Versión Recobro",
   openWeb: "Open this chapter",
@@ -906,6 +909,9 @@ const en: Record<keyof typeof es, string> = {
   openingChapter: "Opening the chapter…",
   loadingVerse: "Opening the verse…",
   retry: "Try again",
+  syncLoadFailed:
+    "We couldn’t load what you have saved. Changes you make now won’t be saved until it loads.",
+  syncSaveFailed: "We couldn’t save your latest changes. Check your connection and try again.",
   couldNotRead: "Could not read it here",
   openRecobro: "Open in Recovery Version",
   openWeb: "Open this chapter",
