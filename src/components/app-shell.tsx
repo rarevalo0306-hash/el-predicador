@@ -27,6 +27,7 @@ import { AskDrawer, type AskPassage } from "@/components/ask-drawer";
 import { WELCOME_PARAM } from "@/components/invite-contacts";
 import { LanguageSwitch, useI18n } from "@/components/language-switch";
 import { useCloudSync } from "@/components/cloud-sync";
+import { Button } from "@/components/ui/button";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAppStore, type SendDraft } from "@/lib/store";
 import { detectLocale, persistLocale } from "@/lib/i18n";
@@ -108,7 +109,8 @@ function PreacherApp({
     setWelcome(true);
     setProfileOpen(true);
   }, []);
-  const ready = useCloudSync(userId, sessionReady);
+  const sync = useCloudSync(userId, sessionReady);
+  const { ready } = sync;
   const admin = useIsAdmin(userId);
   const notify = useAppStore((s) => s.notify);
   const notifyHour = useAppStore((s) => s.notifyHour);
@@ -280,6 +282,11 @@ function PreacherApp({
         </div>
       </header>
       <main className="flex-1 px-5 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+        {sync.loadFailed ? (
+          <SyncNotice text={t("syncLoadFailed")} retry={t("retry")} onRetry={sync.retryLoad} />
+        ) : sync.saveFailed ? (
+          <SyncNotice text={t("syncSaveFailed")} retry={t("retry")} onRetry={sync.retrySave} />
+        ) : null}
         {!ready ? (
           <div className="h-40 animate-pulse rounded-xl bg-card" />
         ) : null}
@@ -430,6 +437,21 @@ function PreacherApp({
           (profileFromMore.current ? focusMoreButton : focusProfileButton)(event)
         }
       />
+    </div>
+  );
+}
+
+/** Says plainly when saved things could not be read or saved, with a way to try again. */
+function SyncNotice({ text, retry, onRetry }: { text: string; retry: string; onRetry: () => void }) {
+  return (
+    <div
+      role="alert"
+      className="mb-4 flex flex-col gap-3 rounded-xl border border-destructive/30 bg-card px-4 py-3 text-sm shadow-paper sm:flex-row sm:items-center sm:justify-between"
+    >
+      <p className="leading-snug">{text}</p>
+      <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={onRetry}>
+        {retry}
+      </Button>
     </div>
   );
 }
