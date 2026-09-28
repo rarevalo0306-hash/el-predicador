@@ -9,6 +9,7 @@ import { useI18n } from "@/components/language-switch";
 import { prefetchVerses } from "@/lib/recobro";
 import { useAppStore, type SendDraft } from "@/lib/store";
 import { getDailyReflection, type DailyReflection } from "@/lib/daily-reflection";
+import { createRemembered } from "@/lib/remembered";
 import {
   getDailyVerse,
   todayKey,
@@ -18,6 +19,12 @@ import {
 } from "@/lib/verses";
 import { cn } from "@/lib/utils";
 import { useBibleVersion } from "@/lib/use-bible-version";
+
+// A day without its word yet is asked for again after a few minutes.
+const reflections = createRemembered<DailyReflection | null>({
+  keepEmptyMs: 5 * 60 * 1000,
+  isEmpty: (value) => value === null || Boolean(value.fallback),
+});
 
 const MOODS: ThemeId[] = ["amor", "paz", "fortaleza", "esperanza", "consuelo"];
 
@@ -34,15 +41,27 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
   const bibleVersion = useBibleVersion(locale);
   const [showContact, setShowContact] = useState(false);
   const [asked, setAsked] = useState(true);
-  const [reflection, setReflection] = useState<DailyReflection | null>(null);
+  const [reflection, setReflection] = useState<DailyReflection | null>(
+    () => reflections.peek(`${todayKey()}:${locale}`) ?? null,
+  );
   const [reflecting, setReflecting] = useState(false);
 
   // The word of the day, written once for everyone; nothing shows if it is not there.
+  // Kept for the rest of the visit, so coming back to Hoy does not ask again.
   useEffect(() => {
     let cancelled = false;
+    const day = todayKey();
+    const key = `${day}:${locale}`;
+    const known = reflections.peek(key);
+    if (known !== undefined) {
+      setReflection(known);
+      setReflecting(false);
+      return;
+    }
     setReflection(null);
     setReflecting(true);
-    getDailyReflection({ data: { day: todayKey(), locale } })
+    reflections
+      .load(key, () => getDailyReflection({ data: { day, locale } }))
       .then((result) => {
         if (!cancelled) setReflection(result);
       })

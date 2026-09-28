@@ -100,8 +100,18 @@ type MessageSchedulePanelProps = {
   initialSenderName?: string;
   initialPerson?: { name: string; phone: string; channel?: MessageChannel };
 };
+// One cache for every schedule form on the page, so opening it again (from
+// Enviar, or for another person) shows the list at once instead of asking
+// the server each time. Only in the browser: on the server each request
+// gets its own.
+let browserClient: QueryClient | null = null;
+function scheduleClient() {
+  if (typeof window === "undefined") return new QueryClient();
+  browserClient ??= new QueryClient({ defaultOptions: { queries: { staleTime: 30_000 } } });
+  return browserClient;
+}
 export function MessageSchedulePanel(props: MessageSchedulePanelProps) {
-  const [client] = useState(() => new QueryClient());
+  const [client] = useState(scheduleClient);
   return (
     <QueryClientProvider client={client}>
       <MessageScheduleForm {...props} />
@@ -135,6 +145,20 @@ function MessageScheduleForm({
   const [versePreview, setVersePreview] = useState<Verse | null>(null);
   const requestVersion = useRef(0);
   const [busy, setBusy] = useState(false);
+  // `busy` reaches the buttons only on the next paint; a second tap before
+  // that must not save, delete or switch the same schedule again.
+  const working = useRef(false);
+  async function once(task: () => Promise<void>) {
+    if (working.current) return;
+    working.current = true;
+    setBusy(true);
+    try {
+      await task();
+    } finally {
+      working.current = false;
+      setBusy(false);
+    }
+  }
   // The form sits above the list, so editing a schedule further down filled it
   // off screen and looked like nothing happened. A counter, not the edited id,
   // so re-editing the same row scrolls back to it too.
@@ -239,45 +263,42 @@ function MessageScheduleForm({
       setSaveFailure(`${copy.error} · sin sesión`);
       return;
     }
-    if (preparing) return;
+    if (preparing || working.current) return;
     setSaveFailure(null);
-    setBusy(true);
-    try {
-      await saveMessageSchedule({ data: validateSchedule(form) });
-      toast.success(copy.saved);
-      resetForm();
-      await query.refetch();
-    } catch (error) {
-      showError(error);
-    } finally {
-      setBusy(false);
-    }
+    await once(async () => {
+      try {
+        await saveMessageSchedule({ data: validateSchedule(form) });
+        toast.success(copy.saved);
+        resetForm();
+        await query.refetch();
+      } catch (error) {
+        showError(error);
+      }
+    });
   }
   async function remove(row: MessageSchedule) {
-    if (!window.confirm(copy.deleteConfirm)) return;
-    setBusy(true);
-    try {
-      await deleteMessageSchedule({ data: { id: row.id } });
-      toast.success(copy.deleted);
-      if (form.id === row.id) resetForm();
-      await query.refetch();
-    } catch (error) {
-      showError(error);
-    } finally {
-      setBusy(false);
-    }
+    if (working.current || !window.confirm(copy.deleteConfirm)) return;
+    await once(async () => {
+      try {
+        await deleteMessageSchedule({ data: { id: row.id } });
+        toast.success(copy.deleted);
+        if (form.id === row.id) resetForm();
+        await query.refetch();
+      } catch (error) {
+        showError(error);
+      }
+    });
   }
   async function toggle(row: MessageSchedule) {
-    setBusy(true);
-    try {
-      await setMessageScheduleEnabled({ data: { id: row.id, enabled: !row.enabled } });
-      toast.success(row.enabled ? copy.pausedToast : copy.activated);
-      await query.refetch();
-    } catch (error) {
-      showError(error);
-    } finally {
-      setBusy(false);
-    }
+    await once(async () => {
+      try {
+        await setMessageScheduleEnabled({ data: { id: row.id, enabled: !row.enabled } });
+        toast.success(row.enabled ? copy.pausedToast : copy.activated);
+        await query.refetch();
+      } catch (error) {
+        showError(error);
+      }
+    });
   }
   function toggleDay(day: number) {
     update({

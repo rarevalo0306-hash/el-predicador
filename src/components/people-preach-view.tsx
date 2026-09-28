@@ -340,11 +340,28 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
     setFormOpen(false);
   }
 
+  // The verse is read before WhatsApp opens, which can take a moment; a
+  // second tap meanwhile must not open the same message twice.
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const sendingRef = useRef<string | null>(null);
+
   async function sendDaily(row: Recipient) {
     if (!normalizePhone(row.phone)) {
       toast.error(t("recipientNeedPhone"));
       return;
     }
+    if (sendingRef.current) return;
+    sendingRef.current = row.id;
+    setSendingId(row.id);
+    try {
+      await sendDailyNow(row);
+    } finally {
+      sendingRef.current = null;
+      setSendingId(null);
+    }
+  }
+
+  async function sendDailyNow(row: Recipient) {
     const messageLocale = row.messageLocale ?? locale;
     const themeId = themeForDay(recipientThemes(row), Math.floor(Date.now() / 86_400_000));
     const pool = versesForTheme(themeId);
@@ -477,6 +494,8 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                 <Button
                   type="button"
                   size="sm"
+                  disabled={sendingId !== null}
+                  aria-busy={sendingId === item.recipient.id && item.kind === "daily"}
                   onClick={() =>
                     item.kind === "daily"
                       ? void sendDaily(item.recipient)
@@ -484,7 +503,9 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                   }
                 >
                   <MessageCircle className="size-4" />
-                  {t("preachSendNow")}
+                  {sendingId === item.recipient.id && item.kind === "daily"
+                    ? t("wait")
+                    : t("preachSendNow")}
                 </Button>
               </li>
             ))}

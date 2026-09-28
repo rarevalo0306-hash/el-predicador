@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Send, Trash2, X } from "lucide-react";
+import { BookOpen, Send, Square, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/components/language-switch";
@@ -111,6 +111,16 @@ export function AskDrawer({
   const [confirmClear, setConfirmClear] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const area = useVisibleArea(open);
+  // The answer on its way, so it can be stopped, and so a second tap or
+  // Enter cannot ask the same question twice.
+  const asking = useRef<AbortController | null>(null);
+  const askedAt = useRef(0);
+
+  // Closing the panel stops the answer being written; what came is kept.
+  useEffect(() => {
+    if (!open) asking.current?.abort();
+  }, [open]);
+  useEffect(() => () => asking.current?.abort(), []);
 
   useEffect(() => {
     if (open) setTurns(loadTurns());
@@ -150,7 +160,10 @@ export function AskDrawer({
 
   async function send(typed = question) {
     const raw = typed.trim();
-    if (!raw || busy) return;
+    if (!raw || busy || asking.current) return;
+    const controller = new AbortController();
+    asking.current = controller;
+    askedAt.current = Date.now();
     const about = attached;
     const text = about ? passageQuestion(about.ref, raw) : raw;
     setAttached(null);
@@ -163,15 +176,35 @@ export function AskDrawer({
     setBusy(true);
     let answer = "";
     try {
-      const { remaining: left } = await askStream({ question: text, history, locale }, (piece) => {
-        // The answer grows on screen as it is written.
-        answer += piece;
-        setTurns([...asked, { role: "assistant", content: answer }]);
-      });
+      const { remaining: left } = await askStream(
+        { question: text, history, locale },
+        (piece) => {
+          // The answer grows on screen as it is written.
+          answer += piece;
+          setTurns([...asked, { role: "assistant", content: answer }]);
+        },
+        controller.signal,
+      );
       if (!answer.trim()) throw new AskError("ask_failed:empty", 502);
       saveTurns([...asked, { role: "assistant", content: answer }]);
       if (left !== null && Number.isFinite(left)) setRemaining(left);
     } catch (error) {
+      if (controller.signal.aborted) {
+        // Cleared: the conversation is already gone, nothing comes back.
+        if (controller.signal.reason === "clear") return;
+        // Stopped: what was already written stays; with nothing written,
+        // the question goes back to the box.
+        if (answer.trim()) {
+          const kept = [...asked, { role: "assistant" as const, content: answer.trim() }];
+          setTurns(kept);
+          saveTurns(kept);
+        } else {
+          setTurns(history);
+          setQuestion(raw);
+          setAttached(about);
+        }
+        return;
+      }
       const key = error instanceof Error ? error.message : "";
       const code = key.startsWith("ask_failed:") ? key.slice("ask_failed:".length) : null;
       // A rejected or unpaid key reads as "unavailable"; anything else as a
@@ -191,11 +224,20 @@ export function AskDrawer({
       setQuestion(raw);
       setAttached(about);
     } finally {
+      if (asking.current === controller) asking.current = null;
       setBusy(false);
     }
   }
 
+  function stop() {
+    // Stop takes the place of Enviar: the second tap of a double tap on
+    // Enviar must not stop the answer it just asked for.
+    if (Date.now() - askedAt.current < 700) return;
+    asking.current?.abort();
+  }
+
   function clear() {
+    asking.current?.abort("clear");
     setTurns([]);
     setNotice(null);
     setFailure(null);
@@ -377,15 +419,36 @@ export function AskDrawer({
               aria-label={t("askPlaceholder")}
               className="min-h-11 flex-1 resize-none text-base"
             />
-            <Button
-              type="submit"
-              size="icon"
-              className="h-11 w-11 shrink-0"
-              disabled={busy || !question.trim()}
-              aria-label={t("askSend")}
-            >
-              <Send />
-            </Button>
+            {/* Separate keys: the same element switching from Detener to a
+                submit button mid-tap would send the question again. */}
+            {busy ? (
+              <Button
+                key="stop"
+                type="button"
+                size="icon"
+                variant="outline"
+                className="h-11 w-11 shrink-0"
+                onClick={(event) => {
+                  event.preventDefault();
+                  stop();
+                }}
+                aria-label={t("askStop")}
+                title={t("askStop")}
+              >
+                <Square className="fill-current" />
+              </Button>
+            ) : (
+              <Button
+                key="send"
+                type="submit"
+                size="icon"
+                className="h-11 w-11 shrink-0"
+                disabled={!question.trim()}
+                aria-label={t("askSend")}
+              >
+                <Send />
+              </Button>
+            )}
           </div>
           <p className="text-xs text-muted-foreground">
             {remaining !== null ? `${t("askRemaining", { n: remaining })} ` : ""}
