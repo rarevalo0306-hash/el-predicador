@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { ArrowLeft, BookOpen, ChevronRight, Send } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, BookOpen, ChevronRight, Send, Square } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { VerseCard } from "@/components/verse-card";
@@ -553,8 +553,24 @@ function CaseComposer({
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
+  // The letter on its way, so it can be stopped, and so a second tap cannot
+  // ask for it twice. Leaving the case stops it too.
+  const writing = useRef<AbortController | null>(null);
+  const writingSince = useRef(0);
+  useEffect(() => () => writing.current?.abort(), []);
+
+  function stopWriting() {
+    // Detener appears where "Escribir" was; a double tap must not stop it.
+    if (Date.now() - writingSince.current < 700) return;
+    writing.current?.abort();
+  }
 
   async function write() {
+    if (writing.current) return;
+    const controller = new AbortController();
+    writing.current = controller;
+    writingSince.current = Date.now();
+    const previous = draft;
     setBusy(true);
     setNotice(null);
     setDraft("");
@@ -566,11 +582,18 @@ function CaseComposer({
           text += piece;
           setDraft(text);
         },
+        controller.signal,
       );
       if (!text.trim()) throw new AskError("ask_failed:empty", 502);
       setDraft(text.trim());
       if (left !== null && Number.isFinite(left)) setRemaining(left);
     } catch (error) {
+      if (controller.signal.aborted) {
+        // Stopped: what was written stays to be corrected; with nothing
+        // written yet, the letter from before comes back.
+        setDraft(text.trim() || previous);
+        return;
+      }
       const key = error instanceof Error ? error.message : "";
       const code = key.startsWith("ask_failed:") ? key.slice("ask_failed:".length) : "";
       setNotice(
@@ -581,6 +604,7 @@ function CaseComposer({
             : `${t("askError")}${code ? ` ${t("askErrorCode", { code })}` : ""}`,
       );
     } finally {
+      if (writing.current === controller) writing.current = null;
       setBusy(false);
     }
   }
@@ -624,13 +648,19 @@ function CaseComposer({
             </Button>
           ) : null}
           {busy ? (
-            <div className="rounded-lg border border-border bg-secondary p-3 text-sm leading-relaxed whitespace-pre-line">
-              {draft || (
-                <span role="status" className="text-muted-foreground">
-                  {t("caseAiWriting")}
-                </span>
-              )}
-            </div>
+            <>
+              <div className="rounded-lg border border-border bg-secondary p-3 text-sm leading-relaxed whitespace-pre-line">
+                {draft || (
+                  <span role="status" className="text-muted-foreground">
+                    {t("caseAiWriting")}
+                  </span>
+                )}
+              </div>
+              <Button type="button" variant="outline" onClick={stopWriting}>
+                <Square className="fill-current" />
+                {t("askStop")}
+              </Button>
+            </>
           ) : null}
           {draft && !busy ? (
             <>
