@@ -175,14 +175,14 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
         </section>
       )}
       <div className="rise-in rise-in-3 flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
           <p className="text-sm font-medium text-foreground">{t("whatNeed")}</p>
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={bumpOffset}
-            className="text-muted-foreground"
+            className="ml-auto text-muted-foreground"
           >
             <RefreshCw />
             {t("another")}
