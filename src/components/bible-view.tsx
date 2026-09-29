@@ -42,6 +42,7 @@ import { combineVerses, formatVerseRange } from "@/lib/reader-prefs";
 import { copyText, formatVerseMessage } from "@/lib/share";
 import { TextSkeleton } from "@/components/text-skeleton";
 import { friendlyError } from "@/lib/friendly-error";
+import { onTabListKeyDown } from "@/lib/tab-keys";
 
 /** A place to open as soon as the Bible shows, e.g. a verse tapped in a chat. */
 export type BibleJump = { bookId: string; chapter: number; verse?: number; at: number };
@@ -424,6 +425,7 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
           <div
             role="tablist"
             aria-label={t("bibleTitle")}
+            onKeyDown={onTabListKeyDown}
             className="grid grid-cols-2 gap-1 rounded-xl bg-secondary p-1"
           >
             {(["at", "nt"] as const).map((id) => {
@@ -434,6 +436,7 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
                   type="button"
                   role="tab"
                   aria-selected={active}
+                  tabIndex={active ? 0 : -1}
                   onClick={() => pickTestament(id)}
                   className={cn(
                     "flex min-h-12 flex-col items-center justify-center rounded-lg px-2 py-1.5 text-center transition-colors duration-150",

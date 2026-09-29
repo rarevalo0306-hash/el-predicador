@@ -24,6 +24,7 @@ import { searchConcordance } from "@/lib/concordance-fn";
 import type { Locale } from "@/lib/i18n";
 import type { Verse } from "@/lib/verses";
 import { TextSkeleton } from "@/components/text-skeleton";
+import { onTabListKeyDown } from "@/lib/tab-keys";
 
 type Filter = "all" | "at" | "nt";
 
@@ -197,6 +198,7 @@ export function ConcordanceView({
             <div
               role="tablist"
               aria-label={t("concordance")}
+              onKeyDown={onTabListKeyDown}
               className="grid grid-cols-3 gap-1 rounded-xl bg-secondary p-1"
             >
               {(["all", "at", "nt"] as const).map((id) => (
@@ -205,6 +207,7 @@ export function ConcordanceView({
                   type="button"
                   role="tab"
                   aria-selected={filter === id}
+                  tabIndex={filter === id ? 0 : -1}
                   onClick={() => setFilter(id)}
                   disabled={counts[id] === 0}
                   className={cn(
