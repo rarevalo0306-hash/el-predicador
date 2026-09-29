@@ -30,12 +30,19 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
 
   if (variant === "hero") {
     return (
-      <article className="rounded-xl bg-card px-6 py-8 shadow-paper sm:px-8 sm:py-10">
+      <article className="rounded-xl bg-card px-6 py-8 shadow-paper @max-[16rem]:px-3 sm:px-8 sm:py-10">
         <PreacherMark className="mx-auto mb-5 size-24" />
         {error ? (
           <div className="flex flex-col items-center gap-3 text-center">
             <p className="text-sm text-muted-foreground">{t("couldNotRead")}</p>
-            <Button type="button" variant="outline" onClick={retry}>
+            {/* With large text the button takes the card's width and may wrap,
+                rather than running past the card's edge. */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={retry}
+              className="@max-[16rem]:h-auto @max-[16rem]:w-full @max-[16rem]:px-1 @max-[16rem]:py-2 @max-[16rem]:whitespace-normal"
+            >
               {t("retry")}
             </Button>
           </div>
