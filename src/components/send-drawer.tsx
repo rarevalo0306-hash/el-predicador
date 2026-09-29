@@ -335,8 +335,8 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
         }
       }}
     >
-      <DrawerContent className="h-[90dvh]">
-        <DrawerHeader>
+      <DrawerContent className="h-[90dvh]" closeLabel={t("close")}>
+        <DrawerHeader className="pr-14">
           <DrawerTitle>{t("sendTitle")}</DrawerTitle>
           <DrawerDescription>{t("sendDesc")}</DrawerDescription>
         </DrawerHeader>

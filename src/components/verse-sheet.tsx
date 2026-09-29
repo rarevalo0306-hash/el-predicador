@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BookOpen, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/components/language-switch";
@@ -10,6 +10,7 @@ import type { Verse } from "@/lib/verses";
 import { useBibleVersion } from "@/lib/use-bible-version";
 import { BibleNotice } from "@/components/bible-notice";
 import { TextSkeleton } from "@/components/text-skeleton";
+import { useDialogFocus } from "@/components/use-dialog-focus";
 
 type VerseSheetProps = {
   link: VerseLink | null;
@@ -31,6 +32,9 @@ export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
   // Bumped by "Reintentar" to read the passage again.
   const [attempt, setAttempt] = useState(0);
   const book = link ? bookById(link.bookId) : undefined;
+  const panelRef = useRef<HTMLElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useDialogFocus(Boolean(link && book), panelRef, closeRef);
 
   useEffect(() => {
     setVerses(null);
@@ -88,12 +92,13 @@ export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
         onClick={onClose}
       />
       <section
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label={place}
         className="relative mx-auto flex max-h-[80dvh] w-full max-w-lg flex-col rounded-t-xl bg-card text-card-foreground shadow-lg sm:rounded-xl"
       >
-        <header className="flex shrink-0 items-start justify-between gap-3 px-4 pt-4 pb-2">
+        <div className="flex shrink-0 items-start justify-between gap-3 px-4 pt-4 pb-2">
           <div className="min-w-0">
             <h2 className="font-serif text-2xl tracking-tight">{place}</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
@@ -101,6 +106,7 @@ export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
             </p>
           </div>
           <button
+            ref={closeRef}
             type="button"
             onClick={onClose}
             className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -108,7 +114,7 @@ export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
           >
             <X className="size-5" />
           </button>
-        </header>
+        </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-3">
           {failed ? (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
