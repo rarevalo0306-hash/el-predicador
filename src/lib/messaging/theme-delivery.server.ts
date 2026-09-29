@@ -2,12 +2,15 @@ import type { Sql } from "../db";
 import type { Locale } from "../i18n.ts";
 import { composeVerseMessage, fallbackNotes, pickRotating } from "./compose.ts";
 
-export type ThemeVerse = { id: string; ref: string; text: string; source?: string | null };
+/** A verse of a theme: which one, never its text. */
+export type ThemeVerse = { id: string; ref: string };
 
-/** Writes a fresh line for one send; null means "use a prepared one". */
+/**
+ * Writes a fresh line for one send; null means "use a prepared one". It gets
+ * the reference only: the editions do not allow sending their text to an AI.
+ */
 export type NoteWriter = (input: {
   ref: string;
-  text: string;
   locale: Locale;
   theme: string;
   name: string | null;
@@ -30,27 +33,37 @@ export type VerseSource = (themeId: string) => Promise<ThemeVerse[]>;
 
 export const catalogVerseSource: VerseSource = async (themeId) => {
   const { versesForTheme } = await import("@/lib/verses");
-  return versesForTheme(themeId as never).map((v) => ({
-    id: v.id,
-    ref: v.ref,
-    text: v.text,
-    source: v.source ?? null,
-  }));
+  return versesForTheme(themeId as never).map((v) => ({ id: v.id, ref: v.ref }));
 };
 
+/** A verse's text as read for one send, with its edition's copyright line. */
+export type ReadVerse = { ref: string; text: string; source?: string | null; copyright?: string | null };
+
 /**
- * The text of a verse in a language: what the owner prepared, or, failing
- * that, the catalog's own copy when it carries one. A verse with neither is
- * reported, never sent half-empty.
+ * Reads a verse's text for one send. Injected so tests need no Bible service.
+ * The app keeps no Bible text (the editions do not allow it), so every send
+ * reads it live; a verse that cannot be read now is reported, never sent
+ * half-empty.
  */
-async function verseText(sql: Sql, verse: ThemeVerse, locale: Locale) {
-  const [stored] = await sql<{ ref: string; text: string; source: string | null }>`
-    select ref, text, source from verse_texts where verse_id = ${verse.id} and locale = ${locale}`;
-  if (stored) return stored;
-  if (locale === "es" && verse.text.trim())
-    return { ref: verse.ref, text: verse.text, source: verse.source ?? null };
-  return null;
-}
+export type TextReader = (verse: { id: string; ref: string }, locale: Locale) => Promise<ReadVerse | null>;
+
+export const liveTextReader: TextReader = async (verse, locale) => {
+  try {
+    const { hydrateVerse, verseFromId } = await import("@/lib/recobro");
+    const base = verseFromId(verse.id, locale) ?? {
+      id: verse.id,
+      ref: verse.ref,
+      book: "",
+      text: "",
+      themes: [],
+    };
+    const read = await hydrateVerse(base, locale);
+    if (!read.text.trim()) return null;
+    return { ref: read.ref, text: read.text, source: read.source ?? null, copyright: read.copyright ?? null };
+  } catch {
+    return null;
+  }
+};
 
 /**
  * What a theme schedule sends this time.
@@ -69,7 +82,7 @@ export async function resolveThemeMessage(
     recipient_name?: string | null;
   },
   verses: VerseSource = catalogVerseSource,
-  fresh: { write?: NoteWriter | null; themeName?: string } = {},
+  fresh: { write?: NoteWriter | null; themeName?: string; read?: TextReader } = {},
 ): Promise<{ message: string; verseId: string } | { error: "theme_empty" | "verse_unavailable" }> {
   const list = await verses(schedule.theme_id);
   if (!list.length) return { error: "theme_empty" };
@@ -78,7 +91,7 @@ export async function resolveThemeMessage(
   // The current attempt already has its receipt row, so it is counted.
   const turn = Math.max(0, count - 1);
   const verse = pickRotating(list, turn)!;
-  const text = await verseText(sql, verse, schedule.message_locale);
+  const text = await (fresh.read ?? liveTextReader)(verse, schedule.message_locale);
   if (!text) return { error: "verse_unavailable" };
   const notes = (
     await sql<{ text: string }>`
@@ -91,7 +104,6 @@ export async function resolveThemeMessage(
     note = await fresh
       .write({
         ref: text.ref,
-        text: text.text,
         locale: schedule.message_locale,
         theme: fresh.themeName ?? schedule.theme_id,
         name: schedule.recipient_name ?? null,
@@ -109,6 +121,7 @@ export async function resolveThemeMessage(
       text: text.text,
       ref: text.ref,
       source: text.source,
+      copyright: text.copyright,
       senderName: schedule.sender_name,
       locale: schedule.message_locale,
     }),

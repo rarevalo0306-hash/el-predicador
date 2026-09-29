@@ -17,6 +17,20 @@ test("a composed message reads verse, reference, source, then the line and sign-
   );
 });
 
+test("a Recobro verse carries LSM's copyright line, not just the edition's name", () => {
+  const message = composeVerseMessage({
+    text: "Porque de tal manera amó Dios al mundo…",
+    ref: "Juan 3:16",
+    source: "Versión Recobro",
+    locale: "es",
+  });
+  assert.match(message, /\n— Juan 3:16\nSanta Biblia Versión Recobro .*© .*Living Stream Ministry/);
+  assert.match(
+    composeVerseMessage({ text: "A", ref: "R", copyright: "Line from the API", locale: "en" }),
+    /\n— R\nLine from the API$/,
+  );
+});
+
 test("missing pieces leave no blank lines behind", () => {
   assert.equal(composeVerseMessage({ text: " A ", ref: "R", locale: "en" }), "«A»\n— R");
   assert.equal(

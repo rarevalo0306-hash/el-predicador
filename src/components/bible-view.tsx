@@ -30,7 +30,6 @@ import {
   formatPlace,
   parseReference,
   recobroChapterUrl,
-  recobroCopyright,
   recobroOrigin,
   type BibleVersion,
   type BibleBook,
@@ -45,6 +44,7 @@ import { combineVerses, formatVerseRange } from "@/lib/reader-prefs";
 import { copyText, formatVerseMessage } from "@/lib/share";
 import { trackApiBibleFums } from "@/lib/api-bible-fums";
 import { useBibleVersion } from "@/lib/use-bible-version";
+import { bibleNotice, plainNotice } from "@/lib/bible-notice";
 import { TextSkeleton } from "@/components/text-skeleton";
 import { friendlyError } from "@/lib/friendly-error";
 import { onTabListKeyDown } from "@/lib/tab-keys";
@@ -375,19 +375,22 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
           {t("concordanceSearchFor", { q: cleanWords(query) })}
         </button>
       ) : null}
-      <button
-        type="button"
-        onClick={() => setCompare(true)}
-        className="flex w-full items-center gap-3 rounded-xl bg-card px-4 py-4 text-left shadow-paper @max-[16rem]:flex-col @max-[16rem]:items-start transition-transform duration-150 ease-out active:scale-[0.98]"
-      >
-        <Languages className="size-5 shrink-0 text-primary" />
-        <span className="min-w-0">
-          <span className="block font-medium">{t("nviTitle")}</span>
-          <span className="mt-0.5 block text-sm text-muted-foreground">
-            {t("nviCardLine")}
+      {/* The comparison reads the Recovery Version live, so it waits for LSM's access. */}
+      {isRecoveryReady() ? (
+        <button
+          type="button"
+          onClick={() => setCompare(true)}
+          className="flex w-full items-center gap-3 rounded-xl bg-card px-4 py-4 text-left shadow-paper @max-[16rem]:flex-col @max-[16rem]:items-start transition-transform duration-150 ease-out active:scale-[0.98]"
+        >
+          <Languages className="size-5 shrink-0 text-primary" />
+          <span className="min-w-0">
+            <span className="block font-medium">{t("nviTitle")}</span>
+            <span className="mt-0.5 block text-sm text-muted-foreground">
+              {t("nviCardLine")}
+            </span>
           </span>
-        </span>
-      </button>
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={() => setConcordance("")}
@@ -1026,8 +1029,7 @@ function ChapterReader({
         <p className="text-center text-xs text-muted-foreground">{t("tapVerse")}</p>
       )}
       <p className="pb-2 text-center text-[0.7rem] leading-relaxed text-muted-foreground">
-        {data?.copyright ??
-          (version === "recovery" ? recobroCopyright(locale) : bibleSource(version, locale))}.{" "}
+        {plainNotice(data?.copyright ?? bibleNotice(version, locale))}{" "}
         <a
           href={officialUrl}
           target="_blank"

@@ -79,3 +79,9 @@ test("keeps the chosen language and verse and defaults legacy schedules to Spani
   assert.equal(saved.verseId, "1ti-4-12");
   assert.equal(saved.message, "Let no one despise your youth.");
 });
+test("a chosen verse needs no message: only the sender's note is kept", () => {
+  const saved = validateSchedule({ ...valid, verseId: "rcv-jhn-3-range-4,6", message: "" });
+  assert.equal(saved.verseId, "rcv-jhn-3-range-4,6");
+  assert.equal(saved.message, "");
+  assert.throws(() => validateSchedule({ ...valid, message: "  " }), /scheduleBadMessage/);
+});

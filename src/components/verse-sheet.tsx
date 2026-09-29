@@ -8,6 +8,7 @@ import { combineVerses } from "@/lib/reader-prefs";
 import type { VerseLink } from "@/lib/verse-links";
 import type { Verse } from "@/lib/verses";
 import { useBibleVersion } from "@/lib/use-bible-version";
+import { BibleNotice } from "@/components/bible-notice";
 import { TextSkeleton } from "@/components/text-skeleton";
 import { useDialogFocus } from "@/components/use-dialog-focus";
 
@@ -136,6 +137,7 @@ export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
                   <span>{verse.text}</span>
                 </p>
               ))}
+              <BibleNotice verse={verses[0]} locale={locale} className="mt-2" />
             </div>
           )}
         </div>

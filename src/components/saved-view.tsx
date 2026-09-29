@@ -8,6 +8,7 @@ import { kindLabel, messageKinds, type MessageKind } from "@/lib/messages";
 import { useAppStore, type SavedMessage, type SendDraft } from "@/lib/store";
 import { getVerseById, type Verse } from "@/lib/verses";
 import { useHydratedVerse } from "@/components/use-hydrated-verse";
+import { BibleNotice } from "@/components/bible-notice";
 import { TextSkeleton } from "@/components/text-skeleton";
 
 type FilterId = "todos" | "versos" | MessageKind;
@@ -191,6 +192,7 @@ function SavedMessageCard({
           <p className="mt-2 text-xs font-medium tracking-[0.12em] text-primary uppercase">
             {shown.ref}
           </p>
+          <BibleNotice verse={shown} locale={item.messageLocale ?? locale} className="mt-1" />
         </>
       )}
       <Button

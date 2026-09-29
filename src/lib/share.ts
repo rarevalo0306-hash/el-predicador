@@ -2,6 +2,7 @@ import { whatsAppUrl, smsUrl } from "@/lib/phone";
 import type { Locale } from "@/lib/i18n";
 import { t } from "@/lib/i18n";
 import type { Verse } from "@/lib/verses";
+import { verseNotice } from "@/lib/bible-notice";
 
 export function formatVerseMessage(
   verse: Verse,
@@ -10,6 +11,8 @@ export function formatVerseMessage(
   locale: Locale = "es",
 ) {
   const lines: string[] = [];
+  // Every edition asks for its copyright line wherever its text goes.
+  const notice = verseNotice(verse, locale);
   if (
     verse.id === "evangelio-camino" ||
     verse.id.startsWith("caso-") ||
@@ -17,11 +20,11 @@ export function formatVerseMessage(
     verse.id.startsWith("nvi-")
   ) {
     lines.push(verse.text);
+    if (notice) lines.push("", notice);
   } else {
     lines.push(`«${verse.text}»`, `— ${verse.ref}`);
-    if (verse.source) {
-      lines.push(verse.source);
-    }
+    if (notice) lines.push(notice);
+    else if (verse.source) lines.push(verse.source);
   }
   // The verse comes whole and first; the personal line follows it.
   const trimmedNote = note?.trim();

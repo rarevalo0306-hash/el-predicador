@@ -1,4 +1,5 @@
 import type { Locale } from "@/lib/i18n";
+import { RECOBRO_NOTICE } from "./bible-notice.ts";
 
 export type Testament = "at" | "nt";
 
@@ -30,11 +31,6 @@ export const RECOBRO_ORIGIN = "https://texto.versionrecobro.org";
 export const RECOVERY_ORIGIN = "https://text.recoveryversion.bible";
 export const SOURCE_RECOBRO = "Versión Recobro";
 export const SOURCE_RECOBRO_EN = "Recovery Version";
-export const RECOBRO_COPYRIGHT =
-  "Santa Biblia Versión Recobro © Living Stream Ministry";
-export const RECOBRO_COPYRIGHT_EN =
-  "Holy Bible Recovery Version © Living Stream Ministry";
-
 /** Which edition a reader picked, per language; missing means "the default". */
 export type BibleVersionChoices = Partial<BibleVersionPreferences>;
 
@@ -317,7 +313,7 @@ export function recobroSource(locale: Locale = "es") {
 }
 
 export function recobroCopyright(locale: Locale = "es") {
-  return locale === "en" ? RECOBRO_COPYRIGHT_EN : RECOBRO_COPYRIGHT;
+  return RECOBRO_NOTICE[locale];
 }
 
 export function recobroChapterUrl(

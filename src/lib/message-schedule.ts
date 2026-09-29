@@ -73,13 +73,15 @@ export function validateSchedule(raw: ScheduleInput): ScheduleInput {
     throw new Error("scheduleInvalid");
   const senderName = String(raw.senderName ?? "").trim();
   if (senderName.length > 80) throw new Error("scheduleInvalid");
-  // A theme schedule composes its text at send time; a fixed one needs it now.
+  // A theme or a chosen verse is read at send time, so its message is only
+  // the sender's own note and may be empty; a free message needs its text.
   if (!recipientName || recipientName.length > 80 || message.length > 1000)
     throw new Error("scheduleBadMessage");
-  if (!themeId && !message) throw new Error("scheduleBadMessage");
+  if (!themeId && !raw.verseId && !message) throw new Error("scheduleBadMessage");
   if (raw.messageLocale !== undefined && raw.messageLocale !== "es" && raw.messageLocale !== "en")
     throw new Error("scheduleInvalid");
-  if (raw.verseId !== undefined && !/^[a-zA-Z0-9-]{1,64}$/.test(raw.verseId))
+  // Verses picked together in the reader carry commas: "rcv-jhn-3-range-4,6".
+  if (raw.verseId !== undefined && !/^[a-zA-Z0-9,-]{1,64}$/.test(raw.verseId))
     throw new Error("scheduleInvalid");
   if (raw.channel !== "whatsapp" && raw.channel !== "sms") throw new Error("scheduleInvalid");
   if (

@@ -1,4 +1,6 @@
 import type { Verse } from "@/lib/verses";
+import type { Locale } from "@/lib/i18n";
+import { verseNotice } from "@/lib/bible-notice";
 
 const W = 1080;
 const H = 1350;
@@ -45,6 +47,7 @@ export async function renderVerseCard(
   verse: Verse,
   note?: string,
   fromName?: string,
+  locale: Locale = "es",
 ): Promise<Blob> {
   if (typeof document !== "undefined" && document.fonts?.ready) {
     await document.fonts.ready.catch(() => undefined);
@@ -99,10 +102,17 @@ export async function renderVerseCard(
     y += 24;
   }
 
+  // The edition's copyright line travels with its text, in small print; the
+  // verse makes room for it.
+  const notice = verseNotice(verse, locale) ?? verse.source;
+  ctx.font = "400 22px Figtree, sans-serif";
+  const noticeLines = notice ? wrapLines(ctx, notice, maxWidth).slice(0, 4) : [];
+  const noticeRoom = noticeLines.length ? 12 + noticeLines.length * 30 : 0;
+
   const body = verse.text.replace(/^«|»$/g, "").trim();
   let fontSize = 48;
   let bodyLines: string[] = [];
-  const bottomLimit = H - 280;
+  const bottomLimit = H - 280 - noticeRoom;
   while (fontSize >= 28) {
     ctx.font = `500 ${fontSize}px Newsreader, Georgia, serif`;
     bodyLines = wrapLines(ctx, body, maxWidth);
@@ -129,11 +139,14 @@ export async function renderVerseCard(
   ctx.font = "600 30px Figtree, sans-serif";
   ctx.fillText(verse.ref.toUpperCase(), W / 2, y);
 
-  if (verse.source) {
-    y += 40;
+  if (noticeLines.length) {
     ctx.fillStyle = "#6E5B45";
-    ctx.font = "400 24px Figtree, sans-serif";
-    ctx.fillText(verse.source, W / 2, y);
+    ctx.font = "400 22px Figtree, sans-serif";
+    y += 12;
+    for (const line of noticeLines) {
+      y += 30;
+      ctx.fillText(line, W / 2, y);
+    }
   }
 
   const name = fromName?.trim();
@@ -160,8 +173,9 @@ export async function verseCardFile(
   verse: Verse,
   note?: string,
   fromName?: string,
+  locale: Locale = "es",
 ): Promise<File> {
-  const blob = await renderVerseCard(verse, note, fromName);
+  const blob = await renderVerseCard(verse, note, fromName, locale);
   const slug = verse.ref.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "");
   return new File([blob], `the-preacher-${slug || "verso"}.png`, {
     type: "image/png",

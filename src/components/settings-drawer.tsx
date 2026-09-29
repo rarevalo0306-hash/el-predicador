@@ -92,7 +92,7 @@ export function SettingsDrawer({
       const verse = await hydrateVerse(getDailyVerse(), locale, bibleVersion);
       await showDailyNotification({
         title: t("notifyBodyTitle"),
-        body: `${verse.ref}: ${verse.text.slice(0, 140)}`,
+        body: `${verse.ref} · ${t("notifyTapToRead")}`,
         tag: `daily-${new Date().toISOString().slice(0, 10)}`,
       });
     } catch {

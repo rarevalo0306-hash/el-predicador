@@ -9,10 +9,14 @@ import { STYLE, VOICE, cleanNote } from "./deepseek.server.ts";
  */
 type Config = Record<string, string | undefined>;
 
-export type VerseInput = { ref: string; text: string; locale: "es" | "en" };
+/**
+ * The verse is sent by reference only: the Bible editions the app reads do
+ * not allow sending their text to an AI.
+ */
+export type VerseInput = { ref: string; locale: "es" | "en" };
 
 const REFLECTION = {
-  es: `{who} Cada mañana escribes la palabra del día para todas las personas que abren la app: una reflexión breve sobre el versículo que recibes (Versión Recobro). Escribe dos o tres oraciones, de 180 a 380 caracteres, en español, de tú, cálida y directa, que lleve a Cristo y aplique el versículo a la vida de hoy. No copies el versículo completo; puedes tomar una palabra o frase de él. Sin títulos, sin emojis, sin comillas alrededor y sin firma.
+  es: `{who} Cada mañana escribes la palabra del día para todas las personas que abren la app: una reflexión breve sobre el versículo cuya cita recibes (solo la referencia). Escribe dos o tres oraciones, de 180 a 380 caracteres, en español, de tú, cálida y directa, que lleve a Cristo y aplique el versículo a la vida de hoy. No escribas ni cites el texto del versículo, ni de memoria: habla de lo que enseña. Sin títulos, sin emojis, sin comillas alrededor y sin firma.
 
 {tone}
 
@@ -22,7 +26,7 @@ Ejemplos del tono buscado (no los copies):
 {examples}
 
 Devuelve solo la reflexión.`,
-  en: `{who} Every morning you write the word of the day for everyone who opens the app: a short reflection on the verse you receive (Recovery Version). Write two or three sentences, 180 to 380 characters, in English, addressed to one person, warm and direct, leading to Christ and applying the verse to life today. Do not copy the whole verse; you may take a word or phrase from it. No titles, no emojis, no surrounding quotes and no signature.
+  en: `{who} Every morning you write the word of the day for everyone who opens the app: a short reflection on the verse whose reference you receive (the reference only). Write two or three sentences, 180 to 380 characters, in English, addressed to one person, warm and direct, leading to Christ and applying the verse to life today. Do not write out or quote the verse, not even from memory: speak about what it teaches. No titles, no emojis, no surrounding quotes and no signature.
 
 {tone}
 
@@ -35,7 +39,7 @@ Return only the reflection.`,
 };
 
 const SEND_NOTE = {
-  es: `{who} Escribes el mensaje de hoy para una persona que conoces. Recibes el versículo que le vas a enviar (cita y texto, Versión Recobro), el tema, y a veces su nombre. Escribe una sola frase de una o dos oraciones (60 a 180 caracteres), en español, de tú, que acompañe el versículo sin citarlo ni repetirlo. Si recibes un nombre, puedes usar solo el primer nombre al inicio, pero no siempre. Sin emojis, sin comillas y sin firma.
+  es: `{who} Escribes el mensaje de hoy para una persona que conoces. Recibes la cita del versículo que le vas a enviar (solo la referencia), el tema, y a veces su nombre. Escribe una sola frase de una o dos oraciones (60 a 180 caracteres), en español, de tú, que acompañe el versículo sin citarlo ni repetirlo. Si recibes un nombre, puedes usar solo el primer nombre al inicio, pero no siempre. Sin emojis, sin comillas y sin firma.
 
 {tone}
 
@@ -45,7 +49,7 @@ Ejemplos del tono buscado (no los copies):
 {examples}
 
 Devuelve solo la frase.`,
-  en: `{who} You write today's message for someone you know. You receive the verse you are sending them (reference and text, Recovery Version), the theme, and sometimes their name. Write a single line of one or two sentences (60 to 180 characters), in English, addressed to them, that goes with the verse without quoting or repeating it. If you receive a name you may use the first name only, at the start, but not always. No emojis, no quotes and no signature.
+  en: `{who} You write today's message for someone you know. You receive the reference of the verse you are sending them (the reference only), the theme, and sometimes their name. Write a single line of one or two sentences (60 to 180 characters), in English, addressed to them, that goes with the verse without quoting or repeating it. If you receive a name you may use the first name only, at the start, but not always. No emojis, no quotes and no signature.
 
 {tone}
 
@@ -153,14 +157,14 @@ export async function writeReflection(
 ): Promise<string | null> {
   const raw = await chat(
     reflectionPrompt(input.locale),
-    JSON.stringify({ ref: input.ref, text: input.text.slice(0, 800) }),
+    JSON.stringify({ ref: input.ref }),
     900,
     15_000,
     config,
     request,
   );
   const whole = completeSentences(raw.text, 440);
-  return whole ? cleanNote(whole, input.text, { min: 60, max: 440 }) : null;
+  return whole ? cleanNote(whole, "", { min: 60, max: 440 }) : null;
 }
 
 /** A fresh line for one scheduled send, or null (the caller uses a prepared one). */
@@ -175,7 +179,6 @@ export async function writeSendNote(
     sendNotePrompt(input.locale),
     JSON.stringify({
       ref: input.ref,
-      text: input.text.slice(0, 800),
       theme: input.theme,
       ...(name ? { name } : {}),
     }),
@@ -185,5 +188,5 @@ export async function writeSendNote(
     request,
   );
   const whole = completeSentences(raw.text, 220);
-  return whole ? cleanNote(whole, input.text) : null;
+  return whole ? cleanNote(whole) : null;
 }

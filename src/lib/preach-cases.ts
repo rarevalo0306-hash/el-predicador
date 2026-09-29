@@ -1,4 +1,3 @@
-import { recobroSource } from "@/lib/bible";
 import { t, type Locale } from "@/lib/i18n";
 import { hydrateVerses } from "@/lib/recobro";
 import { getVerseById, localizeVerse, type Verse } from "@/lib/verses";
@@ -287,9 +286,10 @@ export function caseVerses(entry: PreachCase, locale: Locale = "es") {
     .map((verse) => localizeVerse(verse, locale));
 }
 
-export async function composeCaseText(entry: PreachCase, locale: Locale = "es") {
+/** The message of a case, and the edition its verses were read in, if any. */
+async function composeCase(entry: PreachCase, locale: Locale) {
   const localized = localizedCase(entry, locale);
-  if (hasMarkdown(localized.letter)) return messageText(localized.letter);
+  if (hasMarkdown(localized.letter)) return { text: messageText(localized.letter), from: null };
   const hydrated = await hydrateVerses(caseVerses(entry, locale), locale);
   const lines = [localized.letter, ""];
   for (const verse of hydrated) {
@@ -297,7 +297,11 @@ export async function composeCaseText(entry: PreachCase, locale: Locale = "es") 
     lines.push(`— ${verse.ref}`);
     lines.push("");
   }
-  return lines.join("\n").trim();
+  return { text: lines.join("\n").trim(), from: hydrated[0] ?? null };
+}
+
+export async function composeCaseText(entry: PreachCase, locale: Locale = "es") {
+  return (await composeCase(entry, locale)).text;
 }
 
 /**
@@ -313,12 +317,15 @@ export async function caseMessageVerse(
   locale: Locale = "es",
 ): Promise<Verse> {
   const localized = localizedCase(entry, locale);
+  const { text, from } = await composeCase(entry, locale);
   return {
     id: `caso-${entry.id}`,
     ref: localized.title,
     book: t(locale, "preachFor"),
-    text: await composeCaseText(entry, locale),
+    text,
     themes: ["evangelio"],
-    source: recobroSource(locale),
+    // A letter with no verses read from an edition names none.
+    source: from?.source,
+    copyright: from?.copyright,
   };
 }

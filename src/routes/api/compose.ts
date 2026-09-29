@@ -40,11 +40,9 @@ export const Route = createFileRoute("/api/compose")({
         if (!quota.allowed) return fail(429, "ask_quota");
 
         try {
-          const { hydrateVerses } = await import("@/lib/recobro");
           const localized = localizedCase(entry, locale);
-          const verses = (await hydrateVerses(caseVerses(entry, locale), locale))
-            .filter((v) => v.text.trim())
-            .map((v) => ({ ref: v.ref, text: v.text }));
+          // References only: the Bible text never goes to the AI.
+          const verses = caseVerses(entry, locale).map((v) => ({ ref: v.ref }));
           const words = await streamComposed({
             caseTitle: localized.title,
             issue: localized.issue,

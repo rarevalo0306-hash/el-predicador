@@ -109,34 +109,46 @@ test("overlapping and repeated cron runs submit an occurrence only once", async 
   assert.equal(schedules[0].lastStatus, "accepted");
   assert.equal(schedules[0].nextRunAt, "2026-09-18T13:15:00.000Z");
 });
-test("persists the language and sends the exact English message through the matching channel", async () => {
+test("a chosen verse keeps only its id and the note; its text is read when it is sent", async () => {
   const { id } = await saveSchedule(
     "owner",
     {
       ...schedule,
       messageLocale: "en",
       verseId: "1ti-4-12",
-      message: "Let no one despise your youth.",
+      message: "Thinking of you today.",
+      senderName: "Ricardo",
     },
     sql,
   );
   const saved = (await listSchedules("owner", sql)).schedules[0];
   assert.equal(saved.messageLocale, "en");
   assert.equal(saved.verseId, "1ti-4-12");
+  assert.equal(saved.message, "Thinking of you today.");
   await sql`update message_schedules set enabled=true,next_run_at=${"2026-09-17T13:15:00Z"} where id=${id}`;
-  let calls = 0;
+  const asked: { id: string; locale: string }[] = [];
+  let sentMessage = "";
   await runScheduledMessages(
     sql,
     now,
     async (data) => {
-      calls++;
       assert.equal(data.messageLocale, "en");
-      assert.equal(data.message, saved.message);
+      sentMessage = data.message;
       return { status: "accepted" };
     },
     (_user, _config, language) => ({ whatsapp: language === "en", sms: true }),
+    undefined,
+    null,
+    async (verse, locale) => {
+      asked.push({ id: verse.id, locale });
+      return { ref: "1 Timothy 4:12", text: "Let no one despise your youth", copyright: "Line from the API" };
+    },
   );
-  assert.equal(calls, 1);
+  assert.deepEqual(asked, [{ id: "1ti-4-12", locale: "en" }]);
+  assert.equal(
+    sentMessage,
+    "«Let no one despise your youth»\n— 1 Timothy 4:12\nLine from the API\n\nThinking of you today.\n\nWith love, Ricardo",
+  );
 });
 test("activation requires consent, computes a future occurrence and can be paused", async () => {
   const { id } = await saveSchedule("owner", { ...schedule, consent: false }, sql);
@@ -272,17 +284,18 @@ test("a theme send uses a freshly written line, and a prepared one when writing 
     { ...schedule, message: "", themeId: "fe", senderName: "Ricardo" },
     sql,
   );
-  await sql`insert into verse_texts (verse_id, locale, ref, text, source) values ('w','es','Ref W','Texto W','RV')`;
   await sql`insert into verse_notes (verse_id, locale, position, text) values ('w','es',0,'Nota W')`;
-  const verses = async () => [{ id: "w", ref: "Ref W", text: "" }];
+  const verses = async () => [{ id: "w", ref: "Ref W" }];
+  const read = async (verse: { id: string }) =>
+    verse.id === "w" ? { ref: "Ref W", text: "Texto W", source: "RV" } : null;
   const sent: string[] = [];
   const send = async (data: { message: string }) => {
     sent.push(data.message);
     return { status: "accepted" as const, providerId: `SM${sent.length}` };
   };
-  const asked: { ref: string; text: string; theme: string; name: string | null }[] = [];
+  const asked: { ref: string; theme: string; name: string | null }[] = [];
   const writers = [
-    async (input: { ref: string; text: string; theme: string; name: string | null }) => {
+    async (input: { ref: string; theme: string; name: string | null }) => {
       asked.push(input);
       return "Hoy esta palabra es para ti; descansa en el Señor.";
     },
@@ -293,11 +306,12 @@ test("a theme send uses a freshly written line, and a prepared one when writing 
   for (let i = 0; i < writers.length; i++) {
     const at = new Date(now.getTime() + i * 86_400_000);
     await sql`update message_schedules set enabled=true,next_run_at=${at.toISOString()} where id=${id}`;
-    await runScheduledMessages(sql, at, send, ready, verses, writers[i]);
+    await runScheduledMessages(sql, at, send, ready, verses, writers[i], read);
   }
   assert.equal(sent.length, 2);
   assert.match(sent[0], /^«Texto W»\n— Ref W\nRV\n\nHoy esta palabra es para ti; descansa en el Señor\.\n\nCon cariño, Ricardo$/);
-  assert.equal(asked[0].text, "Texto W");
+  // The AI gets the reference only, never the Bible text.
+  assert.equal("text" in asked[0], false);
   assert.equal(asked[0].ref, "Ref W");
   assert.match(sent[1], /\n\nNota W\n\nCon cariño, Ricardo$/);
 });
@@ -307,12 +321,15 @@ test("a theme schedule walks its verses in order and varies the line, without re
     { ...schedule, message: "", themeId: "fe", senderName: "Ricardo" },
     sql,
   );
-  await sql`insert into verse_texts (verse_id, locale, ref, text, source) values ('a','es','Ref A','Texto A','RV')`;
   await sql`insert into verse_notes (verse_id, locale, position, text) values ('a','es',0,'Nota uno'),('a','es',1,'Nota dos')`;
   const verses = async () => [
-    { id: "a", ref: "Ref A", text: "" },
-    { id: "b", ref: "Ref B", text: "Texto B en catálogo" },
+    { id: "a", ref: "Ref A" },
+    { id: "b", ref: "Ref B" },
   ];
+  const read = async (verse: { id: string }) =>
+    verse.id === "a"
+      ? { ref: "Ref A", text: "Texto A", source: "RV" }
+      : { ref: "Ref B", text: "Texto B leído al enviar", source: "RV" };
   const sent: string[] = [];
   const send = async (data: { message: string }) => {
     sent.push(data.message);
@@ -321,15 +338,15 @@ test("a theme schedule walks its verses in order and varies the line, without re
   for (let i = 0; i < 3; i++) {
     const at = new Date(now.getTime() + i * 86_400_000);
     await sql`update message_schedules set enabled=true,next_run_at=${at.toISOString()} where id=${id}`;
-    await runScheduledMessages(sql, at, send, ready, verses);
+    await runScheduledMessages(sql, at, send, ready, verses, null, read);
   }
   assert.equal(sent.length, 3);
   assert.match(sent[0], /^«Texto A»\n— Ref A\nRV\n\nNota uno\n\nCon cariño, Ricardo$/);
-  // The catalog's own Spanish text serves a verse that was never prepared.
-  assert.match(sent[1], /«Texto B en catálogo»\n— Ref B/);
+  // Every verse is read when it is sent; the app keeps no Bible text.
+  assert.match(sent[1], /«Texto B leído al enviar»\n— Ref B/);
   // Back to the first verse with its other line, not the same one again.
   assert.match(sent[2], /^«Texto A»\n— Ref A\nRV\n\nNota dos\n/);
-  // A verse without any text anywhere fails visibly rather than sending "«»".
+  // A verse that cannot be read now fails visibly rather than sending "«»".
   const { id: bare } = await saveSchedule(
     "owner",
     { ...schedule, phone: "+12015550124", message: "", themeId: "paz" },
@@ -337,7 +354,7 @@ test("a theme schedule walks its verses in order and varies the line, without re
   );
   await sql`update message_schedules set enabled=true,next_run_at=${now.toISOString()} where id=${bare}`;
   const before = sent.length;
-  await runScheduledMessages(sql, now, send, ready, async () => [{ id: "z", ref: "Z", text: "" }]);
+  await runScheduledMessages(sql, now, send, ready, async () => [{ id: "z", ref: "Z" }], null, async () => null);
   assert.equal(sent.length, before);
   const [row] = await sql<{ status: string; error_code: string }>`
     select status, error_code from message_deliveries where schedule_id = ${bare}`;
