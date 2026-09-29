@@ -378,7 +378,7 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
       <button
         type="button"
         onClick={() => setCompare(true)}
-        className="flex w-full items-center gap-3 rounded-xl bg-card px-4 py-4 text-left shadow-paper transition-transform duration-150 ease-out active:scale-[0.98]"
+        className="flex w-full items-center gap-3 rounded-xl bg-card px-4 py-4 text-left shadow-paper @max-[16rem]:flex-col @max-[16rem]:items-start transition-transform duration-150 ease-out active:scale-[0.98]"
       >
         <Languages className="size-5 shrink-0 text-primary" />
         <span className="min-w-0">
@@ -391,7 +391,7 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
       <button
         type="button"
         onClick={() => setConcordance("")}
-        className="flex w-full items-center gap-3 rounded-xl bg-card px-4 py-4 text-left shadow-paper transition-transform duration-150 ease-out active:scale-[0.98]"
+        className="flex w-full items-center gap-3 rounded-xl bg-card px-4 py-4 text-left shadow-paper @max-[16rem]:flex-col @max-[16rem]:items-start transition-transform duration-150 ease-out active:scale-[0.98]"
       >
         <Search className="size-5 shrink-0 text-primary" />
         <span className="min-w-0">
@@ -449,7 +449,7 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
             role="tablist"
             aria-label={t("bibleTitle")}
             onKeyDown={onTabListKeyDown}
-            className="grid grid-cols-2 gap-1 rounded-xl bg-secondary p-1"
+            className="grid grid-cols-1 @min-[16rem]:grid-cols-2 gap-1 rounded-xl bg-secondary p-1"
           >
             {(["at", "nt"] as const).map((id) => {
               const active = testament === id;
@@ -571,7 +571,7 @@ function PlaceCard({
     <button
       type="button"
       onClick={onOpen}
-      className="flex w-full items-center gap-3 rounded-xl bg-card px-4 py-4 text-left shadow-paper transition-transform duration-150 ease-out active:scale-[0.98]"
+      className="flex w-full items-center gap-3 rounded-xl bg-card px-4 py-4 text-left shadow-paper @max-[16rem]:flex-col @max-[16rem]:items-start transition-transform duration-150 ease-out active:scale-[0.98]"
     >
       <Bookmark className="size-5 shrink-0 fill-primary text-primary" />
       <span className="min-w-0">
@@ -600,7 +600,7 @@ function BookGrid({
   const { locale } = useI18n();
   const readingPlace = useAppStore((s) => s.readingPlace);
   return (
-    <div role="tabpanel" className="grid grid-cols-2 gap-2">
+    <div role="tabpanel" className="grid grid-cols-1 @min-[16rem]:grid-cols-2 gap-2">
       {books.map((item) => (
         <button
           key={item.id}

@@ -73,6 +73,15 @@
     font-family: var(--font-sans);
   }
 
+  /* With large text (the screen, <main>, is under 16rem wide) a single word
+     can be wider than its box; it breaks rather than running off the screen.
+     At the usual text size this never applies. */
+  @container (width < 16rem) {
+    * {
+      overflow-wrap: anywhere;
+    }
+  }
+
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;

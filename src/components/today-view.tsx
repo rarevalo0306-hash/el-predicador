@@ -166,7 +166,7 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
           ) : (
             <Button
               type="button"
-              className="mt-4 h-12 w-full"
+              className="mt-4 h-auto min-h-12 py-2 whitespace-normal w-full"
               onClick={() => setShowContact(true)}
             >
               {t("contactCardCta")}
