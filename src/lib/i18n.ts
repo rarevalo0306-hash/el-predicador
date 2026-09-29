@@ -135,6 +135,8 @@ const es = {
   adminPeopleCount: "{n} contactos",
   adminSchedulesCount: "{n} programaciones",
   adminLoadError: "No se pudo cargar la lista.",
+  adminNotesLoadError: "No se pudo ver cuántas frases hay preparadas.",
+  adminNotesStopping: "Deteniendo…",
   adminNotes: "Frases",
   adminNotesSub:
     "Frases de ánimo para acompañar cada versículo en los envíos por tema. Se escriben una sola vez con DeepSeek y quedan guardadas; después ningún envío depende de ese servicio.",
@@ -231,6 +233,7 @@ const es = {
   mailHint: "Mail o Gmail",
   saveImage: "Guardar imagen",
   saveImageHint: "Foto del verso",
+  preparingImage: "Preparando la imagen…",
   printAction: "Imprimir",
   printHint: "Hoja o PDF",
   pasteAnywhere: "Pegarlo donde quieras",
@@ -679,6 +682,8 @@ const en: Record<keyof typeof es, string> = {
   adminPeopleCount: "{n} people",
   adminSchedulesCount: "{n} schedules",
   adminLoadError: "Could not load the list.",
+  adminNotesLoadError: "Could not see how many lines are ready.",
+  adminNotesStopping: "Stopping…",
   adminNotes: "Lines",
   adminNotesSub:
     "Lines of encouragement to go with each verse in theme sends. Written once with DeepSeek and stored; afterwards no send depends on that service.",
@@ -774,6 +779,7 @@ const en: Record<keyof typeof es, string> = {
   mailHint: "Mail or Gmail",
   saveImage: "Save image",
   saveImageHint: "Verse photo",
+  preparingImage: "Preparing the image…",
   printAction: "Print",
   printHint: "Page or PDF",
   pasteAnywhere: "Paste it anywhere",

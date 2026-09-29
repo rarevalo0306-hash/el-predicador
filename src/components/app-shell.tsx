@@ -288,7 +288,9 @@ function PreacherApp({
           <SyncNotice text={t("syncSaveFailed")} retry={t("retry")} onRetry={sync.retrySave} />
         ) : null}
         {!ready ? (
-          <div className="h-40 animate-pulse rounded-xl bg-card" />
+          <div role="status" className="h-40 animate-pulse rounded-xl bg-card">
+            <span className="sr-only">{t("wait")}</span>
+          </div>
         ) : null}
         {ready && tab === "hoy" ? (
           <TodayView mood={mood} onMoodChange={setMood} onSend={openSend} />
