@@ -16,6 +16,7 @@ import { csvCell, maskPhone } from "@/lib/privacy";
 import { cn } from "@/lib/utils";
 import { FileSpreadsheet } from "lucide-react";
 import { REGISTRATION_SHEET_URL } from "@/lib/sheet";
+import { TextSkeleton } from "@/components/text-skeleton";
 
 type Pane = "registrations" | "accounts" | "notes";
 
@@ -57,11 +58,19 @@ export function AdminView() {
   const [noteErrors, setNoteErrors] = useState<string[]>([]);
   const [noteFailure, setNoteFailure] = useState<string | null>(null);
   const [regenerating, setRegenerating] = useState<"es" | "en" | null>(null);
+  const [notesError, setNotesError] = useState(false);
   const cancelled = useRef(false);
-  useEffect(() => {
+  // Detener stops between batches: the one already asked for still finishes.
+  const stopRequested = useRef(false);
+  const [stopping, setStopping] = useState(false);
+  function loadNotes() {
+    setNotesError(false);
     getVerseNotesStatus()
       .then(setNotes)
-      .catch(() => setNotes(null));
+      .catch(() => setNotesError(true));
+  }
+  useEffect(() => {
+    loadNotes();
     return () => {
       cancelled.current = true;
     };
@@ -69,6 +78,9 @@ export function AdminView() {
   // Runs one batch at a time until nothing remains, so no single request has
   // to outlive a serverless timeout; a failure stops here and says why.
   async function prepare(locale: "es" | "en", fresh = false) {
+    if (working) return;
+    stopRequested.current = false;
+    setStopping(false);
     setWorking(locale);
     setRegenerating(null);
     setNoteFailure(null);
@@ -81,7 +93,7 @@ export function AdminView() {
       }
       let remaining = Infinity;
       const skip: string[] = [];
-      while (remaining > 0 && !cancelled.current) {
+      while (remaining > 0 && !cancelled.current && !stopRequested.current) {
         const result = await prepareVerseNotes({ data: { locale, skip } });
         remaining = result.remaining;
         skip.push(...result.failedIds);
@@ -94,6 +106,7 @@ export function AdminView() {
       setNoteFailure(error instanceof Error ? error.message : String(error));
     } finally {
       setWorking(null);
+      setStopping(false);
     }
   }
 
@@ -140,9 +153,9 @@ export function AdminView() {
         className="inline-flex w-full rounded-full border border-border bg-card p-0.5"
         role="tablist"
       >
-        {(data && !data.owner
-          ? (["registrations", "accounts"] as const)
-          : (["registrations", "accounts", "notes"] as const)
+        {(data?.owner
+          ? (["registrations", "accounts", "notes"] as const)
+          : (["registrations", "accounts"] as const)
         ).map((id) => (
           <button
             key={id}
@@ -177,7 +190,11 @@ export function AdminView() {
           </Button>
         </div>
       ) : null}
-      {!data && !error ? <p role="status">{t("wait")}</p> : null}
+      {!data && !error ? (
+        <div className="rounded-xl border border-border bg-card p-4">
+          <TextSkeleton label={t("wait")} lines={4} />
+        </div>
+      ) : null}
 
       {data?.masked ? (
         <p className="rounded-lg bg-secondary px-3 py-2 text-xs leading-relaxed text-muted-foreground">
@@ -350,9 +367,19 @@ export function AdminView() {
         </div>
       ) : null}
 
-      {pane === "notes" ? (
+      {pane === "notes" && data?.owner ? (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">{t("adminNotesSub")}</p>
+          {notesError ? (
+            <div role="alert" className="space-y-2 rounded-lg border border-border p-3 text-sm">
+              <p>{t("adminNotesLoadError")}</p>
+              <Button variant="outline" onClick={loadNotes}>
+                {t("retry")}
+              </Button>
+            </div>
+          ) : !notes ? (
+            <TextSkeleton label={t("wait")} lines={2} />
+          ) : null}
           {notes && !notes.configured ? (
             <p className="rounded-lg border border-border bg-secondary p-3 text-sm">
               {t("adminNotesKeyMissing")}
@@ -376,15 +403,30 @@ export function AdminView() {
                     {t("adminNotesDone", { lang: lang === "es" ? "español" : "English" })}
                   </p>
                 ) : (
-                  <Button
-                    type="button"
-                    disabled={working !== null || !notes?.configured}
-                    onClick={() => void prepare(lang)}
-                  >
-                    {working === lang
-                      ? t("adminNotesWorking", { done, total })
-                      : t("adminNotesPrepare", { lang: lang === "es" ? "español" : "English" })}
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      disabled={working !== null || !notes?.configured}
+                      onClick={() => void prepare(lang)}
+                    >
+                      {working === lang
+                        ? t("adminNotesWorking", { done, total })
+                        : t("adminNotesPrepare", { lang: lang === "es" ? "español" : "English" })}
+                    </Button>
+                    {working === lang ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={stopping}
+                        onClick={() => {
+                          stopRequested.current = true;
+                          setStopping(true);
+                        }}
+                      >
+                        {stopping ? t("adminNotesStopping") : t("askStop")}
+                      </Button>
+                    ) : null}
+                  </div>
                 )}
                 {done > 0 && working === null && notes?.configured ? (
                   regenerating === lang ? (

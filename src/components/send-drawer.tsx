@@ -4,7 +4,7 @@ import type { Locale } from "@/lib/i18n";
 import { canChangeMessageLanguage } from "@/lib/recobro";
 import { MessageSchedulePanel } from "@/components/message-schedule-panel";
 import { scheduleCopy } from "@/lib/schedule-copy";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bookmark,
   Copy,
@@ -253,6 +253,22 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
   async function makeCard() {
     if (!shown) throw new Error("verse");
     return verseCardFile(shown, note, displayName);
+  }
+
+  // Drawing the image takes a moment; while it does, its button says so and
+  // a second tap cannot save, print or share it twice.
+  const [making, setMaking] = useState<"save" | "print" | "share" | null>(null);
+  const makingRef = useRef(false);
+  async function withCard(kind: "save" | "print" | "share", task: () => Promise<void>) {
+    if (makingRef.current) return;
+    makingRef.current = true;
+    setMaking(kind);
+    try {
+      await task();
+    } finally {
+      makingRef.current = false;
+      setMaking(null);
+    }
   }
 
   async function handleSaveImage() {
@@ -542,20 +558,26 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                   icon={<ImageDown />}
                   label={t("saveImage")}
                   hint={t("saveImageHint")}
-                  onClick={() => void handleSaveImage()}
+                  onClick={() => void withCard("save", handleSaveImage)}
+                  disabled={making !== null}
+                  busy={making === "save"}
                 />
                 <ChannelButton
                   icon={<Printer />}
                   label={t("printAction")}
                   hint={t("printHint")}
-                  onClick={() => void handlePrint()}
+                  onClick={() => void withCard("print", handlePrint)}
+                  disabled={making !== null}
+                  busy={making === "print"}
                 />
                 <ChannelButton
                   icon={<Share2 />}
                   label={t("shareAction")}
                   hint={t("otherApps")}
                   className="col-span-2"
-                  onClick={() => void handleShare()}
+                  onClick={() => void withCard("share", handleShare)}
+                  disabled={making !== null}
+                  busy={making === "share"}
                 />
               </div>
             )}
@@ -574,18 +596,25 @@ function ChannelButton({
   hint,
   onClick,
   className,
+  disabled,
+  busy,
 }: {
   icon: React.ReactNode;
   label: string;
   hint: string;
   onClick: () => void;
   className?: string;
+  disabled?: boolean;
+  busy?: boolean;
 }) {
+  const { t } = useI18n();
   return (
     <Button
       type="button"
       variant="outline"
       onClick={onClick}
+      disabled={disabled}
+      aria-busy={busy || undefined}
       className={cn(
         "h-auto flex-col items-start gap-0.5 rounded-lg px-3 py-2.5 text-left",
         className,
@@ -595,7 +624,9 @@ function ChannelButton({
         {icon}
         {label}
       </span>
-      <span className="text-xs font-normal text-muted-foreground">{hint}</span>
+      <span className="text-xs font-normal text-muted-foreground">
+        {busy ? t("preparingImage") : hint}
+      </span>
     </Button>
   );
 }
