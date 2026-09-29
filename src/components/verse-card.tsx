@@ -46,9 +46,11 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
           {shown?.ref ?? meta.ref}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">{source}</p>
-        <div className="mt-8 flex flex-col gap-2 sm:flex-row">
+        {/* With large text the labels may run to two lines and the buttons
+            stack, rather than spilling past the card. */}
+        <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Button
-            className="sm:flex-1"
+            className="h-auto min-h-12 py-2 whitespace-normal sm:flex-1"
             size="lg"
             disabled={!shown}
             onClick={() => shown && onSend(shown)}
@@ -60,7 +62,7 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
             type="button"
             variant={saved ? "secondary" : "outline"}
             size="lg"
-            className="sm:w-auto"
+            className="h-auto min-h-12 py-2 whitespace-normal sm:w-auto"
             disabled={!shown}
             onClick={() => shown && toggleFavorite(verse.id, shown)}
             aria-pressed={saved}
