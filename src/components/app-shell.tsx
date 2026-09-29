@@ -220,67 +220,74 @@ function PreacherApp({
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col">
-      <header className="flex items-center justify-between gap-2 px-3 pt-5 pb-3 min-[360px]:px-4 sm:gap-3 sm:px-5">
-        <Logo fit />
-        <div className="flex min-w-0 shrink-0 items-center gap-1">
+      {/* With large text the buttons move under the logo, and onto a second
+          line if need be, rather than off the side of the screen. The
+          container query is in rem, so it follows the text size. */}
+      <header className="@container flex flex-wrap items-center justify-between gap-2 px-3 pt-5 pb-3 min-[360px]:px-4 sm:gap-3 sm:px-5">
+        <Logo fit className="min-w-10 sm:min-w-12" />
+        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1">
           <LanguageSwitch compact />
-          {/* In the bar, not floating over the page, so it never covers a button. */}
-          <button
-            type="button"
-            onClick={() => setAskOpen(true)}
-            aria-label={t("askButton")}
-            title={t("askButton")}
-            className="inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full bg-primary px-2.5 text-sm font-medium text-primary-foreground transition-transform duration-150 active:scale-95"
-          >
-            <MessageCircleQuestion className="size-5 shrink-0" aria-hidden />
-            {/* Named only where the bar has room: signed in, on a phone.
-                Wider screens show the app's name there instead. */}
-            <span className={user ? "hidden pr-1 min-[360px]:inline sm:hidden" : "hidden"}>
-              {t("askButton")}
-            </span>
-          </button>
-          {isPending ? (
-            <span className="inline-flex h-11 w-16 animate-pulse rounded-full bg-secondary" />
-          ) : user ? (
+          {/* Pregunta and the profile stay side by side when the bar wraps. */}
+          <div className="flex flex-wrap items-center justify-end gap-1">
+            {/* In the bar, not floating over the page, so it never covers a button. */}
             <button
               type="button"
-              onClick={() => openProfile()}
-              data-profile-trigger
-              aria-haspopup="dialog"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
-              aria-label={t("profile")}
+              onClick={() => setAskOpen(true)}
+              aria-label={t("askButton")}
+              title={t("askButton")}
+              className="inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full bg-primary px-2.5 text-sm font-medium text-primary-foreground transition-transform duration-150 active:scale-95"
             >
-              {user.profileImageUrl ? (
-                <img
-                  src={user.profileImageUrl}
-                  alt=""
-                  className="h-6 w-6 rounded-full object-cover"
-                />
-              ) : (
-                <UserRound className="size-5" />
-              )}
+              <MessageCircleQuestion className="size-5 shrink-0" aria-hidden />
+              {/* Named only where the bar has room: signed in, on a phone,
+                  with text at its usual size. Wider screens show the app's
+                  name there instead. */}
+              <span className={user ? "hidden pr-1 max-sm:@min-[20.5rem]:inline" : "hidden"}>
+                {t("askButton")}
+              </span>
             </button>
-          ) : (
-            <div className="flex items-center gap-1">
+            {isPending ? (
+              <span className="inline-flex h-11 w-16 animate-pulse rounded-full bg-secondary" />
+            ) : user ? (
               <button
                 type="button"
-                onClick={() => openProfile("entrar")}
+                onClick={() => openProfile()}
                 data-profile-trigger
                 aria-haspopup="dialog"
-                className="inline-flex h-11 items-center rounded-full border border-border bg-card px-2.5 text-xs font-medium text-foreground sm:px-3.5 sm:text-sm"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
+                aria-label={t("profile")}
               >
-                {t("logIn")}
+                {user.profileImageUrl ? (
+                  <img
+                    src={user.profileImageUrl}
+                    alt=""
+                    className="h-6 w-6 rounded-full object-cover"
+                  />
+                ) : (
+                  <UserRound className="size-5" />
+                )}
               </button>
-              <button
-                type="button"
-                onClick={() => openProfile("crear")}
-                className="hidden h-11 items-center rounded-full border border-border bg-card px-2.5 text-xs font-medium text-foreground min-[360px]:inline-flex sm:px-3.5 sm:text-sm"
-              >
-                <span className="sm:hidden">{t("signupShort")}</span>
-                <span className="hidden sm:inline">{t("signupLink")}</span>
-              </button>
-            </div>
-          )}
+            ) : (
+              <div className="flex flex-wrap items-center justify-end gap-1">
+                <button
+                  type="button"
+                  onClick={() => openProfile("entrar")}
+                  data-profile-trigger
+                  aria-haspopup="dialog"
+                  className="inline-flex h-11 items-center rounded-full border border-border bg-card px-2.5 text-xs font-medium text-foreground sm:px-3.5 sm:text-sm"
+                >
+                  {t("logIn")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openProfile("crear")}
+                  className="hidden h-11 items-center rounded-full border border-border bg-card px-2.5 text-xs font-medium text-foreground min-[360px]:inline-flex sm:px-3.5 sm:text-sm"
+                >
+                  <span className="sm:hidden">{t("signupShort")}</span>
+                  <span className="hidden sm:inline">{t("signupLink")}</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
       <main className="flex-1 px-5 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
