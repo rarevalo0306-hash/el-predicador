@@ -38,6 +38,7 @@ import { versesIn, type VerseLink } from "@/lib/verse-links";
 import { hasMarkdown } from "@/lib/markdown-lite";
 import { MarkdownLite } from "@/components/markdown-lite";
 import { VerseSheet } from "@/components/verse-sheet";
+import { onTabListKeyDown } from "@/lib/tab-keys";
 
 type EvangelismoViewProps = {
   onSend: (verse: Verse) => void;
@@ -68,7 +69,12 @@ export function EvangelismoView({ onSend, onReadVerse }: EvangelismoViewProps) {
         <p className="mt-1 text-sm text-muted-foreground">{t("evangelismSub")}</p>
       </header>
 
-      <div className="grid grid-cols-3 gap-2" role="tablist" aria-label={t("preachFor")}>
+      <div
+        className="grid grid-cols-3 gap-2"
+        role="tablist"
+        aria-label={t("preachFor")}
+        onKeyDown={onTabListKeyDown}
+      >
         <PaneButton
           active={pane === "doctrina"}
           label={t("doctrine")}
@@ -134,6 +140,7 @@ function PaneButton({
       type="button"
       role="tab"
       aria-selected={active}
+      tabIndex={active ? 0 : -1}
       onClick={onClick}
       className={cn(
         "h-11 rounded-full border px-2 text-sm font-medium transition-colors duration-150",
@@ -165,7 +172,7 @@ function TopicRow({
       onClick={onClick}
       className="group flex w-full items-center gap-3 rounded-xl bg-card px-4 py-4 text-left shadow-paper transition-colors duration-150 hover:bg-secondary/80 active:bg-secondary"
     >
-      <span className="w-7 shrink-0 font-serif text-lg leading-none text-primary/70 tabular-nums">
+      <span className="w-7 shrink-0 font-serif text-lg leading-none text-primary/85 tabular-nums">
         {String(index + 1).padStart(2, "0")}
       </span>
       <span className="min-w-0 flex-1">
