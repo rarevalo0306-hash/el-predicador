@@ -52,12 +52,16 @@ function DrawerContent({
   children,
   closeLabel,
   onOpenAutoFocus,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Content> & {
   /** Shows a visible close button (44×44) with this name, focused on open. */
   closeLabel?: string;
 }) {
   const closeRef = React.useRef<HTMLButtonElement>(null);
+  // What had the focus when the panel opened. A panel opened from code has
+  // no trigger to go back to, so without this the focus fell to the page top.
+  const openerRef = React.useRef<HTMLElement | null>(null);
   return (
     <DrawerPortal>
       <DrawerOverlay />
@@ -68,12 +72,23 @@ function DrawerContent({
           className,
         )}
         onOpenAutoFocus={(event) => {
+          openerRef.current =
+            document.activeElement instanceof HTMLElement ? document.activeElement : null;
           onOpenAutoFocus?.(event);
           // Focus goes into the panel, on the close button rather than a
           // field, so a phone does not raise its keyboard on open.
           if (closeLabel && !event.defaultPrevented && closeRef.current) {
             event.preventDefault();
             closeRef.current.focus({ preventScroll: true });
+          }
+        }}
+        onCloseAutoFocus={(event) => {
+          onCloseAutoFocus?.(event);
+          const opener = openerRef.current;
+          openerRef.current = null;
+          if (!event.defaultPrevented && opener?.isConnected) {
+            event.preventDefault();
+            opener.focus({ preventScroll: true });
           }
         }}
         {...props}
