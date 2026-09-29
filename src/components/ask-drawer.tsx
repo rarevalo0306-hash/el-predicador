@@ -6,6 +6,7 @@ import { useI18n } from "@/components/language-switch";
 import { AskError, askStream, type AskTurn } from "@/lib/ask-client";
 import { MarkdownLite } from "@/components/markdown-lite";
 import { VerseSheet } from "@/components/verse-sheet";
+import { useDialogFocus } from "@/components/use-dialog-focus";
 import type { VerseLink } from "@/lib/verse-links";
 import type { Verse } from "@/lib/verses";
 import { passageQuestion } from "@/lib/ask-passage";
@@ -104,6 +105,9 @@ export function AskDrawer({
   const [remaining, setRemaining] = useState<number | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useDialogFocus(open, panelRef, closeRef);
   const area = useVisibleArea(open);
   // The answer on its way, so it can be stopped, and so a second tap or
   // Enter cannot ask the same question twice.
@@ -244,13 +248,15 @@ export function AskDrawer({
 
   return (
     <section
+      ref={panelRef}
       role="dialog"
       aria-modal="true"
       aria-label={t("askTitle")}
       className="fixed inset-x-0 z-50 flex flex-col bg-card text-card-foreground"
       style={area ? { top: area.top, height: area.height } : { top: 0, height: "100dvh" }}
     >
-      <header className="mx-auto flex w-full max-w-lg shrink-0 items-start justify-between gap-3 px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-2">
+      {/* A div, not <header>: inside the panel a header reads as a second page banner. */}
+      <div className="mx-auto flex w-full max-w-lg shrink-0 items-start justify-between gap-3 px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-2">
         <div className="min-w-0">
           <h2 className="font-serif text-2xl tracking-tight">{t("askTitle")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{t("askIntro")}</p>
@@ -267,6 +273,7 @@ export function AskDrawer({
             </button>
           ) : null}
           <button
+            ref={closeRef}
             type="button"
             onClick={() => onOpenChange(false)}
             className="inline-flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -275,7 +282,7 @@ export function AskDrawer({
             <X className="size-5" />
           </button>
         </div>
-      </header>
+      </div>
       {confirmClear ? (
         <div
           role="alertdialog"
