@@ -52,8 +52,11 @@ const BAR_TABS: { id: Exclude<Tab, "evangelio" | "guardados" | "admin">; icon: t
   { id: "personas", icon: Users },
 ];
 
+// With large text a label grows only as far as its button is wide, so none is
+// cut short or runs into the next; at the usual size it is text-xs as before.
+const BAR_LABEL = "max-w-full truncate text-[min(0.75rem,24cqw)]";
 const BAR_BUTTON =
-  "flex h-16 min-w-0 flex-col items-center justify-center gap-1 px-0.5 text-xs font-medium transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset";
+  "@container flex h-16 min-w-0 flex-col items-center justify-center gap-1 px-0.5 text-xs font-medium transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset";
 
 
 export function AppShell() {
@@ -288,7 +291,9 @@ function PreacherApp({
           </div>
         </div>
       </header>
-      <main className="flex-1 px-5 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+      {/* A container, so the screens' two-column grids can drop to one column
+          when the text is large (their rules are in rem). */}
+      <main className="@container flex-1 px-5 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
         {sync.loadFailed ? (
           <SyncNotice text={t("syncLoadFailed")} retry={t("retry")} onRetry={sync.retryLoad} />
         ) : sync.saveFailed ? (
@@ -362,7 +367,7 @@ function PreacherApp({
                 aria-current={active ? "page" : undefined}
               >
                 <Icon className="size-5" aria-hidden />
-                {labels[item.id]}
+                <span className={BAR_LABEL}>{labels[item.id]}</span>
               </button>
             );
           })}
@@ -380,7 +385,7 @@ function PreacherApp({
             )}
           >
             <Ellipsis className="size-5" aria-hidden />
-            {t("tabMore")}
+            <span className={BAR_LABEL}>{t("tabMore")}</span>
           </button>
         </div>
       </nav>
