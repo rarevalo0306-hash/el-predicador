@@ -128,7 +128,7 @@ export function ThemesView({
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 @min-[16rem]:grid-cols-2 gap-3">
           {THEMES.map((theme) => {
             const copy = localizedTheme(theme.id, locale);
             const count = versesForTheme(theme.id).length;

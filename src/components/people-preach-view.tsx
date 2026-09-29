@@ -431,7 +431,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
 
       <Button
         type="button"
-        className="h-12 w-full"
+        className="h-auto min-h-12 py-2 whitespace-normal w-full"
         onClick={() => {
           setSchedulePerson(null);
           setSection("schedules");
@@ -440,12 +440,12 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       >
         {scheduleCopy(locale).title}
       </Button>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 @min-[16rem]:grid-cols-2 gap-2">
         <button
           type="button"
           onClick={() => setSection("people")}
           className={cn(
-            "flex h-11 items-center justify-center gap-2 rounded-md border text-sm font-medium",
+            "flex min-h-11 items-center justify-center gap-2 rounded-md border px-2 py-2 text-sm font-medium",
             section === "people"
               ? "border-primary bg-primary text-primary-foreground"
               : "border-border bg-card",
@@ -458,7 +458,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
           type="button"
           onClick={() => setSection("church")}
           className={cn(
-            "flex h-11 items-center justify-center gap-2 rounded-md border text-sm font-medium",
+            "flex min-h-11 items-center justify-center gap-2 rounded-md border px-2 py-2 text-sm font-medium",
             section === "church"
               ? "border-primary bg-primary text-primary-foreground"
               : "border-border bg-card",
@@ -582,7 +582,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
               })}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 @min-[16rem]:grid-cols-2 gap-3">
             <div className="grid gap-2">
               <Label htmlFor="church-time">{t("churchTime")}</Label>
               <Input
@@ -620,7 +620,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
           <h2 id="people-list-title" ref={listHeadingRef} tabIndex={-1} className="sr-only">
             {t("preachPeople")}
           </h2>
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground" aria-live="polite">
               {recipients.length === 0
                 ? ""
@@ -630,7 +630,12 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
                     ? t("peopleCountOne")
                     : t("peopleCount", { n: recipients.length })}
             </p>
-            <Button type="button" className="shrink-0" data-person-new onClick={openNew}>
+            <Button
+              type="button"
+              className="ml-auto h-auto min-h-11 max-w-full shrink-0 py-2 whitespace-normal"
+              data-person-new
+              onClick={openNew}
+            >
               <Plus className="size-4" />
               {t("personAdd")}
             </Button>
@@ -885,7 +890,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
         <Button
           type="button"
           variant="outline"
-          className="w-full"
+          className="h-auto min-h-11 w-full py-2 whitespace-normal"
           onClick={() => void enableReminders()}
         >
           <Bell className="size-4" />
