@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,9 +26,12 @@ export function ContactForm({ compact }: ContactFormProps) {
   const [consent, setConsent] = useState(false);
   const [company, setCompany] = useState("");
   const [busy, setBusy] = useState(false);
+  // A second Enter before the button turns off must not register twice.
+  const sending = useRef(false);
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (sending.current) return;
     if (!consent) {
       toast.error(t("contactNeedConsent"));
       return;
@@ -37,6 +40,7 @@ export function ContactForm({ compact }: ContactFormProps) {
       toast.error(t("contactBadPhone"));
       return;
     }
+    sending.current = true;
     setBusy(true);
     try {
       const result = await submitContact({
@@ -65,6 +69,7 @@ export function ContactForm({ compact }: ContactFormProps) {
       else if (code === "too_many") toast.error(t("contactTooMany"));
       else toast.error(t("contactFail"));
     } finally {
+      sending.current = false;
       setBusy(false);
     }
   }

@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { Share2, Smartphone, UserRound } from "lucide-react";
@@ -53,11 +54,27 @@ export function SettingsDrawer({
   const fontScale = useAppStore((s) => s.fontScale);
   const setFontScale = useAppStore((s) => s.setFontScale);
 
+  // Turning reminders on waits for the permission prompt and today's verse;
+  // a second tap meanwhile must not ask twice or show two notifications.
+  const [turningOn, setTurningOn] = useState(false);
+  const turningOnRef = useRef(false);
   async function toggleNotify() {
+    if (turningOnRef.current) return;
     if (notify) {
       setNotify(false);
       return;
     }
+    turningOnRef.current = true;
+    setTurningOn(true);
+    try {
+      await turnNotifyOn();
+    } finally {
+      turningOnRef.current = false;
+      setTurningOn(false);
+    }
+  }
+
+  async function turnNotifyOn() {
     if (typeof Notification === "undefined") {
       toast(t("notifyUnsupported"));
       return;
@@ -221,7 +238,9 @@ export function SettingsDrawer({
           <button
             type="button"
             onClick={() => void toggleNotify()}
-            className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-3 text-left"
+            disabled={turningOn}
+            aria-busy={turningOn || undefined}
+            className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-3 text-left disabled:opacity-60"
             aria-pressed={notify}
           >
             <span>

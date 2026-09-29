@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { GROK_PROVIDERS, authClient, authEnabled, signIn } from "@/lib/auth/client";
@@ -61,6 +61,9 @@ export function SignInPanel({
   const [address, setAddress] = useState("");
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
+  // A second Enter before the button turns off must not create the account
+  // (and its registration) twice.
+  const submitting = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const creating = mode === "crear";
   const needDetails = collectDetails && creating;
@@ -97,6 +100,8 @@ export function SignInPanel({
       setError(t("contactBadPhone"));
       return;
     }
+    if (submitting.current) return;
+    submitting.current = true;
     setBusy(true);
     setError(null);
     try {
@@ -133,6 +138,7 @@ export function SignInPanel({
     } catch (err) {
       setError(err instanceof Error && err.message ? err.message : t("signInError"));
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }
