@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { FileSpreadsheet } from "lucide-react";
 import { REGISTRATION_SHEET_URL } from "@/lib/sheet";
 import { TextSkeleton } from "@/components/text-skeleton";
+import { onTabListKeyDown } from "@/lib/tab-keys";
 
 type Pane = "registrations" | "accounts" | "notes";
 
@@ -152,6 +153,8 @@ export function AdminView() {
       <div
         className="inline-flex w-full rounded-full border border-border bg-card p-0.5"
         role="tablist"
+        aria-label={t("adminTitle")}
+        onKeyDown={onTabListKeyDown}
       >
         {(data?.owner
           ? (["registrations", "accounts", "notes"] as const)
@@ -162,6 +165,7 @@ export function AdminView() {
             type="button"
             role="tab"
             aria-selected={pane === id}
+            tabIndex={pane === id ? 0 : -1}
             onClick={() => setPane(id)}
             className={cn(
               "h-11 flex-1 rounded-full px-4 text-sm font-medium transition-colors duration-150",
