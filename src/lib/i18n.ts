@@ -463,6 +463,16 @@ const es = {
     "La conexión oficial de la Biblia está pendiente de aprobación. Mientras tanto, puedes abrir el capítulo en el sitio oficial.",
   apiBibleUnavailable:
     "Esta versión no está disponible en este momento. Inténtalo de nuevo más tarde.",
+  apiBibleMissingKey:
+    "Esta versión aún no está configurada: falta guardar la clave de API.Bible (API_BIBLE_KEY) en Vercel.",
+  apiBibleRejectedKey:
+    "API.Bible rechazó la clave guardada (API_BIBLE_KEY). Revisa en Vercel que esté completa y vigente.",
+  apiBibleNoLicenseLbla:
+    "La clave de API.Bible no tiene acceso a La Biblia de las Américas (LBLA). Actívala en tu cuenta de API.Bible.",
+  apiBibleNoLicenseNasb:
+    "La clave de API.Bible no tiene acceso a la New American Standard Bible 2020. Actívala en tu cuenta de API.Bible.",
+  apiBibleLimit:
+    "Se alcanzó el límite de lecturas de API.Bible por ahora. Inténtalo de nuevo más tarde.",
   contactTitle: "Tus datos",
   contactLead:
     "Si quieres que te enviemos la palabra, deja tu nombre, correo, teléfono y dirección. Solo el predicador ve esta lista.",
@@ -1018,6 +1028,15 @@ const en: Record<keyof typeof es, string> = {
     "The official Bible connection is awaiting approval. In the meantime, you can open the chapter on the official site.",
   apiBibleUnavailable:
     "This version is not available right now. Please try again later.",
+  apiBibleMissingKey:
+    "This version is not set up yet: the API.Bible key (API_BIBLE_KEY) still has to be saved in Vercel.",
+  apiBibleRejectedKey:
+    "API.Bible turned down the saved key (API_BIBLE_KEY). Check in Vercel that it is complete and current.",
+  apiBibleNoLicenseLbla:
+    "The API.Bible key has no access to La Biblia de las Américas (LBLA). Turn it on in your API.Bible account.",
+  apiBibleNoLicenseNasb:
+    "The API.Bible key has no access to the New American Standard Bible 2020. Turn it on in your API.Bible account.",
+  apiBibleLimit: "The API.Bible reading limit has been reached for now. Please try again later.",
   contactTitle: "Your details",
   contactLead:
     "If you want us to send you the word, leave your name, email, phone, and address. Only the preacher sees this list.",

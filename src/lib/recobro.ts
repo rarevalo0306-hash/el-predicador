@@ -10,6 +10,7 @@ import {
   type BibleBook,
 } from "@/lib/bible";
 import { t, type Locale } from "@/lib/i18n";
+import { apiBibleProblem, type ApiBibleProblem } from "@/lib/api-bible-problem";
 import { rangeOf, type VerseRange } from "@/lib/verse-memory";
 import {
   catalogSpan,
@@ -56,6 +57,15 @@ function toVerse(
   };
 }
 
+const API_BIBLE_PROBLEM_TEXT = {
+  "missing-key": "apiBibleMissingKey",
+  "rejected-key": "apiBibleRejectedKey",
+  "no-license-lbla": "apiBibleNoLicenseLbla",
+  "no-license-nasb20": "apiBibleNoLicenseNasb",
+  limit: "apiBibleLimit",
+  unavailable: "apiBibleUnavailable",
+} as const satisfies Record<ApiBibleProblem, string>;
+
 async function loadRecobro(
   book: BibleBook,
   chapter: number,
@@ -96,9 +106,10 @@ async function loadRecobro(
       if (error.message === "lsm-missing" || error.message === "lsm-pending") {
         throw new Error(t(locale, "bibleApiPending"));
       }
-      if (error.message.startsWith("api-bible-")) {
-        throw new Error(t(locale, "apiBibleUnavailable"));
-      }
+      // Say which condition is missing (key, license, limit), not just
+      // "not available", so the owner knows what to fix.
+      const problem = apiBibleProblem(error);
+      if (problem) throw new Error(t(locale, API_BIBLE_PROBLEM_TEXT[problem]));
     }
     throw new Error(t(locale, "chapterOpenFail"));
   }
