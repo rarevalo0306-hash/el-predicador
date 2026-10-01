@@ -135,6 +135,9 @@ function newId() {
 
 type AppState = CloudPayload & {
   locale: Locale;
+  /** Changes when the verses DeepSeek added to the themes arrive; not synced. */
+  themeExtrasVersion: number;
+  bumpThemeExtras: () => void;
   toggleFavorite: (id: string, verse?: Verse) => void;
   setFavoriteKind: (id: string, kind: MessageKind) => void;
   rememberVerse: (verse: Verse) => void;
@@ -169,6 +172,8 @@ type AppState = CloudPayload & {
 export const useAppStore = create<AppState>()((set, get) => ({
   ...EMPTY_CLOUD,
   locale: "es",
+  themeExtrasVersion: 0,
+  bumpThemeExtras: () => set((state) => ({ themeExtrasVersion: state.themeExtrasVersion + 1 })),
   setFavoriteKind: (id, kind) =>
     set((state) => ({
       favoriteKinds: { ...state.favoriteKinds, [id]: kind },

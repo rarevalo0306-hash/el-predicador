@@ -80,6 +80,8 @@ const emptyForm: RecipientInput = {
 
 export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   const { locale, t } = useI18n();
+  // Re-read the themes when the verses DeepSeek added arrive.
+  useAppStore((s) => s.themeExtrasVersion);
   const recipients = useAppStore((s) => s.recipients);
   const upsertRecipient = useAppStore((s) => s.upsertRecipient);
   const removeRecipient = useAppStore((s) => s.removeRecipient);

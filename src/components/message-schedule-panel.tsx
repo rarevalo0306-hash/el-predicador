@@ -121,6 +121,8 @@ function MessageScheduleForm({
   const { locale, t } = useI18n();
   const copy = scheduleCopy(locale);
   const { user, isPending } = useCurrentUserState();
+  // Re-read the themes when the verses DeepSeek added arrive.
+  useAppStore((s) => s.themeExtrasVersion);
   const recipients = useAppStore((s) => s.recipients);
   const displayName = useAppStore((s) => s.displayName);
   const id = useId();
