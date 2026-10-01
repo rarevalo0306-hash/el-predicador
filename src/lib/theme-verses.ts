@@ -77,7 +77,7 @@ export const expandThemeVerses = createServerFn({ method: "POST" })
     const { getSql } = await import("@/lib/db");
     const sql = await getSql();
     const theme = themeById(themeId);
-    return expandTheme(sql, themeId, {
+    const result = await expandTheme(sql, themeId, {
       propose: (existing) =>
         proposeThemeRefs({ theme: theme.name, line: theme.line, existing, count: 10 }),
       canonical: (ref) => {
@@ -104,6 +104,16 @@ export const expandThemeVerses = createServerFn({ method: "POST" })
         return { ref: verse.ref, text: verse.text, source: verse.source ?? null };
       },
     });
+    // Counts only, so the owner's run can be read in the logs.
+    const count = (reason: string) => result.rejected.filter((r) => r.reason === reason).length;
+    console.info("[theme-verses] expanded", {
+      themeId,
+      added: result.added.length,
+      repeated: count("repeated"),
+      invalid: count("invalid"),
+      noText: count("no_text"),
+    });
+    return result;
   });
 
 /** Takes one added verse out of a theme; its kept text stays for sends already made. */

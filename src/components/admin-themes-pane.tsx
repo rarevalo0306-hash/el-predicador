@@ -25,7 +25,10 @@ export function AdminThemesPane() {
   const [loadError, setLoadError] = useState(false);
   const [working, setWorking] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
-  const [added, setAdded] = useState<{ theme: string; refs: string[] }[]>([]);
+  /** What each theme got in the last run, including the ones that got nothing new. */
+  const [added, setAdded] = useState<
+    { theme: string; refs: string[]; repeated: number; invalid: number; noText: number }[]
+  >([]);
   const [removing, setRemoving] = useState<string | null>(null);
   const stop = useRef(false);
   const unmounted = useRef(false);
@@ -43,6 +46,9 @@ export function AdminThemesPane() {
   }
 
   useEffect(() => {
+    // Set again on every mount: a remount (React runs effects twice in
+    // development) must not leave the pane thinking it was closed.
+    unmounted.current = false;
     void refresh();
     return () => {
       unmounted.current = true;
@@ -63,12 +69,18 @@ export function AdminThemesPane() {
         setWorking(id);
         try {
           const result = await expandThemeVerses({ data: { themeId: id } });
-          if (result.added.length) {
-            setAdded((list) => [
-              ...list,
-              { theme: localizedTheme(id as never, locale).name, refs: result.added },
-            ]);
-          }
+          const count = (reason: string) =>
+            result.rejected.filter((item) => item.reason === reason).length;
+          setAdded((list) => [
+            ...list,
+            {
+              theme: localizedTheme(id as never, locale).name,
+              refs: result.added,
+              repeated: count("repeated"),
+              invalid: count("invalid"),
+              noText: count("no_text"),
+            },
+          ]);
         } catch (error) {
           failed = error instanceof Error ? error.message : String(error);
           // A rejected or unpaid key fails every theme alike; anything else
@@ -150,7 +162,21 @@ export function AdminThemesPane() {
           <ul className="mt-1 list-disc space-y-1 pl-5">
             {added.map((item) => (
               <li key={item.theme}>
-                {item.theme}: {item.refs.join(", ")}
+                {item.theme}: {item.refs.length ? item.refs.join(", ") : t("adminThemesNothingNew")}
+                {item.repeated + item.invalid + item.noText ? (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    (
+                    {[
+                      item.repeated ? t("adminThemesSkipRepeated", { n: item.repeated }) : "",
+                      item.invalid ? t("adminThemesSkipInvalid", { n: item.invalid }) : "",
+                      item.noText ? t("adminThemesSkipNoText", { n: item.noText }) : "",
+                    ]
+                      .filter(Boolean)
+                      .join(", ")}
+                    )
+                  </span>
+                ) : null}
               </li>
             ))}
           </ul>
