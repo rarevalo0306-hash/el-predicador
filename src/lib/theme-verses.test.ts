@@ -116,3 +116,21 @@ test("themes are separate: a verse in one theme can be added to another", async 
   const other = await expandTheme(sql, "fe", deps(["B 2:3"]));
   assert.deepEqual(other.added, ["B 2:3"]);
 });
+
+test("a passage whose words do not arrive in time is skipped, not waited for", async () => {
+  const started = Date.now();
+  const result = await expandTheme(
+    sql,
+    "paz",
+    deps(["B 2:3", "B 3:1"], {
+      textBudgetMs: 50,
+      textOf: (passage, locale) =>
+        passage.ref === "B 3:1"
+          ? new Promise(() => undefined)
+          : Promise.resolve({ ref: passage.ref, text: `${locale} text` }),
+    }),
+  );
+  assert.ok(Date.now() - started < 2000);
+  assert.deepEqual(result.added, ["B 2:3"]);
+  assert.deepEqual(result.rejected, [{ ref: "B 3:1", reason: "no_text" }]);
+});

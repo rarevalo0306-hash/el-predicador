@@ -21,6 +21,8 @@ export type ExpandDeps = {
   textOf: (passage: Passage, locale: Locale) => Promise<VerseText | null>;
   /** At most this many are added in one step. */
   limit?: number;
+  /** How long the words may take to arrive, all passages together. */
+  textBudgetMs?: number;
 };
 
 export type ExpandResult = {
@@ -51,25 +53,61 @@ export async function expandTheme(
     .filter((span): span is Passage["span"] => Boolean(span));
 
   const proposals = await deps.propose(existing);
-  const result: ExpandResult = { added: [], rejected: [] };
   const limit = deps.limit ?? 12;
-  for (const raw of proposals) {
-    if (result.added.length >= limit) break;
+  const rejected: (ExpandResult["rejected"][number] & { at: number })[] = [];
+
+  // First the checks that need nothing fetched.
+  const candidates: { at: number; passage: Passage }[] = [];
+  const seen = new Set<string>();
+  proposals.forEach((raw, at) => {
+    if (candidates.length >= limit + 6) return;
     const passage = deps.canonical(raw);
     if (!passage) {
-      result.rejected.push({ ref: raw, reason: "invalid" });
+      rejected.push({ at, ref: raw, reason: "invalid" });
+      return;
+    }
+    if (seen.has(passage.id) || taken.some((span) => overlaps(span, passage.span))) {
+      rejected.push({ at, ref: passage.ref, reason: "repeated" });
+      return;
+    }
+    seen.add(passage.id);
+    candidates.push({ at, passage });
+  });
+
+  // Then the words, a few at a time, so one step stays well inside the
+  // serverless time limit; a passage still loading at the deadline is skipped.
+  const deadline = Date.now() + (deps.textBudgetMs ?? 20_000);
+  const textOf = (passage: Passage, locale: Locale) => {
+    const left = deadline - Date.now();
+    if (left <= 0) return Promise.resolve(null);
+    return Promise.race([
+      deps.textOf(passage, locale).catch(() => null),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), left)),
+    ]);
+  };
+  const texts: [VerseText | null, VerseText | null][] = [];
+  for (let i = 0; i < candidates.length; i += 6) {
+    const batch = candidates.slice(i, i + 6);
+    texts.push(
+      ...(await Promise.all(
+        batch.map(({ passage }) => Promise.all([textOf(passage, "es"), textOf(passage, "en")])),
+      )),
+    );
+  }
+
+  const added: string[] = [];
+  const accepted: Passage["span"][] = [];
+  for (const [index, { at, passage }] of candidates.entries()) {
+    if (added.length >= limit) break;
+    if (accepted.some((span) => overlaps(span, passage.span))) {
+      rejected.push({ at, ref: passage.ref, reason: "repeated" });
       continue;
     }
-    if (taken.some((span) => overlaps(span, passage.span))) {
-      result.rejected.push({ ref: passage.ref, reason: "repeated" });
-      continue;
-    }
-    const es = await deps.textOf(passage, "es").catch(() => null);
+    const [es, en] = texts[index] ?? [null, null];
     if (!es?.text.trim()) {
-      result.rejected.push({ ref: passage.ref, reason: "no_text" });
+      rejected.push({ at, ref: passage.ref, reason: "no_text" });
       continue;
     }
-    const en = await deps.textOf(passage, "en").catch(() => null);
     for (const [locale, text] of [
       ["es", es],
       ["en", en],
@@ -82,8 +120,11 @@ export async function expandTheme(
     await sql`insert into theme_verses (theme_id, verse_id, ref)
       values (${themeId}, ${passage.id}, ${passage.ref})
       on conflict (theme_id, verse_id) do nothing`;
-    taken.push(passage.span);
-    result.added.push(passage.ref);
+    accepted.push(passage.span);
+    added.push(passage.ref);
   }
-  return result;
+  return {
+    added,
+    rejected: rejected.sort((a, b) => a.at - b.at).map(({ ref, reason }) => ({ ref, reason })),
+  };
 }
