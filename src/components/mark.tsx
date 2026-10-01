@@ -5,10 +5,10 @@ import { cn } from "@/lib/utils";
 export function PreacherMark({ className }: { className?: string }) {
   return (
     <img
-      src="/logo.svg?v=5"
+      src="/icon-192.png"
       alt=""
-      width={160}
-      height={160}
+      width={192}
+      height={192}
       className={cn("size-10 rounded-full object-cover", className)}
       crossOrigin="anonymous"
       aria-hidden

@@ -1,4 +1,6 @@
 const SW_URL = "/preacher-sw.js";
+/** The seal, so the reminder is recognisable among other notifications. */
+const NOTIFY_ICON = "/icon-192.png";
 
 export async function ensurePreacherServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return null;
@@ -32,12 +34,17 @@ export async function showDailyNotification(opts: {
     await registration.showNotification(opts.title, {
       body: opts.body,
       tag: opts.tag ?? "daily-verse",
+      icon: NOTIFY_ICON,
       data: { url: "/" },
     });
     return true;
   }
   try {
-    new Notification(opts.title, { body: opts.body, tag: opts.tag ?? "daily-verse" });
+    new Notification(opts.title, {
+      body: opts.body,
+      tag: opts.tag ?? "daily-verse",
+      icon: NOTIFY_ICON,
+    });
     return true;
   } catch {
     return false;
