@@ -198,7 +198,7 @@ test("theme proposals ask for JSON, read a thinking model's reasoning and say wh
     type: "json_object",
   });
 
-  const calls: unknown[] = [];
+  const calls: { body?: unknown }[] = [];
   await assert.rejects(
     proposeThemeRefs(
       { theme: "Paz", line: "", existing: [], count: 5 },
