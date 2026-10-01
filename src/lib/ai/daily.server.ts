@@ -272,19 +272,41 @@ export async function proposeThemeRefs(
       linea: input.line,
       ya_tiene: input.existing.slice(0, 120),
     }),
-    60 * input.count + 200,
-    25_000,
+    // Room for a model that thinks before it answers; this step does
+    // nothing else, so it can wait most of a serverless request.
+    2_500,
+    45_000,
     config,
     request,
   );
-  const json = raw.text.slice(raw.text.indexOf("{"), raw.text.lastIndexOf("}") + 1);
-  let parsed: { refs?: unknown };
-  try {
-    parsed = JSON.parse(json);
-  } catch {
-    throw new Error("deepseek_bad_json");
+  const refs = readRefs(raw.text);
+  if (!refs.length) throw new Error("deepseek_bad_json");
+  return refs.slice(0, input.count * 2);
+}
+
+const REF =
+  /(?:[1-3]\s)?\p{Lu}[\p{L}]+(?:\s[\p{L}]+){0,3}\s\d{1,3}:\d{1,3}(?:\s*[-–—]\s*\d{1,3})?/gu;
+
+/**
+ * The references in DeepSeek's answer: the JSON asked for when it comes
+ * whole, else every "Libro 1:2" written anywhere in it (a fenced block, a
+ * list, a cut-off answer). The caller checks each one against the Bible.
+ */
+export function readRefs(text: string): string[] {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start >= 0 && end > start) {
+    try {
+      const parsed = JSON.parse(text.slice(start, end + 1)) as { refs?: unknown };
+      if (Array.isArray(parsed.refs)) {
+        const refs = parsed.refs.filter(
+          (ref): ref is string => typeof ref === "string" && ref.length <= 60,
+        );
+        if (refs.length) return refs;
+      }
+    } catch {
+      /* not whole JSON: read the references out of the text */
+    }
   }
-  return (Array.isArray(parsed.refs) ? parsed.refs : [])
-    .filter((ref): ref is string => typeof ref === "string" && ref.length <= 60)
-    .slice(0, input.count * 2);
+  return [...new Set(text.match(REF) ?? [])].filter((ref) => ref.length <= 60);
 }

@@ -5,7 +5,8 @@ import { useI18n } from "@/components/language-switch";
 import { useAppStore } from "@/lib/store";
 import { localizedTheme, setThemeExtras } from "@/lib/verses";
 import {
-  expandThemeVerses,
+  proposeThemeVerses,
+  publishThemeVerses,
   getThemeExtras,
   getThemeExtrasStatus,
   removeThemeVerse,
@@ -68,7 +69,9 @@ export function AdminThemesPane() {
         if (stop.current || unmounted.current) break;
         setWorking(id);
         try {
-          const result = await expandThemeVerses({ data: { themeId: id } });
+          const { refs } = await proposeThemeVerses({ data: { themeId: id } });
+          if (stop.current || unmounted.current) break;
+          const result = await publishThemeVerses({ data: { themeId: id, refs } });
           const count = (reason: string) =>
             result.rejected.filter((item) => item.reason === reason).length;
           setAdded((list) => [
@@ -99,7 +102,10 @@ export function AdminThemesPane() {
     if (/deepseek_(401|403)/.test(code)) return t("adminThemesKeyBad");
     if (code.includes("deepseek_402")) return t("adminThemesNoBalance");
     if (/deepseek_429|deepseek_5\d\d/.test(code)) return t("adminThemesBusy");
-    if (/timeout|aborted|deepseek_bad_json|fetch/i.test(code)) return t("adminThemesSlow");
+    // The code stays visible, so a repeat of this can be told apart.
+    if (/timeout|aborted|deepseek_bad_json|fetch/i.test(code)) {
+      return `${t("adminThemesSlow")} (${code.slice(0, 60)})`;
+    }
     return t("adminNotesFail", { error: code });
   }
 
