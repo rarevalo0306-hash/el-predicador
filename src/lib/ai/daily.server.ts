@@ -269,7 +269,7 @@ export async function proposeThemeRefs(
       ya_tiene: input.existing.slice(0, 120),
     }),
     60 * input.count + 200,
-    40_000,
+    25_000,
     config,
     request,
   );

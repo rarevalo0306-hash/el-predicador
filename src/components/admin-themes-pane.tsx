@@ -56,24 +56,39 @@ export function AdminThemesPane() {
     stop.current = false;
     setFailure(null);
     setAdded([]);
+    let failed: string | null = null;
     try {
       for (const id of ids) {
         if (stop.current || unmounted.current) break;
         setWorking(id);
-        const result = await expandThemeVerses({ data: { themeId: id } });
-        if (result.added.length) {
-          setAdded((list) => [
-            ...list,
-            { theme: localizedTheme(id as never, locale).name, refs: result.added },
-          ]);
+        try {
+          const result = await expandThemeVerses({ data: { themeId: id } });
+          if (result.added.length) {
+            setAdded((list) => [
+              ...list,
+              { theme: localizedTheme(id as never, locale).name, refs: result.added },
+            ]);
+          }
+        } catch (error) {
+          failed = error instanceof Error ? error.message : String(error);
+          // A rejected or unpaid key fails every theme alike; anything else
+          // (a slow answer, a busy moment) only skips this one.
+          if (/deepseek_(401|402|403)|not_configured|forbidden/.test(failed)) break;
         }
       }
-    } catch (error) {
-      setFailure(error instanceof Error ? error.message : String(error));
     } finally {
+      if (failed) setFailure(failed);
       setWorking(null);
       await refresh();
     }
+  }
+
+  function failureText(code: string) {
+    if (/deepseek_(401|403)/.test(code)) return t("adminThemesKeyBad");
+    if (code.includes("deepseek_402")) return t("adminThemesNoBalance");
+    if (/deepseek_429|deepseek_5\d\d/.test(code)) return t("adminThemesBusy");
+    if (/timeout|aborted|deepseek_bad_json|fetch/i.test(code)) return t("adminThemesSlow");
+    return t("adminNotesFail", { error: code });
   }
 
   async function remove(themeId: string, verseId: string) {
@@ -126,7 +141,7 @@ export function AdminThemesPane() {
       <p className="text-xs text-muted-foreground">{t("adminThemesTotal", { n: totalExtras })}</p>
       {failure ? (
         <p role="alert" className="text-sm text-destructive">
-          {t("adminNotesFail", { error: failure })}
+          {failureText(failure)}
         </p>
       ) : null}
       {added.length ? (

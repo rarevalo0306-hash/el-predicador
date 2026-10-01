@@ -150,6 +150,13 @@ const es = {
   adminThemesCount: "{own} propios + {extra} de la IA",
   adminThemesSeeAdded: "Ver los añadidos",
   adminThemesRemove: "Quitar",
+  adminThemesKeyBad:
+    "DeepSeek no aceptó la clave. Revisa DEEPSEEK_API_KEY en Vercel (sin espacios) y vuelve a publicar.",
+  adminThemesNoBalance:
+    "La cuenta de DeepSeek no tiene saldo. Recárgala en platform.deepseek.com y vuelve a intentar.",
+  adminThemesBusy: "DeepSeek está ocupado ahora. Espera un minuto y vuelve a intentar.",
+  adminThemesSlow:
+    "Algún tema tardó demasiado y se saltó. Vuelve a pulsar Ampliar; lo ya publicado se queda.",
   adminThemesRemoveAria: "Quitar {ref} de {theme}",
   adminNotesSub:
     "Frases de ánimo para acompañar cada versículo en los envíos por tema. Se escriben una sola vez con DeepSeek y quedan guardadas; después ningún envío depende de ese servicio.",
@@ -720,6 +727,13 @@ const en: Record<keyof typeof es, string> = {
   adminThemesCount: "{own} own + {extra} from the AI",
   adminThemesSeeAdded: "See the added ones",
   adminThemesRemove: "Remove",
+  adminThemesKeyBad:
+    "DeepSeek did not accept the key. Check DEEPSEEK_API_KEY in Vercel (no spaces) and redeploy.",
+  adminThemesNoBalance:
+    "The DeepSeek account has no balance. Top it up at platform.deepseek.com and try again.",
+  adminThemesBusy: "DeepSeek is busy right now. Wait a minute and try again.",
+  adminThemesSlow:
+    "Some theme took too long and was skipped. Press Grow again; what was published stays.",
   adminThemesRemoveAria: "Remove {ref} from {theme}",
   adminNotesSub:
     "Lines of encouragement to go with each verse in theme sends. Written once with DeepSeek and stored; afterwards no send depends on that service.",

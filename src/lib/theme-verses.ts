@@ -79,7 +79,7 @@ export const expandThemeVerses = createServerFn({ method: "POST" })
     const theme = themeById(themeId);
     return expandTheme(sql, themeId, {
       propose: (existing) =>
-        proposeThemeRefs({ theme: theme.name, line: theme.line, existing, count: 15 }),
+        proposeThemeRefs({ theme: theme.name, line: theme.line, existing, count: 10 }),
       canonical: (ref) => {
         const passage = canonicalPassage(ref);
         return passage
