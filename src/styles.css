@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Night mode follows the `dark` class on <html> (src/lib/color-theme.ts),
+   not only the system setting, so a reader can choose it. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-background: #f4ead6;
   --color-foreground: #221711;
@@ -41,6 +45,36 @@
   --motion-quick: 150ms;
   --motion-fast: 250ms;
   --motion-slow: 400ms;
+}
+
+/* Noche: the night palette. Same token names as the day theme above, so
+   components need no changes; values from the design system's dark theme. */
+html.dark {
+  --color-background: #17120e;
+  --color-foreground: #ecdfc8;
+  --color-card: #2a221c;
+  --color-card-foreground: #ecdfc8;
+  --color-popover: #2a221c;
+  --color-popover-foreground: #ecdfc8;
+  --color-primary: #cf8794;
+  --color-primary-foreground: #2b1117;
+  --color-secondary: #3b2f25;
+  --color-secondary-foreground: #ecdfc8;
+  --color-muted: #3b2f25;
+  --color-muted-foreground: #ad9c84;
+  --color-accent: #3b2f25;
+  --color-accent-foreground: #ecdfc8;
+  --color-destructive: #f4b088;
+  --color-destructive-foreground: #2a0e0b;
+  --color-border: #4a3b2e;
+  --color-input: #85705a;
+  --color-ring: #d4ac5e;
+  --color-paper: #110d0a;
+
+  --shadow-paper: 0 1px 0 rgb(0 0 0 / 0.35),
+    0 22px 44px -20px rgb(0 0 0 / 0.6);
+
+  color-scheme: dark;
 }
 
 @layer base {
@@ -134,6 +168,11 @@
   box-decoration-break: clone;
   border-radius: 0.15em;
   padding: 0.05em 0.12em;
+}
+
+.dark .verse-highlight {
+  /* A softer gold at night, so a marked verse doesn't glare. */
+  background: color-mix(in oklab, #c99a2e 35%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {

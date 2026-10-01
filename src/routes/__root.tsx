@@ -2,6 +2,7 @@ import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-r
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { Toaster } from "@/components/ui/sonner";
+import { THEME_BOOT_SCRIPT } from "@/lib/color-theme";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "The Preacher APP";
@@ -40,6 +41,8 @@ export const Route = createRootRoute({
     <html lang="es" className="antialiased" suppressHydrationWarning>
       <head>
         <HeadContent />
+        {/* Day or night colours before the first paint (see color-theme.ts). */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
       <body>
         <PreviewHostBridge />
