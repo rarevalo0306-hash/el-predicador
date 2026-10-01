@@ -114,7 +114,8 @@ async function chat(
   timeoutMs: number,
   config: Config,
   request: typeof fetch,
-): Promise<{ text: string; cutOff: boolean }> {
+  options: { json?: boolean } = {},
+): Promise<{ text: string; cutOff: boolean; finish: string; reasoning: string }> {
   if (!config.DEEPSEEK_API_KEY) throw new Error("deepseek_not_configured");
   const response = await request(
     `${config.DEEPSEEK_BASE_URL || "https://api.deepseek.com"}/chat/completions`,
@@ -128,6 +129,7 @@ async function chat(
         model: config.DEEPSEEK_MODEL || "deepseek-flash",
         temperature: 1.1,
         max_tokens: maxTokens,
+        ...(options.json ? { response_format: { type: "json_object" } } : {}),
         messages: [
           { role: "system", content: system },
           { role: "user", content: user },
@@ -138,11 +140,19 @@ async function chat(
   );
   if (!response.ok) throw new Error(`deepseek_${response.status}`);
   const body = (await response.json()) as {
-    choices?: { message?: { content?: string }; finish_reason?: string }[];
+    choices?: {
+      message?: { content?: string; reasoning_content?: string };
+      finish_reason?: string;
+    }[];
   };
   const choice = body.choices?.[0];
   // "length" means the model ran out of room mid-sentence.
-  return { text: choice?.message?.content ?? "", cutOff: choice?.finish_reason === "length" };
+  return {
+    text: choice?.message?.content ?? "",
+    cutOff: choice?.finish_reason === "length",
+    finish: choice?.finish_reason ?? "none",
+    reasoning: choice?.message?.reasoning_content ?? "",
+  };
 }
 
 const SENTENCE_END = /[.!?…]["”»')\]]*$/;
@@ -265,27 +275,31 @@ export async function proposeThemeRefs(
   const system = THEME_REFS.replace("{who}", VOICE.es.who)
     .replace("{forbidden}", VOICE.es.forbidden)
     .replace("{n}", String(input.count));
-  const raw = await chat(
-    system,
-    JSON.stringify({
-      tema: input.theme,
-      linea: input.line,
-      ya_tiene: input.existing.slice(0, 120),
-    }),
-    // Room for a model that thinks before it answers; this step does
-    // nothing else, so it can wait most of a serverless request.
-    2_500,
-    45_000,
-    config,
-    request,
-  );
-  const refs = readRefs(raw.text);
-  if (!refs.length) throw new Error("deepseek_bad_json");
-  return refs.slice(0, input.count * 2);
+  const user = JSON.stringify({
+    tema: input.theme,
+    linea: input.line,
+    ya_tiene: input.existing.slice(0, 120),
+  });
+  // JSON mode, as the verse lines use; one more try if nothing usable comes
+  // back. A model that thinks first may leave its answer in the reasoning.
+  let seen = "";
+  const started = Date.now();
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    // The retry only when the first answer came quickly: both together must
+    // stay inside one serverless request.
+    if (attempt === 2 && Date.now() - started > 15_000) break;
+    const raw = await chat(system, user, 2_500, 40_000, config, request, { json: true });
+    const refs = readRefs(raw.text.trim() ? raw.text : raw.reasoning);
+    if (refs.length) return refs.slice(0, input.count * 2);
+    const sample = raw.text.replace(/\s+/g, " ").trim().slice(0, 80);
+    seen = `${raw.finish}, ${raw.text.length} chars${sample ? `: ${sample}` : ""}`;
+  }
+  // What came back, short, so the owner's screen says what to fix.
+  throw new Error(`deepseek_bad_json [${seen}]`);
 }
 
 const REF =
-  /(?:[1-3]\s)?\p{Lu}[\p{L}]+(?:\s[\p{L}]+){0,3}\s\d{1,3}:\d{1,3}(?:\s*[-–—]\s*\d{1,3})?/gu;
+  /(?:[1-3]\s)?\p{Lu}[\p{L}]+(?:\s[\p{L}]+){0,3}\s\d{1,3}\s?[:.]\s?\d{1,3}(?:\s*[-–—]\s*\d{1,3})?/gu;
 
 /**
  * The references in DeepSeek's answer: the JSON asked for when it comes
@@ -308,5 +322,9 @@ export function readRefs(text: string): string[] {
       /* not whole JSON: read the references out of the text */
     }
   }
-  return [...new Set(text.match(REF) ?? [])].filter((ref) => ref.length <= 60);
+  // "Juan 3.16" and "Juan 3: 16" are read as "Juan 3:16".
+  const found = (text.match(REF) ?? []).map((ref) =>
+    ref.replace(/(\d{1,3})\s?[:.]\s?(\d{1,3})/, "$1:$2"),
+  );
+  return [...new Set(found)].filter((ref) => ref.length <= 60);
 }

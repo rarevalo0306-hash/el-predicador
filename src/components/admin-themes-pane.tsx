@@ -104,7 +104,7 @@ export function AdminThemesPane() {
     if (/deepseek_429|deepseek_5\d\d/.test(code)) return t("adminThemesBusy");
     // The code stays visible, so a repeat of this can be told apart.
     if (/timeout|aborted|deepseek_bad_json|fetch/i.test(code)) {
-      return `${t("adminThemesSlow")} (${code.slice(0, 60)})`;
+      return `${t("adminThemesSlow")} (${code.slice(0, 160)})`;
     }
     return t("adminNotesFail", { error: code });
   }
