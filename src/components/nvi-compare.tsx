@@ -4,11 +4,16 @@ import { useI18n } from "@/components/language-switch";
 import {
   NVI_ROWS,
   localizedNvi,
-  nviDigestVerse,
-  nviRowVerse,
+  nviDigestVerseFrom,
+  nviRowVerseFrom,
   nviSystem,
+  readRecobroRows,
+  type RecobroReading,
 } from "@/lib/nvi-compare";
+import { useEffect, useState } from "react";
 import type { Verse } from "@/lib/verses";
+import { BibleNotice } from "@/components/bible-notice";
+import { recobroSource } from "@/lib/bible";
 
 type NviCompareProps = {
   onSend: (verse: Verse) => void;
@@ -16,6 +21,22 @@ type NviCompareProps = {
 
 export function NviCompare({ onSend }: NviCompareProps) {
   const { locale, t } = useI18n();
+  // The Recovery Version passages are read live each visit: the app keeps
+  // none of LSM's text. Null while reading.
+  const [recobro, setRecobro] = useState<Record<string, RecobroReading> | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setRecobro(null);
+    void readRecobroRows(locale)
+      .catch(() => ({}))
+      .then((read) => {
+        if (!cancelled) setRecobro(read);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [locale]);
+  const digest = recobro ? nviDigestVerseFrom(locale, recobro) : null;
   return (
     <section className="flex flex-col gap-4">
       <div className="rounded-xl bg-card px-4 py-4 shadow-paper">
@@ -33,7 +54,8 @@ export function NviCompare({ onSend }: NviCompareProps) {
       <Button
         size="lg"
         variant="secondary"
-        onClick={() => onSend(nviDigestVerse(locale))}
+        disabled={!digest}
+        onClick={() => digest && onSend(digest)}
       >
         <Send />
         {t("sendAllComparisons")}
@@ -41,6 +63,7 @@ export function NviCompare({ onSend }: NviCompareProps) {
       <div className="flex flex-col gap-3">
         {NVI_ROWS.map((item) => {
           const row = localizedNvi(item, locale);
+          const read = recobro?.[item.id];
           return (
             <article key={item.id} className="rounded-xl bg-card px-4 py-4 shadow-paper">
               <p className="text-xs font-medium tracking-[0.12em] text-primary uppercase">
@@ -50,13 +73,17 @@ export function NviCompare({ onSend }: NviCompareProps) {
               <p className="mt-3 font-serif text-xl leading-snug">{row.original}</p>
               <p className="mt-1 text-sm text-muted-foreground">{row.spoken}</p>
               <Row label={t("conveys")} text={row.meaning} />
-              <Row label={t("sourceRecobro")} text={row.recobro} />
+              <Row
+                label={t("sourceRecobro")}
+                text={read?.text ?? (recobro ? t("couldNotRead") : t("loadingVerse"))}
+              />
               <Row label={t("sourceNvi")} text={row.nvi} />
               <Row label={t("theDifference")} text={row.difference} />
               <Button
                 className="mt-4 w-full"
                 variant="outline"
-                onClick={() => onSend(nviRowVerse(item, locale))}
+                disabled={!read}
+                onClick={() => read && onSend(nviRowVerseFrom(item, read, locale))}
               >
                 <Send />
                 {t("sendThisComparison")}
@@ -65,6 +92,14 @@ export function NviCompare({ onSend }: NviCompareProps) {
           );
         })}
       </div>
+      <BibleNotice
+        verse={{
+          source: recobroSource(locale),
+          copyright: recobro ? Object.values(recobro)[0]?.copyright : undefined,
+        }}
+        locale={locale}
+        className="text-center"
+      />
       <p className="text-center text-[0.7rem] leading-relaxed text-muted-foreground">
         {t("nviFooter")}
       </p>
@@ -75,9 +110,7 @@ export function NviCompare({ onSend }: NviCompareProps) {
 function Row({ label, text }: { label: string; text: string }) {
   return (
     <div className="mt-3">
-      <p className="text-xs font-medium tracking-[0.12em] text-primary uppercase">
-        {label}
-      </p>
+      <p className="text-xs font-medium tracking-[0.12em] text-primary uppercase">{label}</p>
       <p className="mt-1 text-sm leading-relaxed">{text}</p>
     </div>
   );

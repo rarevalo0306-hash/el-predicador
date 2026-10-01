@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { cleanNote, generateVerseNotes, systemPrompt } from "./deepseek.server.ts";
 
 const verses = [
-  { id: "jn-3-16", ref: "Juan 3:16", text: "Porque de tal manera amó Dios al mundo…" },
-  { id: "sal-23-1", ref: "Salmos 23:1", text: "Jehová es mi pastor; nada me faltará." },
+  { id: "jn-3-16", ref: "Juan 3:16" },
+  { id: "sal-23-1", ref: "Salmos 23:1" },
 ];
 const config = { DEEPSEEK_API_KEY: "sk-test" };
 const reply = (notes: unknown) =>

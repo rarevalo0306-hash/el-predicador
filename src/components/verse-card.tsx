@@ -4,9 +4,11 @@ import { PreacherMark } from "@/components/mark";
 import { useI18n } from "@/components/language-switch";
 import { useHydratedVerse } from "@/components/use-hydrated-verse";
 import { cn } from "@/lib/utils";
-import { recobroSource } from "@/lib/bible";
+import { bibleSource } from "@/lib/bible";
 import { localizeVerse, type Verse } from "@/lib/verses";
 import { useAppStore } from "@/lib/store";
+import { useBibleVersion } from "@/lib/use-bible-version";
+import { BibleNotice } from "@/components/bible-notice";
 import { TextSkeleton } from "@/components/text-skeleton";
 
 type VerseCardProps = {
@@ -22,16 +24,25 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
   const favorites = useAppStore((s) => s.favorites);
   const toggleFavorite = useAppStore((s) => s.toggleFavorite);
   const saved = favorites.includes(verse.id);
-  const source = shown?.source ?? recobroSource(locale);
+  const bibleVersion = useBibleVersion(locale);
+  // Before the text arrives (or when it cannot), name the version being asked for.
+  const source = shown?.source ?? bibleSource(bibleVersion, locale);
 
   if (variant === "hero") {
     return (
-      <article className="rounded-xl bg-card px-6 py-8 shadow-paper sm:px-8 sm:py-10">
+      <article className="rounded-xl bg-card px-6 py-8 shadow-paper @max-[16rem]:px-3 sm:px-8 sm:py-10">
         <PreacherMark className="mx-auto mb-5 size-24" />
         {error ? (
           <div className="flex flex-col items-center gap-3 text-center">
             <p className="text-sm text-muted-foreground">{t("couldNotRead")}</p>
-            <Button type="button" variant="outline" onClick={retry}>
+            {/* With large text the button takes the card's width and may wrap,
+                rather than running past the card's edge. */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={retry}
+              className="@max-[16rem]:h-auto @max-[16rem]:w-full @max-[16rem]:px-1 @max-[16rem]:py-2 @max-[16rem]:whitespace-normal"
+            >
               {t("retry")}
             </Button>
           </div>
@@ -45,7 +56,11 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
         <p className="mt-6 font-sans text-sm font-medium tracking-[0.14em] text-primary uppercase">
           {shown?.ref ?? meta.ref}
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">{source}</p>
+        {shown && !error ? (
+          <BibleNotice verse={shown} locale={locale} className="mt-1 text-xs" />
+        ) : (
+          <p className="mt-1 text-xs text-muted-foreground">{source}</p>
+        )}
         {/* With large text the labels may run to two lines and the buttons
             stack, rather than spilling past the card. */}
         <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -87,7 +102,10 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
       ) : loading || !shown ? (
         <TextSkeleton label={t("loadingVerse")} lines={2} lineClassName="h-5" />
       ) : (
-        <p className="font-serif text-lg leading-snug text-foreground">{shown.text}</p>
+        <>
+          <p className="font-serif text-lg leading-snug text-foreground">{shown.text}</p>
+          <BibleNotice verse={shown} locale={locale} className="mt-2" />
+        </>
       )}
       <div className="mt-3 flex items-center justify-between gap-3">
         <p className="text-xs font-medium tracking-[0.12em] text-primary uppercase">

@@ -14,6 +14,7 @@ import {
   type ThemeId,
   type Verse,
 } from "@/lib/verses";
+import { useBibleVersion } from "@/lib/use-bible-version";
 
 type ThemesViewProps = {
   query: string;
@@ -31,20 +32,21 @@ export function ThemesView({
   onSend,
 }: ThemesViewProps) {
   const { locale, t } = useI18n();
+  const bibleVersion = useBibleVersion(locale);
   const reply = query.trim() ? answerTopic(query, locale) : null;
   const results = reply?.verses ?? [];
 
   useEffect(() => {
     if (themeId) {
-      prefetchVerses(versesForTheme(themeId), locale);
+      prefetchVerses(versesForTheme(themeId), locale, bibleVersion);
       return;
     }
     if (!results.length) return;
     // While typing, the verses are asked for once the words settle, not on
     // every letter.
-    const timer = setTimeout(() => prefetchVerses(results, locale), 350);
+    const timer = setTimeout(() => prefetchVerses(results, locale, bibleVersion), 350);
     return () => clearTimeout(timer);
-  }, [locale, query, themeId]);
+  }, [locale, query, themeId, bibleVersion]);
 
   if (themeId) {
     const theme = localizedTheme(themeId, locale);

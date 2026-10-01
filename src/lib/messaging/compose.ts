@@ -1,8 +1,10 @@
 import { t, type Locale } from "../i18n.ts";
+import { verseNotice } from "../bible-notice.ts";
 
 /**
  * The message a theme schedule sends: the whole verse with its reference and
- * source first, then the short teaching line, then the sender's sign-off. Same shape as formatVerseMessage in
+ * its edition's copyright line first, then the short teaching line, then the
+ * sender's sign-off. Same shape as formatVerseMessage in
  * share.ts, which the hand-sent messages use; kept apart because the worker
  * and its tests must load without the app's import aliases.
  */
@@ -11,11 +13,14 @@ export function composeVerseMessage(input: {
   text: string;
   ref: string;
   source?: string | null;
+  copyright?: string | null;
   senderName?: string | null;
   locale: Locale;
 }): string {
   const lines: string[] = [`«${input.text.trim()}»`, `— ${input.ref}`];
-  if (input.source) lines.push(input.source);
+  const notice = verseNotice(input, input.locale);
+  if (notice) lines.push(notice);
+  else if (input.source) lines.push(input.source);
   const note = input.note?.trim();
   if (note) lines.push("", note);
   const name = input.senderName?.trim();

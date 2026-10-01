@@ -23,6 +23,7 @@ import {
 import { searchConcordance } from "@/lib/concordance-fn";
 import type { Locale } from "@/lib/i18n";
 import type { Verse } from "@/lib/verses";
+import { plainNotice } from "@/lib/bible-notice";
 import { TextSkeleton } from "@/components/text-skeleton";
 import { onTabListKeyDown } from "@/lib/tab-keys";
 
@@ -287,7 +288,7 @@ export function ConcordanceView({
               })}
             </ol>
             <p className="text-center text-[0.7rem] leading-relaxed text-muted-foreground">
-              {result.copyright ?? recobroCopyright(locale)}
+              {plainNotice(result.copyright ?? recobroCopyright(locale))}
             </p>
           </section>
         )

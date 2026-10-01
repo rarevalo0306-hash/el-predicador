@@ -5,7 +5,8 @@
  */
 type Config = Record<string, string | undefined>;
 
-export type NoteRequest = { id: string; ref: string; text: string };
+/** A verse by reference only: the editions do not allow sending their text to an AI. */
+export type NoteRequest = { id: string; ref: string };
 
 /**
  * The voice: an evangelical pastor of sound doctrine, Bible-centered,
@@ -34,7 +35,7 @@ export const STYLE = {
 };
 
 const PROMPT = {
-  es: `{who} Escribes mensajes de texto breves y cálidos a personas que conoces. Para cada versículo recibirás su cita y su texto (Versión Recobro). Escribe {n} frases distintas, cada una de una o dos oraciones (60 a 160 caracteres), en español, dirigidas a una sola persona de tú, que acompañen el versículo sin citarlo ni repetirlo.
+  es: `{who} Escribes mensajes de texto breves y cálidos a personas que conoces. Para cada versículo recibirás solo su cita. No escribas ni cites su texto, ni de memoria. Escribe {n} frases distintas, cada una de una o dos oraciones (60 a 160 caracteres), en español, dirigidas a una sola persona de tú, que acompañen el versículo sin citarlo ni repetirlo.
 
 {tone}
 
@@ -44,7 +45,7 @@ Ejemplos del tono buscado (no los copies):
 {examples}
 
 Devuelve solo JSON con la forma {"notes": {"<id>": ["frase", "frase", "frase"]}} usando exactamente los ids recibidos.`,
-  en: `{who} You write short, warm text messages to people you know. For each verse you receive its reference and text (Recovery Version). Write {n} different lines, each one or two sentences (60 to 160 characters), in English, addressed to one person, that go with the verse without quoting or repeating it.
+  en: `{who} You write short, warm text messages to people you know. For each verse you receive its reference only. Do not write out or quote its text, not even from memory. Write {n} different lines, each one or two sentences (60 to 160 characters), in English, addressed to one person, that go with the verse without quoting or repeating it.
 
 {tone}
 
@@ -153,7 +154,7 @@ export async function generateVerseNotes(
           {
             role: "user",
             content: JSON.stringify(
-              verses.map((v) => ({ id: v.id, ref: v.ref, text: v.text.slice(0, 600) })),
+              verses.map((v) => ({ id: v.id, ref: v.ref })),
             ),
           },
         ],
@@ -176,7 +177,7 @@ export async function generateVerseNotes(
   for (const verse of verses) {
     const list = parsed.notes?.[verse.id];
     const notes = (Array.isArray(list) ? list : [])
-      .map((line) => cleanNote(line, verse.text))
+      .map((line) => cleanNote(line))
       .filter((n): n is string => n !== null);
     out[verse.id] = [...new Set(notes)].slice(0, perVerse);
   }

@@ -1,8 +1,10 @@
 /**
  * A message written for one person, from a preaching case: the owner says
  * who the person is and what they are living, and the app writes the
- * message in its own voice, on the case's approach, quoting the case's
- * verses. Streamed like "Pregunta", paid from the same daily quota.
+ * message in its own voice, on the case's approach, pointing to the case's
+ * verses by reference. The verses go by reference only: the Bible editions
+ * do not allow sending their text to an AI. Streamed like "Pregunta", paid
+ * from the same daily quota.
  */
 import { VOICE } from "./deepseek.server.ts";
 import { sseText, type Locale } from "./ask.ts";
@@ -16,14 +18,14 @@ export type ComposeInput = {
   issue: string;
   approach: string;
   points: string[];
-  verses: { ref: string; text: string }[];
+  verses: { ref: string }[];
   details: string;
   locale: Locale;
 };
 
 const TASK = {
-  es: `Vas a escribir un mensaje personal para enviar por WhatsApp o SMS a una persona concreta. Recibirás el caso (a quién se le predica, el punto central, cómo abordarlo y los versículos disponibles con su texto) y lo que el remitente sabe de la persona. Escribe el mensaje en español, de tú, entre 100 y 170 palabras, en texto plano sin markdown ni títulos, listo para enviar tal cual. Sigue el enfoque y los puntos del caso, hablando de lo que esa persona está viviendo si se te dijo. Cita uno o dos de los versículos recibidos, con su texto exacto, cada uno en su propia línea así: «texto» y en la línea siguiente — referencia. No inventes versículos ni cambies su texto. Sin saludo con nombre inventado ni firma: el remitente añade la suya. Cálido, directo, sin atacar a la persona ni burlarte de lo que cree. Devuelve solo el mensaje.`,
-  en: `You will write a personal message to send by WhatsApp or SMS to one specific person. You receive the case (who is being preached to, the central point, how to approach it and the verses available with their text) and what the sender knows about the person. Write the message in English, 100 to 170 words, in plain text without markdown or headings, ready to send as is. Follow the case's approach and points, speaking to what that person is living if told. Quote one or two of the verses received, with their exact text, each on its own line like this: "text" and on the next line — reference. Do not invent verses or change their text. No greeting with an invented name and no signature: the sender adds their own. Warm, direct, never attacking the person or mocking what they believe. Return only the message.`,
+  es: `Vas a escribir un mensaje personal para enviar por WhatsApp o SMS a una persona concreta. Recibirás el caso (a quién se le predica, el punto central, cómo abordarlo y las citas de los versículos disponibles) y lo que el remitente sabe de la persona. Escribe el mensaje en español, de tú, entre 100 y 170 palabras, en texto plano sin markdown ni títulos, listo para enviar tal cual. Sigue el enfoque y los puntos del caso, hablando de lo que esa persona está viviendo si se te dijo. Remite a uno o dos de los versículos recibidos solo por su cita, cada una en su propia línea así: — referencia. No escribas el texto de los versículos, ni de memoria. No inventes versículos. Sin saludo con nombre inventado ni firma: el remitente añade la suya. Cálido, directo, sin atacar a la persona ni burlarte de lo que cree. Devuelve solo el mensaje.`,
+  en: `You will write a personal message to send by WhatsApp or SMS to one specific person. You receive the case (who is being preached to, the central point, how to approach it and the references of the verses available) and what the sender knows about the person. Write the message in English, 100 to 170 words, in plain text without markdown or headings, ready to send as is. Follow the case's approach and points, speaking to what that person is living if told. Point to one or two of the verses received by reference only, each on its own line like this: — reference. Do not write out the text of the verses, not even from memory. Do not invent verses. No greeting with an invented name and no signature: the sender adds their own. Warm, direct, never attacking the person or mocking what they believe. Return only the message.`,
 };
 
 export function composePrompt(locale: Locale) {
@@ -41,7 +43,7 @@ export function composeBrief(input: ComposeInput) {
     `${es ? "Puntos" : "Points"}:`,
     ...input.points.map((p) => `- ${p}`),
     `${es ? "Versículos disponibles" : "Verses available"}:`,
-    ...input.verses.map((v) => `- ${v.ref}: ${v.text}`),
+    ...input.verses.map((v) => `- ${v.ref}`),
     `${es ? "Sobre la persona" : "About the person"}: ${
       input.details.trim() || (es ? "(sin detalles)" : "(no details)")
     }`,

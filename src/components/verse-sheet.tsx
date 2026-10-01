@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { BookOpen, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/components/language-switch";
-import { bookAbbr, bookById, bookName, recobroSource } from "@/lib/bible";
+import { bibleSource, bookAbbr, bookById, bookName } from "@/lib/bible";
 import { chapterToVerses, loadCachedChapter } from "@/lib/recobro";
 import { combineVerses } from "@/lib/reader-prefs";
 import type { VerseLink } from "@/lib/verse-links";
 import type { Verse } from "@/lib/verses";
+import { useBibleVersion } from "@/lib/use-bible-version";
+import { BibleNotice } from "@/components/bible-notice";
 import { TextSkeleton } from "@/components/text-skeleton";
 import { useDialogFocus } from "@/components/use-dialog-focus";
 
@@ -24,6 +26,7 @@ type VerseSheetProps = {
  */
 export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
   const { locale, t } = useI18n();
+  const bibleVersion = useBibleVersion(locale);
   const [verses, setVerses] = useState<Verse[] | null>(null);
   const [failed, setFailed] = useState(false);
   // Bumped by "Reintentar" to read the passage again.
@@ -38,7 +41,7 @@ export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
     setFailed(false);
     if (!link || !book) return;
     let cancelled = false;
-    void loadCachedChapter(book.id, link.chapter, locale)
+    void loadCachedChapter(book.id, link.chapter, locale, bibleVersion)
       .then((chapter) => {
         if (cancelled) return;
         const picked = chapterToVerses(book, chapter, locale).filter((verse) => {
@@ -54,7 +57,7 @@ export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
     return () => {
       cancelled = true;
     };
-  }, [link, book, locale, attempt]);
+  }, [link, book, locale, bibleVersion, attempt]);
 
   useEffect(() => {
     if (!link) return;
@@ -98,7 +101,9 @@ export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
         <div className="flex shrink-0 items-start justify-between gap-3 px-4 pt-4 pb-2">
           <div className="min-w-0">
             <h2 className="font-serif text-2xl tracking-tight">{place}</h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">{recobroSource(locale)}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {bibleSource(bibleVersion, locale)}
+            </p>
           </div>
           <button
             ref={closeRef}
@@ -132,6 +137,7 @@ export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
                   <span>{verse.text}</span>
                 </p>
               ))}
+              <BibleNotice verse={verses[0]} locale={locale} className="mt-2" />
             </div>
           )}
         </div>

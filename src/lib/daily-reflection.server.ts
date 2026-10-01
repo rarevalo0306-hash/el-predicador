@@ -7,8 +7,11 @@ type Locale = "es" | "en";
 export type ReflectionDeps = {
   /** Whether DeepSeek is set up; without it only a kept reflection is shown. */
   configured: boolean;
-  /** The verse's own words to write about; "" text when they cannot be had. */
-  verseText: () => Promise<{ ref: string; text: string }>;
+  /**
+   * The verse's reference ("Marcos 11:24"). Only the reference goes to the
+   * AI: the Bible editions do not allow sending or keeping their text.
+   */
+  ref: string;
   /** One request to DeepSeek; null when the answer misses the brief. */
   write: (input: VerseInput) => Promise<string | null>;
   now?: () => number;
@@ -76,16 +79,13 @@ export async function reflectionFor(
   const key = `${day}:${locale}`;
   if ((cooldown.get(key) ?? 0) > now()) return fallbackFor(sql, verseId, locale);
 
-  const verse = await deps.verseText().catch(() => ({ ref: "", text: "" }));
-  if (!verse.text.trim()) {
-    cooldown.set(key, now() + COOLDOWN_MS);
-    return fallbackFor(sql, verseId, locale);
-  }
+  const ref = deps.ref.trim();
+  if (!ref) return fallbackFor(sql, verseId, locale);
 
   let written: string | null = null;
   for (let attempt = 1; attempt <= 2 && !written; attempt += 1) {
     written = await deps
-      .write({ ref: verse.ref, text: verse.text, locale })
+      .write({ ref, locale })
       .catch((error: unknown) => {
         console.warn("[daily-reflection] request failed", {
           day,

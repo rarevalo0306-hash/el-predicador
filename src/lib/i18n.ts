@@ -167,6 +167,7 @@ const es = {
   displayName: "Tu nombre en los mensajes",
   displayPlaceholder: "Opcional, para firmar",
   notifyTitle: "Aviso del verso de hoy",
+  notifyTapToRead: "Tócalo para leerlo en la app.",
   notifyDesc: "Te recuerda la palabra del día en el teléfono (mejor si instalas la app).",
   notifyUnsupported: "Este navegador no admite avisos",
   notifyDenied: "No se activaron los avisos",
@@ -307,8 +308,11 @@ const es = {
   nviFooter:
     "Citas breves de la NVI © Biblica, y de la Versión Recobro © Living Stream Ministry, para enseñanza.",
   bibleTitle: "Biblia",
-  bibleSub: "Santa Biblia Versión Recobro. Busca una cita o entra por un libro.",
+  bibleSub: "Busca una cita o entra por un libro.",
   bibleSubEn: "Holy Bible Recovery Version. Search a reference or open a book.",
+  bibleVersion: "Versión de la Biblia",
+  bibleVersionHelp: "Escoge la traducción para leer, copiar, compartir y preguntar.",
+  bibleVersionSoon: "Próximamente",
   searchRef: "Juan 3:16, Salmos 23…",
   searchRefEn: "John 3:16, Psalms 23…",
   searchRefAria: "Buscar cita o libro",
@@ -455,6 +459,20 @@ const es = {
   chapterNotFound: "Capítulo no encontrado",
   chapterOpenFail: "No se pudo abrir este capítulo",
   chapterEmpty: "Este capítulo no trajo texto",
+  bibleApiPending:
+    "La conexión oficial de la Biblia está pendiente de aprobación. Mientras tanto, puedes abrir el capítulo en el sitio oficial.",
+  apiBibleUnavailable:
+    "Esta versión no está disponible en este momento. Inténtalo de nuevo más tarde.",
+  apiBibleMissingKey:
+    "Esta versión aún no está configurada: falta guardar la clave de API.Bible (API_BIBLE_KEY) en Vercel.",
+  apiBibleRejectedKey:
+    "API.Bible rechazó la clave guardada (API_BIBLE_KEY). Revisa en Vercel que esté completa y vigente.",
+  apiBibleNoLicenseLbla:
+    "La clave de API.Bible no tiene acceso a La Biblia de las Américas (LBLA). Actívala en tu cuenta de API.Bible.",
+  apiBibleNoLicenseNasb:
+    "La clave de API.Bible no tiene acceso a la New American Standard Bible 2020. Actívala en tu cuenta de API.Bible.",
+  apiBibleLimit:
+    "Se alcanzó el límite de lecturas de API.Bible por ahora. Inténtalo de nuevo más tarde.",
   contactTitle: "Tus datos",
   contactLead:
     "Si quieres que te enviemos la palabra, deja tu nombre, correo, teléfono y dirección. Solo el predicador ve esta lista.",
@@ -714,6 +732,7 @@ const en: Record<keyof typeof es, string> = {
   displayName: "Your name on messages",
   displayPlaceholder: "Optional, to sign",
   notifyTitle: "Today’s verse reminder",
+  notifyTapToRead: "Tap to read it in the app.",
   notifyDesc: "Reminds you of today’s word on your phone (best if you install the app).",
   notifyUnsupported: "This browser does not support notifications",
   notifyDenied: "Notifications were not enabled",
@@ -854,8 +873,11 @@ const en: Record<keyof typeof es, string> = {
   nviFooter:
     "Brief quotations from the NIV © Biblica, and the Recovery Version © Living Stream Ministry, for teaching.",
   bibleTitle: "Bible",
-  bibleSub: "Holy Bible Recovery Version. Search a reference or open a book.",
+  bibleSub: "Search a reference or open a book.",
   bibleSubEn: "Holy Bible Recovery Version. Search a reference or open a book.",
+  bibleVersion: "Bible version",
+  bibleVersionHelp: "Choose the translation used to read, copy, share, and ask questions.",
+  bibleVersionSoon: "Coming soon",
   searchRef: "John 3:16, Psalms 23…",
   searchRefEn: "John 3:16, Psalms 23…",
   searchRefAria: "Search a reference or book",
@@ -1002,6 +1024,19 @@ const en: Record<keyof typeof es, string> = {
   chapterNotFound: "Chapter not found",
   chapterOpenFail: "Could not open this chapter",
   chapterEmpty: "This chapter returned no text",
+  bibleApiPending:
+    "The official Bible connection is awaiting approval. In the meantime, you can open the chapter on the official site.",
+  apiBibleUnavailable:
+    "This version is not available right now. Please try again later.",
+  apiBibleMissingKey:
+    "This version is not set up yet: the API.Bible key (API_BIBLE_KEY) still has to be saved in Vercel.",
+  apiBibleRejectedKey:
+    "API.Bible turned down the saved key (API_BIBLE_KEY). Check in Vercel that it is complete and current.",
+  apiBibleNoLicenseLbla:
+    "The API.Bible key has no access to La Biblia de las Américas (LBLA). Turn it on in your API.Bible account.",
+  apiBibleNoLicenseNasb:
+    "The API.Bible key has no access to the New American Standard Bible 2020. Turn it on in your API.Bible account.",
+  apiBibleLimit: "The API.Bible reading limit has been reached for now. Please try again later.",
   contactTitle: "Your details",
   contactLead:
     "If you want us to send you the word, leave your name, email, phone, and address. Only the preacher sees this list.",

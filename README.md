@@ -23,7 +23,16 @@ Configúralas en el hosting (nunca en el código):
 | `CONTACTS_ADMIN_PIN` | Clave para ver la lista de contactos |
 | `CONTACTS_ADMIN_USER_IDS` | Opcional: IDs de usuario permitidos, separados por coma |
 | `CONTACTS_EMAIL` | Correo FormSubmit para avisos de nuevos registros |
+| `API_BIBLE_KEY` | Clave privada de API.Bible para LBLA y NASB 2020 |
+| `API_BIBLE_LBLA_ID` | Opcional: fija la edición LBLA si la cuenta devuelve varias |
+| `API_BIBLE_NASB20_ID` | Opcional: fija la edición NASB 2020 si la cuenta devuelve varias |
 | `VITE_AUTH_ENABLED` | `true` en deploy para cuentas |
+
+La clave de API.Bible se usa únicamente en funciones del servidor. Nunca debe
+llevar el prefijo `VITE_`, guardarse en Git ni enviarse al navegador. La app
+descubre automáticamente entre las licencias activas las ediciones LBLA y
+NASB 2020; los IDs opcionales solo son necesarios si la cuenta ofrece varias
+ediciones con nombres similares.
 
 Para Google en [Google Cloud Console](https://console.cloud.google.com/apis/credentials): crea un cliente OAuth web y añade como URI de redirección:
 

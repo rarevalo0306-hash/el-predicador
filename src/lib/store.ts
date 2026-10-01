@@ -5,7 +5,14 @@ import { persistLocale, type Locale } from "@/lib/i18n";
 import { todayKey, type ThemeId, type Verse } from "@/lib/verses";
 import { EMPTY_CHURCH, isThemeId, normalizeChurch, type ChurchInfo } from "@/lib/church";
 import { recipientThemes } from "@/lib/recipient-themes";
+import { keptVerse, keptVerses } from "@/lib/verse-memory";
 import type { MessageChannel } from "@/lib/message-schedule";
+import {
+  isBibleVersionForLocale,
+  parseBibleVersionChoices,
+  type BibleVersion,
+  type BibleVersionChoices,
+} from "@/lib/bible";
 
 export type SentItem = {
   verseId: string;
@@ -97,6 +104,11 @@ export type CloudPayload = {
   highlights: string[];
   /** Reader text size: 0 small … 3 largest. */
   fontScale: 0 | 1 | 2 | 3;
+  /**
+   * Bible edition the reader picked for Spanish and for English. A language
+   * left out reads the default (Recobro once it can be read).
+   */
+  bibleChoice: BibleVersionChoices;
   locale?: Locale;
 };
 
@@ -120,6 +132,7 @@ export const EMPTY_CLOUD: CloudPayload = {
   bookmarks: [],
   highlights: [],
   fontScale: 1,
+  bibleChoice: {},
 };
 
 function placeKey(place: Pick<ReadingPlace, "bookId" | "chapter" | "verse">) {
@@ -161,6 +174,7 @@ type AppState = CloudPayload & {
   toggleBookmark: (place: ReadingPlace) => void;
   toggleHighlight: (verseId: string, verse?: Verse) => void;
   setFontScale: (scale: 0 | 1 | 2 | 3) => void;
+  setBibleVersion: (locale: Locale, version: BibleVersion) => void;
   setLocale: (locale: Locale) => void;
   hydrateFromCloud: (payload: CloudPayload) => void;
   snapshotCloud: () => CloudPayload;
@@ -175,7 +189,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     })),
   rememberVerse: (verse) =>
     set((state) => ({
-      verseMemory: { ...state.verseMemory, [verse.id]: verse },
+      verseMemory: { ...state.verseMemory, [verse.id]: keptVerse(verse) },
     })),
   toggleFavorite: (id, verse) =>
     set((state) => {
@@ -186,7 +200,9 @@ export const useAppStore = create<AppState>()((set, get) => ({
         favorites: saved ? state.favorites.filter((item) => item !== id) : [...state.favorites, id],
         favoriteKinds: nextKinds,
         verseMemory:
-          verse && !saved ? { ...state.verseMemory, [verse.id]: verse } : state.verseMemory,
+          verse && !saved
+            ? { ...state.verseMemory, [verse.id]: keptVerse(verse) }
+            : state.verseMemory,
       };
     }),
   saveMessage: (item) => {
@@ -338,10 +354,17 @@ export const useAppStore = create<AppState>()((set, get) => ({
         highlights: on
           ? state.highlights.filter((id) => id !== verseId)
           : [verseId, ...state.highlights].slice(0, 200),
-        verseMemory: verse && !on ? { ...state.verseMemory, [verse.id]: verse } : state.verseMemory,
+        verseMemory:
+          verse && !on ? { ...state.verseMemory, [verse.id]: keptVerse(verse) } : state.verseMemory,
       };
     }),
   setFontScale: (fontScale) => set({ fontScale }),
+  setBibleVersion: (locale, version) =>
+    set((state) => ({
+      bibleChoice: isBibleVersionForLocale(version, locale)
+        ? { ...state.bibleChoice, [locale]: version }
+        : state.bibleChoice,
+    })),
   setLocale: (locale) => {
     persistLocale(locale);
     set({ locale });
@@ -367,8 +390,11 @@ export const useAppStore = create<AppState>()((set, get) => ({
         ? payload.recipients.map((row) => ({ ...row, phone: restorePhone(row.phone) }))
         : [],
       church: normalizeChurch(payload.church),
+      // Text saved before references alone were kept is dropped here.
+      verseMemory: keptVerses(payload.verseMemory),
       highlights: Array.isArray(payload.highlights) ? payload.highlights : [],
       fontScale: scale,
+      bibleChoice: parseBibleVersionChoices(payload.bibleChoice),
       locale,
     });
   },
@@ -391,6 +417,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       bookmarks: state.bookmarks,
       highlights: state.highlights,
       fontScale: state.fontScale,
+      bibleChoice: state.bibleChoice,
       locale: state.locale,
     };
   },

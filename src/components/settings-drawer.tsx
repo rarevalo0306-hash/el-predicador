@@ -26,6 +26,7 @@ import {
   type FontScale,
 } from "@/lib/reader-prefs";
 import { cn } from "@/lib/utils";
+import { useBibleVersion } from "@/lib/use-bible-version";
 
 type SettingsDrawerProps = {
   open: boolean;
@@ -53,6 +54,7 @@ export function SettingsDrawer({
   const recipients = useAppStore((s) => s.recipients);
   const fontScale = useAppStore((s) => s.fontScale);
   const setFontScale = useAppStore((s) => s.setFontScale);
+  const bibleVersion = useBibleVersion(locale);
 
   // Turning reminders on waits for the permission prompt and today's verse;
   // a second tap meanwhile must not ask twice or show two notifications.
@@ -87,10 +89,10 @@ export function SettingsDrawer({
     await ensurePreacherServiceWorker();
     setNotify(true);
     try {
-      const verse = await hydrateVerse(getDailyVerse(), locale);
+      const verse = await hydrateVerse(getDailyVerse(), locale, bibleVersion);
       await showDailyNotification({
         title: t("notifyBodyTitle"),
-        body: `${verse.ref}: ${verse.text.slice(0, 140)}`,
+        body: `${verse.ref} · ${t("notifyTapToRead")}`,
         tag: `daily-${new Date().toISOString().slice(0, 10)}`,
       });
     } catch {

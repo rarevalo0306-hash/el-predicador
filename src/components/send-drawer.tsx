@@ -1,7 +1,7 @@
 import { MessageLanguageSelect } from "@/components/message-language-select";
 import { messageLanguageCopy } from "@/lib/message-language";
 import type { Locale } from "@/lib/i18n";
-import { canChangeMessageLanguage } from "@/lib/recobro";
+import { canChangeMessageLanguage, verseFromId } from "@/lib/recobro";
 import { MessageSchedulePanel } from "@/components/message-schedule-panel";
 import { scheduleCopy } from "@/lib/schedule-copy";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -47,8 +47,10 @@ import {
   tryNativeShareFile,
 } from "@/lib/share";
 import { verseCardFile } from "@/lib/verse-card";
-import { getVerseById, type Verse } from "@/lib/verses";
+import type { Verse } from "@/lib/verses";
 import { useHydratedVerse } from "@/components/use-hydrated-verse";
+import { BibleNotice } from "@/components/bible-notice";
+import { canReadAgain } from "@/lib/verse-memory";
 
 type SendDrawerProps = {
   verse: Verse | null;
@@ -100,6 +102,10 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
     if (!shown) return "";
     return formatVerseMessage(shown, note, displayName, messageLocale);
   }, [shown, note, displayName, messageLocale]);
+
+  // The id a schedule keeps for this verse, when its text can be read again.
+  const scheduledVerseId =
+    verse && canReadAgain(verse) && verseFromId(verse.id, messageLocale) ? verse.id : undefined;
 
   const selectedPeople = useMemo(
     () => recipients.filter((row) => selectedIds.includes(row.id)),
@@ -252,7 +258,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
 
   async function makeCard() {
     if (!shown) throw new Error("verse");
-    return verseCardFile(shown, note, displayName);
+    return verseCardFile(shown, note, displayName, messageLocale);
   }
 
   // Drawing the image takes a moment; while it does, its button says so and
@@ -356,13 +362,12 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
               {scheduleCopy(locale).back}
             </Button>
             <MessageSchedulePanel
-              initialMessage={message}
+              // A verse the app can read again is scheduled by its id, with
+              // the note and signature apart: the Bible text is never kept.
+              initialMessage={scheduledVerseId ? note.trim() : message}
               initialLocale={messageLocale}
-              initialVerseId={
-                !note.trim() && !displayName.trim() && getVerseById(verse?.id ?? "")
-                  ? verse?.id
-                  : undefined
-              }
+              initialVerseId={scheduledVerseId}
+              initialSenderName={scheduledVerseId ? displayName : undefined}
               initialPerson={
                 selectedPeople.length === 1 ? selectedPeople[0] : { name: personName, phone }
               }
@@ -388,6 +393,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                 <p className="mt-2 text-xs font-medium tracking-[0.12em] text-primary uppercase">
                   {shown.ref}
                 </p>
+                <BibleNotice verse={shown} locale={messageLocale} className="mt-1" />
               </div>
               <div className="grid gap-2 rounded-lg border border-border bg-card px-3 py-3">
                 <div className="flex items-center gap-2">

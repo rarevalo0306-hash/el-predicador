@@ -37,6 +37,7 @@ import { allDueItems } from "@/lib/preach-schedule";
 import { showDailyNotification } from "@/lib/notify";
 import { cn } from "@/lib/utils";
 import type { VerseLink } from "@/lib/verse-links";
+import { useBibleVersion } from "@/lib/use-bible-version";
 
 type Tab = "hoy" | "biblia" | "evangelio" | "temas" | "personas" | "guardados" | "admin";
 
@@ -120,6 +121,7 @@ function PreacherApp({
   const fontScale = useAppStore((s) => s.fontScale);
   const recipients = useAppStore((s) => s.recipients);
   const church = useAppStore((s) => s.church);
+  const bibleVersion = useBibleVersion(locale);
 
   useEffect(() => {
     void import("@/lib/reader-prefs").then(({ applyFontScale }) => {
@@ -160,12 +162,13 @@ function PreacherApp({
       const key = `pv-notified-${todayKey()}`;
       try {
         if (localStorage.getItem(key)) return;
-        const verse = await hydrateVerse(getDailyVerse(), locale);
+        const verse = await hydrateVerse(getDailyVerse(), locale, bibleVersion);
         if (cancelled) return;
         const { showDailyNotification } = await import("@/lib/notify");
         await showDailyNotification({
           title: t("notifyBodyTitle"),
-          body: `${verse.ref}: ${verse.text.slice(0, 140)}`,
+          // Only the reference: the text shows, with its copyright line, in the app.
+        body: `${verse.ref} · ${t("notifyTapToRead")}`,
           tag: key,
         });
         localStorage.setItem(key, "1");
@@ -192,7 +195,7 @@ function PreacherApp({
       cancelled = true;
       if (timer) window.clearTimeout(timer);
     };
-  }, [ready, notify, notifyHour, locale, t]);
+  }, [ready, notify, notifyHour, locale, bibleVersion, t]);
 
   /** Another section starts at its top, not where the last one was scrolled to. */
   function openTab(next: Tab) {
