@@ -73,7 +73,7 @@ export function SavedView({ onSend, onExplore }: SavedViewProps) {
       </header>
 
       <div className="-mx-5 overflow-x-auto px-5">
-        <div className="flex w-max gap-2 pb-1">
+        <div className="flex w-max gap-2 pb-1" role="group" aria-label={t("savedFilterAria")}>
           {filters.map((item) => {
             const active = filter === item.id;
             return (
@@ -81,6 +81,7 @@ export function SavedView({ onSend, onExplore }: SavedViewProps) {
                 key={item.id}
                 type="button"
                 onClick={() => setFilter(item.id)}
+                aria-pressed={active}
                 className={cn(
                   "h-11 shrink-0 rounded-full border px-3 text-sm font-medium transition-colors duration-150",
                   active
@@ -217,7 +218,7 @@ function KindPicker({
   const { locale, t } = useI18n();
   const kinds = messageKinds(locale);
   return (
-    <div className="-mx-1 overflow-x-auto px-1" aria-label={t("organizeBy")}>
+    <div className="-mx-1 overflow-x-auto px-1" role="group" aria-label={t("organizeBy")}>
       <div className="flex w-max gap-1.5">
         {kinds.map((item) => {
           const active = value === item.id;
@@ -226,6 +227,7 @@ function KindPicker({
               key={item.id}
               type="button"
               onClick={() => onChange(item.id)}
+              aria-pressed={active}
               className={cn(
                 "h-11 shrink-0 rounded-full border px-3 text-xs font-medium transition-colors duration-150",
                 active

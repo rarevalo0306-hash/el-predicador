@@ -438,10 +438,15 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
       >
         {scheduleCopy(locale).title}
       </Button>
-      <div className="grid grid-cols-1 @min-[16rem]:grid-cols-2 gap-2">
+      <div
+        className="grid grid-cols-1 @min-[16rem]:grid-cols-2 gap-2"
+        role="group"
+        aria-label={t("preachSectionsAria")}
+      >
         <button
           type="button"
           onClick={() => setSection("people")}
+          aria-pressed={section === "people"}
           className={cn(
             "flex min-h-11 items-center justify-center gap-2 rounded-md border px-2 py-2 text-sm font-medium",
             section === "people"
@@ -455,6 +460,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
         <button
           type="button"
           onClick={() => setSection("church")}
+          aria-pressed={section === "church"}
           className={cn(
             "flex min-h-11 items-center justify-center gap-2 rounded-md border px-2 py-2 text-sm font-medium",
             section === "church"

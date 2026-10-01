@@ -170,7 +170,9 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
       )}
       <div className="rise-in rise-in-3 flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-          <p className="text-sm font-medium text-foreground">{t("whatNeed")}</p>
+          <p id="mood-label" className="text-sm font-medium text-foreground">
+            {t("whatNeed")}
+          </p>
           <Button
             type="button"
             variant="ghost"
@@ -182,7 +184,7 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
             {t("another")}
           </Button>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" role="group" aria-labelledby="mood-label">
           {MOODS.map((id) => {
             const active = mood === id;
             return (
@@ -190,8 +192,9 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
                 key={id}
                 type="button"
                 onClick={() => onMoodChange(active ? null : id)}
+                aria-pressed={active}
                 className={cn(
-                  "h-10 rounded-full border px-4 text-sm font-medium transition-colors duration-150",
+                  "h-11 rounded-full border px-4 text-sm font-medium transition-colors duration-150",
                   active
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-border bg-card text-foreground hover:bg-secondary",

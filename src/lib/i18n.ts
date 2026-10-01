@@ -267,6 +267,7 @@ const es = {
   favoriteVerses: "Versos favoritos",
   versesLabel: "Versos",
   organizeBy: "Organizar por mensaje",
+  savedFilterAria: "Mostrar en guardados",
   preachFor: "Para predicar",
   evangelism: "Evangelismo",
   evangelismSub:
@@ -490,6 +491,7 @@ const es = {
   preachSub: "Guarda tus contactos, prepara mensajes y elige los días y la hora de tus envíos.",
   preachPeople: "Contactos",
   preachChurch: "Iglesia",
+  preachSectionsAria: "Qué ver en Gente",
   preachDueTitle: "Para enviar ahora",
   preachDueHint: "Recordatorios listos. WhatsApp se abre con el mensaje preparado.",
   preachDueDaily: "Mensaje diario · {theme}",
@@ -818,6 +820,7 @@ const en: Record<keyof typeof es, string> = {
   favoriteVerses: "Favorite verses",
   versesLabel: "Verses",
   organizeBy: "Organize by message",
+  savedFilterAria: "Show in saved",
   preachFor: "For preaching",
   evangelism: "Evangelism",
   evangelismSub:
@@ -1042,6 +1045,7 @@ const en: Record<keyof typeof es, string> = {
   preachSub: "Save your contacts, prepare messages, and choose the days and times to send them.",
   preachPeople: "Contacts",
   preachChurch: "Church",
+  preachSectionsAria: "What to show in People",
   preachDueTitle: "Ready to send",
   preachDueHint: "Reminders ready. WhatsApp opens with the message prepared.",
   preachDueDaily: "Daily message · {theme}",
