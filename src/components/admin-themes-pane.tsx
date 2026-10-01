@@ -197,7 +197,7 @@ export function AdminThemesPane() {
                 <p className="text-sm">
                   <span className="font-medium">{name}</span>{" "}
                   <span className="text-muted-foreground">
-                    · {t("adminThemesCount", { own: theme.own, extra: theme.extras.length })}
+                    · {t("adminThemesCount", { n: theme.own + theme.extras.length })}
                   </span>
                 </p>
                 <Button
