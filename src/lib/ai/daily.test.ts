@@ -1,12 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  blessingPrompt,
   completeSentences,
   endsComplete,
   firstName,
+  proposeThemeRefs,
   reflectionPrompt,
   sendNotePrompt,
   writeReflection,
+  writeBlessing,
   writeSendNote,
 } from "./daily.server.ts";
 
@@ -93,4 +96,38 @@ test("sentence helpers", () => {
   assert.equal(endsComplete("Vuélvete a tu espíritu"), false);
   assert.equal(completeSentences("Uno. Dos tres", 100), "Uno.");
   assert.equal(completeSentences("Sin punto final", 100), "");
+});
+
+test("the blessing sends only the day, and comes back whole and on brief", async () => {
+  assert.match(blessingPrompt("es"), /40 a 140 caracteres/);
+  assert.doesNotMatch(blessingPrompt("en"), /\{who\}|\{forbidden\}/);
+  const seen: { body?: unknown }[] = [];
+  const good = "“Que el Señor te guarde hoy y sea tu paz en todo lo que hagas.”";
+  const out = await writeBlessing({ day: "2026-10-01", locale: "es" }, config, fakeFetch(good, seen));
+  assert.equal(out, "Que el Señor te guarde hoy y sea tu paz en todo lo que hagas.");
+  const body = seen[0]?.body as { messages: { role: string; content: string }[] };
+  assert.deepEqual(JSON.parse(body.messages[1]!.content), { day: "2026-10-01" });
+
+  const prosperity = "Que hoy recibas tu milagro y una bendición financiera.";
+  assert.equal(await writeBlessing({ day: "2026-10-01", locale: "es" }, config, fakeFetch(prosperity)), null);
+  const cut = "Que el Señor te guarde hoy y";
+  assert.equal(await writeBlessing({ day: "2026-10-01", locale: "es" }, config, fakeFetch(cut)), null);
+});
+
+test("theme proposals are read as references only, whatever surrounds the JSON", async () => {
+  const seen: { body?: unknown }[] = [];
+  const answer = 'Aquí van: {"refs": ["Isaías 41:10", 7, "1 Pedro 5:7", "' + "x".repeat(80) + '"]} Bendiciones.';
+  const refs = await proposeThemeRefs(
+    { theme: "Paz", line: "Sosiego en medio del ruido", existing: ["Juan 14:27"], count: 5 },
+    config,
+    fakeFetch(answer, seen),
+  );
+  assert.deepEqual(refs, ["Isaías 41:10", "1 Pedro 5:7"]);
+  const body = seen[0]?.body as { messages: { content: string }[] };
+  assert.match(body.messages[0]!.content, /Propón 5 citas/);
+  assert.deepEqual(JSON.parse(body.messages[1]!.content).ya_tiene, ["Juan 14:27"]);
+  await assert.rejects(
+    proposeThemeRefs({ theme: "Paz", line: "", existing: [], count: 5 }, config, fakeFetch("sin json")),
+    /deepseek_bad_json/,
+  );
 });

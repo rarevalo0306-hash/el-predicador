@@ -57,6 +57,29 @@ Examples of the register (do not copy them):
 Return only the line.`,
 };
 
+const BLESSING = {
+  es: `{who} Cada mañana escribes la bendición con la que la app saluda a cada persona que la abre; la app pone delante «Hola, <nombre>.». Escribe una sola oración, de 40 a 140 caracteres, en español, de tú, que bendiga a la persona en el nombre del Señor para este día: Su paz, Su presencia, Su gracia, Su cuidado, Su vida en ella. Empieza con mayúscula y termina con punto. No saludes, no pongas nombres, sin emojis, sin comillas y sin firma.
+
+{forbidden}
+
+Ejemplos del tono buscado (no los copies):
+- Que el Señor te bendiga y te guarde, y que Su rostro brille hoy sobre ti.
+- Que la gracia de Cristo te sostenga en cada paso de este día.
+- Que el Señor Jesús sea tu paz en medio de todo lo que hoy te espera.
+
+Devuelve solo la bendición.`,
+  en: `{who} Every morning you write the blessing the app greets each person with when they open it; the app puts "Hello, <name>." in front of it. Write a single sentence, 40 to 140 characters, in English, addressed to the person, that blesses them in the name of the Lord for this day: His peace, His presence, His grace, His care, His life in them. Start with a capital letter and end with a period. No greeting, no names, no emojis, no quotes and no signature.
+
+{forbidden}
+
+Examples of the register (do not copy them):
+- May the Lord bless you and keep you, and make His face shine on you today.
+- May the grace of Christ hold you up in every step of this day.
+- May the Lord Jesus be your peace in the middle of all that awaits you today.
+
+Return only the blessing.`,
+};
+
 function fill(template: string, locale: "es" | "en") {
   const voice = VOICE[locale];
   return template
@@ -72,6 +95,10 @@ export function reflectionPrompt(locale: "es" | "en") {
 
 export function sendNotePrompt(locale: "es" | "en") {
   return fill(SEND_NOTE[locale], locale);
+}
+
+export function blessingPrompt(locale: "es" | "en") {
+  return fill(BLESSING[locale], locale);
 }
 
 /** Only a first name, letters only, so a typed name cannot steer the model. */
@@ -186,4 +213,74 @@ export async function writeSendNote(
   );
   const whole = completeSentences(raw.text, 220);
   return whole ? cleanNote(whole, input.text) : null;
+}
+
+/**
+ * Today's blessing for the greeting on Hoy, or null when it misses the
+ * brief. Only the day goes to DeepSeek, never a name.
+ */
+export async function writeBlessing(
+  input: { day: string; locale: "es" | "en" },
+  config: Config = process.env,
+  request: typeof fetch = fetch,
+): Promise<string | null> {
+  const raw = await chat(
+    blessingPrompt(input.locale),
+    JSON.stringify({ day: input.day }),
+    200,
+    10_000,
+    config,
+    request,
+  );
+  const whole = completeSentences(raw.text, 160);
+  return whole ? cleanNote(whole, "", { min: 30, max: 160 }) : null;
+}
+
+const THEME_REFS = `{who} Ayudas a escoger versículos de la Biblia para un tema de la app. Recibes el tema, una línea que lo describe y las citas que ya tiene. Propón {n} citas distintas que hablen de ese tema de forma clara y directa, que sirvan para enviar a una persona como ánimo, y que no estén en la lista que ya tiene.
+
+Reglas:
+- Solo la cita, en español, con el nombre completo del libro como en la Versión Recobro: «Isaías 41:10», «1 Pedro 5:7», «Salmos 23:1-3», «Juan 14:27».
+- Pasajes de uno a tres versículos seguidos del mismo capítulo.
+- Del Antiguo y del Nuevo Testamento, centrados en Cristo y en la gracia.
+- Nada fuera de contexto: el versículo debe decir de verdad lo que el tema busca.
+
+{forbidden}
+
+Devuelve solo JSON con la forma {"refs": ["Libro 1:2", "Libro 3:4-5"]}.`;
+
+/**
+ * Passages DeepSeek proposes for a theme: references only, never text. The
+ * caller checks each one against the Bible and the Recovery Version before
+ * anyone sees it.
+ */
+export async function proposeThemeRefs(
+  input: { theme: string; line: string; existing: string[]; count: number },
+  config: Config = process.env,
+  request: typeof fetch = fetch,
+): Promise<string[]> {
+  const system = THEME_REFS.replace("{who}", VOICE.es.who)
+    .replace("{forbidden}", VOICE.es.forbidden)
+    .replace("{n}", String(input.count));
+  const raw = await chat(
+    system,
+    JSON.stringify({
+      tema: input.theme,
+      linea: input.line,
+      ya_tiene: input.existing.slice(0, 120),
+    }),
+    60 * input.count + 200,
+    40_000,
+    config,
+    request,
+  );
+  const json = raw.text.slice(raw.text.indexOf("{"), raw.text.lastIndexOf("}") + 1);
+  let parsed: { refs?: unknown };
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    throw new Error("deepseek_bad_json");
+  }
+  return (Array.isArray(parsed.refs) ? parsed.refs : [])
+    .filter((ref): ref is string => typeof ref === "string" && ref.length <= 60)
+    .slice(0, input.count * 2);
 }

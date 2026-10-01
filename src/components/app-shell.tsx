@@ -121,6 +121,19 @@ function PreacherApp({
   const recipients = useAppStore((s) => s.recipients);
   const church = useAppStore((s) => s.church);
 
+  // The verses DeepSeek added to the themes (Admin → Temas), once per visit.
+  const bumpThemeExtras = useAppStore((s) => s.bumpThemeExtras);
+  useEffect(() => {
+    void Promise.all([import("@/lib/theme-verses"), import("@/lib/verses")])
+      .then(async ([{ getThemeExtras }, { setThemeExtras }]) => {
+        const list = await getThemeExtras();
+        if (!list.length) return;
+        setThemeExtras(list);
+        bumpThemeExtras();
+      })
+      .catch(() => undefined);
+  }, [bumpThemeExtras]);
+
   useEffect(() => {
     void import("@/lib/reader-prefs").then(({ applyFontScale }) => {
       applyFontScale(fontScale);

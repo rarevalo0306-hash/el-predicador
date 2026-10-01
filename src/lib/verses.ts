@@ -1598,10 +1598,58 @@ export function getDailyVerse(offset = 0, date = new Date()) {
 }
 
 export function getVerseById(id: string) {
-  return VERSES.find((verse) => verse.id === id);
+  return VERSES.find((verse) => verse.id === id) ?? EXTRA_BY_ID.get(id);
+}
+
+/** A verse added to a theme by DeepSeek (Admin → Temas), as stored. */
+export type ThemeExtra = { themeId: ThemeId; id: string; ref: string };
+
+const EXTRAS = new Map<ThemeId, Verse[]>();
+const EXTRA_BY_ID = new Map<string, Verse>();
+
+/**
+ * One passage, as the app keeps it: the Spanish reference with the book's
+ * full name ("Salmos 23:1-3") and an id from the book, chapter and verses
+ * ("x-psa-23-1-3"), the same whatever theme it is added to. Null when the
+ * reference is not a real place or spans more than three verses.
+ */
+export function canonicalPassage(ref: string): { id: string; ref: string; span: VerseSpan } | null {
+  const span = parseVerseRef(ref);
+  if (!span || span.chapter > span.book.chapters || span.to - span.from > 2) return null;
+  const verses = span.to > span.from ? `${span.from}-${span.to}` : `${span.from}`;
+  return {
+    id: `x-${span.book.id}-${span.chapter}-${verses}`,
+    ref: `${span.book.name} ${span.chapter}:${verses}`,
+    span,
+  };
+}
+
+/**
+ * The verses DeepSeek added to the themes, loaded from the server once per
+ * visit: after this, versesForTheme lists them after the theme's own.
+ */
+export function setThemeExtras(list: ThemeExtra[]) {
+  EXTRAS.clear();
+  EXTRA_BY_ID.clear();
+  for (const item of list) {
+    if (!THEME_KEYS[item.themeId] || VERSES.some((verse) => verse.id === item.id)) continue;
+    const passage = canonicalPassage(item.ref);
+    if (!passage) continue;
+    const known = EXTRA_BY_ID.get(item.id);
+    const verse: Verse = known
+      ? { ...known, themes: [...known.themes, item.themeId] }
+      : { id: item.id, ref: passage.ref, book: passage.span.book.name, text: "", themes: [item.themeId] };
+    EXTRA_BY_ID.set(item.id, verse);
+    EXTRAS.set(item.themeId, [...(EXTRAS.get(item.themeId) ?? []), verse]);
+  }
 }
 
 export function versesForTheme(id: ThemeId) {
+  return [...VERSES.filter((verse) => verse.themes.includes(id)), ...(EXTRAS.get(id) ?? [])];
+}
+
+/** The theme's own verses only, without the ones DeepSeek added. */
+export function catalogVersesForTheme(id: ThemeId) {
   return VERSES.filter((verse) => verse.themes.includes(id));
 }
 

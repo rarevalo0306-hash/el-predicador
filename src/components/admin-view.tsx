@@ -18,8 +18,9 @@ import { FileSpreadsheet } from "lucide-react";
 import { REGISTRATION_SHEET_URL } from "@/lib/sheet";
 import { TextSkeleton } from "@/components/text-skeleton";
 import { onTabListKeyDown } from "@/lib/tab-keys";
+import { AdminThemesPane } from "@/components/admin-themes-pane";
 
-type Pane = "registrations" | "accounts" | "notes";
+type Pane = "registrations" | "accounts" | "notes" | "themes";
 
 function csvOf(header: string[], rows: (string | number)[][]) {
   // Cells come from a public form: never let a spreadsheet run one as a formula.
@@ -157,7 +158,7 @@ export function AdminView() {
         onKeyDown={onTabListKeyDown}
       >
         {(data?.owner
-          ? (["registrations", "accounts", "notes"] as const)
+          ? (["registrations", "accounts", "notes", "themes"] as const)
           : (["registrations", "accounts"] as const)
         ).map((id) => (
           <button
@@ -178,8 +179,10 @@ export function AdminView() {
               ? t("adminRegistrations")
               : id === "accounts"
                 ? t("adminAccounts")
-                : t("adminNotes")}
-            {data && id !== "notes"
+                : id === "notes"
+                  ? t("adminNotes")
+                  : t("adminThemes")}
+            {data && (id === "registrations" || id === "accounts")
               ? ` · ${id === "registrations" ? data.registrations.length : data.accounts.length}`
               : ""}
           </button>
@@ -502,6 +505,8 @@ export function AdminView() {
           ) : null}
         </div>
       ) : null}
+
+      {pane === "themes" && data?.owner ? <AdminThemesPane /> : null}
     </section>
   );
 }

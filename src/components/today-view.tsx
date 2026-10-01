@@ -9,6 +9,10 @@ import { useI18n } from "@/components/language-switch";
 import { prefetchVerses } from "@/lib/recobro";
 import { useAppStore, type SendDraft } from "@/lib/store";
 import { getDailyReflection, type DailyReflection } from "@/lib/daily-reflection";
+import { getDailyBlessing } from "@/lib/daily-blessing";
+import { fallbackBlessing, greetingName, type DailyBlessing } from "@/lib/blessings";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { TextSkeleton } from "@/components/text-skeleton";
 import { createRemembered } from "@/lib/remembered";
 import {
   getDailyVerse,
@@ -25,7 +29,32 @@ const reflections = createRemembered<DailyReflection | null>({
   isEmpty: (value) => value === null || Boolean(value.fallback),
 });
 
-const MOODS: ThemeId[] = ["amor", "paz", "fortaleza", "esperanza", "consuelo"];
+// Today's blessing for the greeting; a prepared one is asked for again later.
+const blessings = createRemembered<DailyBlessing | null>({
+  keepEmptyMs: 5 * 60 * 1000,
+  isEmpty: (value) => value === null || Boolean(value.fallback),
+});
+
+/** What most people come for, always on screen; the rest behind "Más temas". */
+const MOODS: ThemeId[] = [
+  "amor",
+  "paz",
+  "fortaleza",
+  "esperanza",
+  "consuelo",
+  "fe",
+  "oracion",
+  "perdon",
+];
+const MORE_MOODS: ThemeId[] = [
+  "familia",
+  "matrimonios",
+  "jovenes",
+  "amistad",
+  "gratitud",
+  "sabiduria",
+  "evangelio",
+];
 
 type TodayViewProps = {
   mood: ThemeId | null;
@@ -36,6 +65,8 @@ type TodayViewProps = {
 export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
   const { locale, t } = useI18n();
   const dailyOffset = useAppStore((s) => s.dailyOffset);
+  // Re-read the themes when the verses DeepSeek added arrive.
+  useAppStore((s) => s.themeExtrasVersion);
   const bumpOffset = useAppStore((s) => s.bumpOffset);
   const [showContact, setShowContact] = useState(false);
   const [asked, setAsked] = useState(true);
@@ -43,6 +74,38 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
     () => reflections.peek(`${todayKey()}:${locale}`) ?? null,
   );
   const [reflecting, setReflecting] = useState(false);
+  const { user } = useCurrentUserState();
+  const displayName = useAppStore((s) => s.displayName);
+  // Only people who signed in are greeted, by their first name.
+  const name = user ? greetingName(user.displayName) || greetingName(displayName) : "";
+  const [blessing, setBlessing] = useState<DailyBlessing | null>(null);
+  const [moreMoods, setMoreMoods] = useState(false);
+  const showAllMoods = moreMoods || (mood !== null && MORE_MOODS.includes(mood));
+
+  // Today's blessing, written once for everyone; the name never leaves the device.
+  useEffect(() => {
+    if (!name) return;
+    let cancelled = false;
+    const day = todayKey();
+    const key = `${day}:${locale}`;
+    const known = blessings.peek(key);
+    if (known) {
+      setBlessing(known);
+      return;
+    }
+    setBlessing(null);
+    blessings
+      .load(key, () => getDailyBlessing({ data: { day, locale } }))
+      .then((result) => {
+        if (!cancelled) setBlessing(result ?? fallbackBlessing(day, locale));
+      })
+      .catch(() => {
+        if (!cancelled) setBlessing(fallbackBlessing(day, locale));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [locale, name]);
 
   // The word of the day, written once for everyone; nothing shows if it is not there.
   // Kept for the rest of the visit, so coming back to Hoy does not ask again.
@@ -116,6 +179,20 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
   return (
     <div className="flex flex-col gap-6">
       <header className="rise-in">
+        {name ? (
+          <div className="mb-5">
+            <p className="font-serif text-2xl tracking-tight text-foreground">
+              {t("greetHello", { name })}
+            </p>
+            {blessing ? (
+              <p className="mt-1 font-serif text-base leading-relaxed text-muted-foreground italic">
+                {blessing.text}
+              </p>
+            ) : (
+              <TextSkeleton label={t("wait")} lines={1} className="mt-2" lineClassName="h-5" />
+            )}
+          </div>
+        ) : null}
         <p className="text-xs font-medium tracking-[0.18em] text-primary uppercase">
           {dateLabel}
         </p>
@@ -185,7 +262,7 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
           </Button>
         </div>
         <div className="flex flex-wrap gap-2" role="group" aria-labelledby="mood-label">
-          {MOODS.map((id) => {
+          {(showAllMoods ? [...MOODS, ...MORE_MOODS] : MOODS).map((id) => {
             const active = mood === id;
             return (
               <button
@@ -204,6 +281,17 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
               </button>
             );
           })}
+          {/* Hidden while a theme from the extra ones is chosen, so it never hides it. */}
+          {mood && MORE_MOODS.includes(mood) ? null : (
+            <button
+              type="button"
+              onClick={() => setMoreMoods((open) => !open)}
+              aria-expanded={moreMoods}
+              className="h-11 rounded-full px-3 text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              {moreMoods ? t("moodLess") : t("moodMore", { n: MORE_MOODS.length })}
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -29,13 +29,27 @@ export async function defaultNoteWriter(): Promise<NoteWriter | null> {
 export type VerseSource = (themeId: string) => Promise<ThemeVerse[]>;
 
 export const catalogVerseSource: VerseSource = async (themeId) => {
-  const { versesForTheme } = await import("@/lib/verses");
-  return versesForTheme(themeId as never).map((v) => ({
+  const { catalogVersesForTheme } = await import("@/lib/verses");
+  const own = catalogVersesForTheme(themeId as never).map((v) => ({
     id: v.id,
     ref: v.ref,
     text: v.text,
     source: v.source ?? null,
   }));
+  // Then the ones DeepSeek added (Admin → Temas); their texts are in verse_texts.
+  try {
+    const { getSql } = await import("@/lib/db");
+    const sql = await getSql();
+    const extras = await sql<{ verse_id: string; ref: string }>`
+      select verse_id, ref from theme_verses where theme_id = ${themeId}
+      order by created_at, verse_id`;
+    return [
+      ...own,
+      ...extras.map((row) => ({ id: row.verse_id, ref: row.ref, text: "", source: null })),
+    ];
+  } catch {
+    return own;
+  }
 };
 
 /**

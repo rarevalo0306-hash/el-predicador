@@ -6,7 +6,7 @@ import { VerseCard } from "@/components/verse-card";
 import { useI18n } from "@/components/language-switch";
 import { prefetchVerses } from "@/lib/recobro";
 import { answerTopic } from "@/lib/topic-reply";
-import type { SendDraft } from "@/lib/store";
+import { useAppStore, type SendDraft } from "@/lib/store";
 import {
   THEMES,
   localizedTheme,
@@ -31,6 +31,8 @@ export function ThemesView({
   onSend,
 }: ThemesViewProps) {
   const { locale, t } = useI18n();
+  // Re-read the themes when the verses DeepSeek added arrive.
+  const extrasVersion = useAppStore((s) => s.themeExtrasVersion);
   const reply = query.trim() ? answerTopic(query, locale) : null;
   const results = reply?.verses ?? [];
 
@@ -44,7 +46,8 @@ export function ThemesView({
     // every letter.
     const timer = setTimeout(() => prefetchVerses(results, locale), 350);
     return () => clearTimeout(timer);
-  }, [locale, query, themeId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- results follow query
+  }, [locale, query, themeId, extrasVersion]);
 
   if (themeId) {
     const theme = localizedTheme(themeId, locale);
