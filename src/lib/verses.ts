@@ -1677,6 +1677,19 @@ export function canonicalPassage(ref: string): { id: string; ref: string; span: 
 }
 
 /**
+ * The same, for a reference written inside a sentence ("Propongo Salmos
+ * 119:9"): leading words are dropped one by one until a book matches.
+ */
+export function canonicalPassageLoose(ref: string) {
+  const words = ref.trim().split(/\s+/);
+  for (let start = 0; start < words.length - 1; start += 1) {
+    const passage = canonicalPassage(words.slice(start).join(" "));
+    if (passage) return passage;
+  }
+  return null;
+}
+
+/**
  * The verses DeepSeek added to the themes, loaded from the server once per
  * visit: after this, versesForTheme lists them after the theme's own.
  */

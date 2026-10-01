@@ -59,29 +59,70 @@ export const getThemeExtrasStatus = createServerFn({ method: "GET" })
   });
 
 /**
- * One step for the owner's screen: DeepSeek proposes passages for a theme
- * and the ones that check out are published at once. The screen calls this
- * theme by theme, so no single request outlives a serverless timeout.
+ * Step one of growing a theme: DeepSeek proposes references, nothing else.
+ * Kept apart from checking and publishing so each request stays well
+ * inside the serverless time limit, however slowly DeepSeek answers.
  */
-export const expandThemeVerses = createServerFn({ method: "POST" })
+export const proposeThemeVerses = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator((data: { themeId: string }) => ({ themeId: String(data?.themeId ?? "") }))
+  .handler(async ({ data, context }): Promise<{ refs: string[] }> => {
+    await requireAdmin(context.userId);
+    const themeId = await isTheme(data.themeId);
+    if (!themeId) throw new Error("invalid");
+    const { catalogVersesForTheme, themeById } = await import("@/lib/verses");
+    const { proposeThemeRefs } = await import("@/lib/ai/daily.server");
+    const { getSql } = await import("@/lib/db");
+    const sql = await getSql();
+    const kept = await sql<{ ref: string }>`
+      select ref from theme_verses where theme_id = ${themeId} order by created_at`;
+    const existing = [
+      ...catalogVersesForTheme(themeId).map((verse) => verse.ref),
+      ...kept.map((row) => row.ref),
+    ];
+    const theme = themeById(themeId);
+    const refs = await proposeThemeRefs({
+      theme: theme.name,
+      line: theme.line,
+      existing,
+      count: 10,
+    }).catch((error: unknown) => {
+      console.warn("[theme-verses] propose failed", {
+        themeId,
+        code: error instanceof Error ? error.message.slice(0, 60) : "unknown",
+      });
+      throw error;
+    });
+    return { refs };
+  });
+
+/**
+ * Step two: the proposed references that are real passages of one to three
+ * verses, not already in the theme and with words in the Recovery Version
+ * are published. Each is checked here, whatever the screen sent.
+ */
+export const publishThemeVerses = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((data: { themeId: string; refs: string[] }) => ({
+    themeId: String(data?.themeId ?? ""),
+    refs: (Array.isArray(data?.refs) ? data.refs : [])
+      .filter((ref): ref is string => typeof ref === "string")
+      .map((ref) => ref.slice(0, 60))
+      .slice(0, 30),
+  }))
   .handler(async ({ data, context }) => {
     await requireAdmin(context.userId);
     const themeId = await isTheme(data.themeId);
     if (!themeId) throw new Error("invalid");
-    const { canonicalPassage, catalogVersesForTheme, themeById } = await import("@/lib/verses");
-    const { proposeThemeRefs } = await import("@/lib/ai/daily.server");
+    const { canonicalPassageLoose, catalogVersesForTheme } = await import("@/lib/verses");
     const { hydrateVerse } = await import("@/lib/recobro");
     const { expandTheme } = await import("@/lib/theme-verses.server");
     const { getSql } = await import("@/lib/db");
     const sql = await getSql();
-    const theme = themeById(themeId);
     const result = await expandTheme(sql, themeId, {
-      propose: (existing) =>
-        proposeThemeRefs({ theme: theme.name, line: theme.line, existing, count: 10 }),
+      propose: async () => data.refs,
       canonical: (ref) => {
-        const passage = canonicalPassage(ref);
+        const passage = canonicalPassageLoose(ref);
         return passage
           ? {
               id: passage.id,
@@ -106,8 +147,9 @@ export const expandThemeVerses = createServerFn({ method: "POST" })
     });
     // Counts only, so the owner's run can be read in the logs.
     const count = (reason: string) => result.rejected.filter((r) => r.reason === reason).length;
-    console.info("[theme-verses] expanded", {
+    console.info("[theme-verses] published", {
       themeId,
+      proposed: data.refs.length,
       added: result.added.length,
       repeated: count("repeated"),
       invalid: count("invalid"),
