@@ -12,7 +12,7 @@ type Config = Record<string, string | undefined>;
 export type VerseInput = { ref: string; text: string; locale: "es" | "en" };
 
 const REFLECTION = {
-  es: `{who} Cada mañana escribes la palabra del día para todas las personas que abren la app: una reflexión breve sobre el versículo que recibes (Versión Recobro). Escribe dos o tres oraciones, de 180 a 380 caracteres, en español, de tú, cálida y directa, que lleve a Cristo y aplique el versículo a la vida de hoy. No copies el versículo completo; puedes tomar una palabra o frase de él. Sin títulos, sin emojis, sin comillas alrededor y sin firma.
+  es: `{who} Cada mañana escribes la palabra del día para todas las personas que abren la app: una reflexión breve sobre el versículo que recibes (Versión Recobro). Escribe dos o tres oraciones, de 180 a 380 caracteres, en español, de tú, cálida y directa, que lleve a Cristo y aplique el versículo a la vida de hoy. Este texto es lo primero que muchos leen en el día: tiene que dar aliento y esperanza y transmitir confianza en Dios. Recuerda a quien lo lee que el Señor está con él, que es fiel a Su palabra y que puede descansar en Él hoy, sea lo que sea que esté pasando. Si recibes un tema (fuerza, esperanza, consuelo, amor, fe, paz, oración, perdón o bendición), deja que dé el tono. Nunca termines en reproche, exigencia o culpa. No copies el versículo completo; puedes tomar una palabra o frase de él. Sin títulos, sin emojis, sin comillas alrededor y sin firma.
 
 {tone}
 
@@ -22,7 +22,7 @@ Ejemplos del tono buscado (no los copies):
 {examples}
 
 Devuelve solo la reflexión.`,
-  en: `{who} Every morning you write the word of the day for everyone who opens the app: a short reflection on the verse you receive (Recovery Version). Write two or three sentences, 180 to 380 characters, in English, addressed to one person, warm and direct, leading to Christ and applying the verse to life today. Do not copy the whole verse; you may take a word or phrase from it. No titles, no emojis, no surrounding quotes and no signature.
+  en: `{who} Every morning you write the word of the day for everyone who opens the app: a short reflection on the verse you receive (Recovery Version). Write two or three sentences, 180 to 380 characters, in English, addressed to one person, warm and direct, leading to Christ and applying the verse to life today. This is the first thing many people read in the day: it must give courage and hope and build trust in God. Remind the reader that the Lord is with them, that He is faithful to His word and that they can rest in Him today, whatever they are going through. If you receive a theme (strength, hope, comfort, love, faith, peace, prayer, forgiveness or blessing), let it set the tone. Never end on reproach, demand or guilt. Do not copy the whole verse; you may take a word or phrase from it. No titles, no emojis, no surrounding quotes and no signature.
 
 {tone}
 
@@ -174,13 +174,17 @@ export function completeSentences(text: string, max: number): string {
 
 /** Today's reflection on a verse, or null when it misses the brief. */
 export async function writeReflection(
-  input: VerseInput,
+  input: VerseInput & { theme?: string | null },
   config: Config = process.env,
   request: typeof fetch = fetch,
 ): Promise<string | null> {
   const raw = await chat(
     reflectionPrompt(input.locale),
-    JSON.stringify({ ref: input.ref, text: input.text.slice(0, 800) }),
+    JSON.stringify({
+      ref: input.ref,
+      text: input.text.slice(0, 800),
+      ...(input.theme ? { tema: input.theme } : {}),
+    }),
     900,
     15_000,
     config,

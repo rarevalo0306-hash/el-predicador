@@ -43,6 +43,7 @@ const HINTS: Hint[] = [
   { keys: ["amor", "love"], theme: "amor" },
   { keys: ["paz", "peace"], theme: "paz" },
   { keys: ["esperanza", "hope"], theme: "esperanza" },
+  { keys: ["bendicion", "bendecir", "bendito", "blessing", "bless"], theme: "bendicion" },
   { keys: ["sabiduria", "decision", "wisdom", "choose"], theme: "sabiduria" },
   { keys: ["gracias", "gratitud", "gratitude", "thankful"], theme: "gratitud" },
   { keys: ["fortaleza", "fuerza", "cansado", "strength", "tired", "weak"], theme: "fortaleza" },

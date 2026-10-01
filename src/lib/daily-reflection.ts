@@ -28,8 +28,10 @@ export const getDailyReflection = createServerFn({ method: "POST" })
     const noon = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12);
     if (Math.abs(noon.getTime() - Date.now()) > 36 * 60 * 60 * 1000) return null;
 
-    const { getDailyVerse } = await import("@/lib/verses");
-    const verse = getDailyVerse(0, noon);
+    const { getDailyPick, localizedTheme } = await import("@/lib/verses");
+    const pick = getDailyPick(0, noon);
+    const verse = pick.verse;
+    const theme = localizedTheme(pick.theme, data.locale).name;
     const { getSql } = await import("@/lib/db");
     const sql = await getSql();
     const { deepseekConfigured } = await import("@/lib/ai/deepseek.server");
@@ -38,7 +40,7 @@ export const getDailyReflection = createServerFn({ method: "POST" })
 
     return reflectionFor(sql, data.day, data.locale, verse.id, {
       configured: deepseekConfigured(),
-      write: (input) => writeReflection(input),
+      write: (input) => writeReflection({ ...input, theme }),
       // The verse's own words: the stored copy, else the Recovery Version,
       // kept for next time like the verse lines do.
       verseText: async () => {

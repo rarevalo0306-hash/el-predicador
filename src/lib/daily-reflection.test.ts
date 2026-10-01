@@ -81,6 +81,24 @@ test("a reflection kept cut off is replaced, never shown", async () => {
   assert.equal(await keptText(), WHOLE);
 });
 
+test("a reflection kept for another verse is replaced by one for today's verse", async () => {
+  await sql`insert into daily_reflections (day, locale, verse_id, text)
+    values (${DAY}, 'es', 'old-verse', ${WHOLE})`;
+  const other =
+    "El Señor no te ha soltado de Su mano. Descansa hoy en Su fidelidad y deja que Su paz guarde tu corazón.";
+  const run = deps([other]);
+  assert.deepEqual(await reflectionFor(sql, DAY, "es", VERSE, run.value), {
+    verseId: VERSE,
+    text: other,
+  });
+  const rows = await sql<{ verse_id: string }>`
+    select verse_id from daily_reflections where day = ${DAY} and locale = 'es'`;
+  assert.deepEqual(
+    rows.map((row) => row.verse_id),
+    [VERSE],
+  );
+});
+
 test("an answer that ends mid-sentence is retried and never kept", async () => {
   const run = deps([CUT, WHOLE]);
   assert.equal((await reflectionFor(sql, DAY, "es", VERSE, run.value))?.text, WHOLE);

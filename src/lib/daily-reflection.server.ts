@@ -63,8 +63,15 @@ export async function reflectionFor(
     )[0];
 
   const kept = await read();
-  if (kept && endsComplete(kept.text)) return { verseId: kept.verse_id, text: kept.text };
-  if (kept) {
+  if (kept && kept.verse_id === verseId && endsComplete(kept.text)) {
+    return { verseId: kept.verse_id, text: kept.text };
+  }
+  if (kept && kept.verse_id !== verseId) {
+    // Written for another verse (the day's verse came from a different
+    // list then): replaced, so the word always matches the verse shown.
+    await sql`delete from daily_reflections
+      where day = ${day} and locale = ${locale} and verse_id = ${kept.verse_id}`;
+  } else if (kept) {
     // Written before the app checked for whole sentences: cut off, so it is
     // replaced by a new one rather than shown half-finished.
     console.warn("[daily-reflection] stored text was incomplete", { day, locale });

@@ -20,6 +20,7 @@ export const THEME_IDS = [
   "matrimonios",
   "amistad",
   "oracion",
+  "bendicion",
 ] as const;
 export type ScheduleThemeId = (typeof THEME_IDS)[number];
 export type ScheduleInput = {
