@@ -896,7 +896,7 @@ function ChapterReader({
               onClick={handleHighlight}
             >
               <Highlighter
-                className={cn(allHighlighted && "fill-amber-400 text-amber-700")}
+                className={cn(allHighlighted && "fill-amber-400 text-amber-700 dark:text-amber-300")}
               />
             </Button>
             <Button

@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
-import { Share2, Smartphone, UserRound } from "lucide-react";
+import { Moon, Share2, Smartphone, Sun, SunMoon, UserRound } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -19,13 +19,16 @@ import { hydrateVerse } from "@/lib/recobro";
 import { getDailyVerse } from "@/lib/verses";
 import { ContactForm } from "@/components/contact-form";
 import { ensurePreacherServiceWorker, showDailyNotification } from "@/lib/notify";
-import {
-  applyFontScale,
-  FONT_SCALE_STEPS,
-  shareAppLink,
-  type FontScale,
-} from "@/lib/reader-prefs";
+import { applyFontScale, FONT_SCALE_STEPS, shareAppLink, type FontScale } from "@/lib/reader-prefs";
 import { cn } from "@/lib/utils";
+import { setColorTheme, type ColorTheme } from "@/lib/color-theme";
+import { useColorThemeChoice } from "@/components/use-color-theme";
+
+const THEME_OPTIONS = [
+  { id: "light", icon: Sun, label: "colorThemeLight" },
+  { id: "dark", icon: Moon, label: "colorThemeDark" },
+  { id: "system", icon: SunMoon, label: "colorThemeSystem" },
+] as const satisfies readonly { id: ColorTheme; icon: unknown; label: string }[];
 
 type SettingsDrawerProps = {
   open: boolean;
@@ -53,6 +56,7 @@ export function SettingsDrawer({
   const recipients = useAppStore((s) => s.recipients);
   const fontScale = useAppStore((s) => s.fontScale);
   const setFontScale = useAppStore((s) => s.setFontScale);
+  const colorTheme = useColorThemeChoice();
 
   // Turning reminders on waits for the permission prompt and today's verse;
   // a second tap meanwhile must not ask twice or show two notifications.
@@ -127,9 +131,7 @@ export function SettingsDrawer({
             <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
               {t("installTitle")}
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              {t("installDesc")}
-            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t("installDesc")}</p>
             <Button asChild className="mt-4 w-full">
               <a href="/?install=1&platform=ios">
                 <Smartphone className="size-4" />
@@ -181,6 +183,38 @@ export function SettingsDrawer({
           <div className="grid gap-2">
             <p className="text-sm font-medium">{t("language")}</p>
             <LanguageSwitch />
+          </div>
+
+          <div className="rounded-lg border border-border bg-card px-4 py-4">
+            <p className="text-sm font-medium" id="color-theme-title">
+              {t("colorThemeTitle")}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("colorThemeHint")}</p>
+            {/* Icon above the word so "Automático" fits on a phone; with large
+                text the choices wrap to a new row rather than squeeze. */}
+            <div
+              className="mt-3 flex flex-wrap gap-2"
+              role="group"
+              aria-labelledby="color-theme-title"
+            >
+              {THEME_OPTIONS.map(({ id, icon: Icon, label }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setColorTheme(id)}
+                  aria-pressed={colorTheme === id}
+                  className={cn(
+                    "flex min-h-14 min-w-[5.5rem] flex-1 flex-col items-center justify-center gap-1 rounded-md border px-2 py-2 text-center text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none",
+                    colorTheme === id
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-background text-foreground",
+                  )}
+                >
+                  <Icon className="size-4 shrink-0" aria-hidden />
+                  {t(label)}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="rounded-lg border border-border bg-card px-4 py-4">
@@ -245,9 +279,7 @@ export function SettingsDrawer({
           >
             <span>
               <span className="block text-sm font-medium">{t("notifyTitle")}</span>
-              <span className="mt-0.5 block text-xs text-muted-foreground">
-                {t("notifyDesc")}
-              </span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">{t("notifyDesc")}</span>
             </span>
             <span
               className={
