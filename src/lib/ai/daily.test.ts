@@ -175,5 +175,37 @@ test("references are still read from a fenced, listed or cut-off answer", () => 
     "2 Timoteo 2:22",
     "Proverbios 3:5-6",
   ]);
+  assert.deepEqual(readRefs("Juan 3.16 y Romanos 8: 28"), ["Juan 3:16", "Romanos 8:28"]);
   assert.deepEqual(readRefs("No tengo citas."), []);
+});
+
+test("theme proposals ask for JSON, read a thinking model's reasoning and say what came back", async () => {
+  const seen: { body?: unknown }[] = [];
+  const thinking = (async (_url: unknown, init?: RequestInit) => {
+    seen.push({ body: JSON.parse(String(init?.body)) });
+    const message = { content: "", reasoning_content: 'Opciones: {"refs": ["Salmos 119:9"]}' };
+    return new Response(JSON.stringify({ choices: [{ message, finish_reason: "length" }] }), {
+      status: 200,
+    });
+  }) as typeof fetch;
+  const refs = await proposeThemeRefs(
+    { theme: "Jóvenes", line: "", existing: [], count: 5 },
+    config,
+    thinking,
+  );
+  assert.deepEqual(refs, ["Salmos 119:9"]);
+  assert.deepEqual((seen[0]?.body as { response_format?: unknown }).response_format, {
+    type: "json_object",
+  });
+
+  const calls: unknown[] = [];
+  await assert.rejects(
+    proposeThemeRefs(
+      { theme: "Paz", line: "", existing: [], count: 5 },
+      config,
+      fakeFetch("{}", calls),
+    ),
+    /deepseek_bad_json \[none, 2 chars: \{\}\]/,
+  );
+  assert.equal(calls.length, 2, "one retry when the first answer has nothing");
 });
