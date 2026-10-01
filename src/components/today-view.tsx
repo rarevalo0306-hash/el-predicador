@@ -15,6 +15,7 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { TextSkeleton } from "@/components/text-skeleton";
 import { createRemembered } from "@/lib/remembered";
 import {
+  DAILY_THEMES,
   getDailyVerse,
   todayKey,
   versesForTheme,
@@ -35,17 +36,8 @@ const blessings = createRemembered<DailyBlessing | null>({
   isEmpty: (value) => value === null || Boolean(value.fallback),
 });
 
-/** What most people come for, always on screen; the rest behind "Más temas". */
-const MOODS: ThemeId[] = [
-  "amor",
-  "paz",
-  "fortaleza",
-  "esperanza",
-  "consuelo",
-  "fe",
-  "oracion",
-  "perdon",
-];
+/** The themes of the verse of the day, always on screen; the rest behind "Más temas". */
+const MOODS: ThemeId[] = DAILY_THEMES;
 const MORE_MOODS: ThemeId[] = [
   "familia",
   "matrimonios",
@@ -174,6 +166,7 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
     familia: t("themeFamilia"),
     perdon: t("themePerdon"),
     evangelio: t("themeEvangelio"),
+    bendicion: t("themeBendicion"),
   };
 
   return (

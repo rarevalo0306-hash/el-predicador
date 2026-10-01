@@ -34,6 +34,7 @@ export const THEMES: {
   { id: "familia", name: "Familia", line: "Hogar y compañía" },
   { id: "perdon", name: "Perdón", line: "Soltar y empezar de nuevo" },
   { id: "evangelio", name: "Evangelio", line: "La buena noticia de Jesús" },
+  { id: "bendicion", name: "Bendición", line: "Lo que el Señor pone sobre los suyos" },
 ];
 
 export const SOURCE = SOURCE_RECOBRO;
@@ -55,6 +56,7 @@ const THEME_KEYS: Record<ThemeId, { name: StringKey; line: StringKey }> = {
   familia: { name: "themeFamilia", line: "themeFamiliaLine" },
   perdon: { name: "themePerdon", line: "themePerdonLine" },
   evangelio: { name: "themeEvangelio", line: "themeEvangelioLine" },
+  bendicion: { name: "themeBendicion", line: "themeBendicionLine" },
 };
 
 export function localizeVerse(verse: Verse, locale: Locale): Verse {
@@ -284,7 +286,7 @@ export const VERSES: Verse[] = [
     ref: "Romanos 15:13",
     book: "Romanos",
     text: "Y el Dios de esperanza os llene de todo gozo y paz en el creer, para que abundéis en esperanza por el poder del Espíritu Santo.",
-    themes: ["esperanza", "paz"],
+    themes: ["esperanza", "paz", "bendicion"],
   },
   {
     id: "is-40-31",
@@ -368,7 +370,7 @@ export const VERSES: Verse[] = [
     ref: "Números 6:24-26",
     book: "Números",
     text: "Jehová te bendiga, y te guarde; Jehová haga resplandecer su rostro sobre ti, y tenga de ti misericordia; Jehová alce sobre ti su rostro, y ponga en ti paz.",
-    themes: ["paz", "familia", "gratitud"],
+    themes: ["paz", "familia", "gratitud", "bendicion"],
   },
   {
     id: "jn-16-33",
@@ -1019,7 +1021,7 @@ export const VERSES: Verse[] = [
     ref: "2 Corintios 13:14",
     book: "2 Corintios",
     text: "La gracia del Señor Jesucristo, el amor de Dios, y la comunión del Espíritu Santo sean con todos vosotros.",
-    themes: ["evangelio", "fe"],
+    themes: ["evangelio", "fe", "bendicion"],
   },
   {
     id: "jn-14-16",
@@ -1574,6 +1576,21 @@ export const VERSES: Verse[] = [
     text: "Muchos me dirán en aquel día: Señor, Señor, ¿no profetizamos en tu nombre, y en tu nombre echamos fuera demonios, y en tu nombre hicimos muchos milagros? Y entonces les declararé: Nunca os conocí; apartaos de mí, hacedores de maldad.",
     themes: ["evangelio"],
   },
+  // Bendición: what the Lord puts on His own, for the verse of the day.
+  { id: "ef-1-3", ref: "Efesios 1:3", book: "Efesios", text: "", themes: ["bendicion"] },
+  { id: "sal-67-1", ref: "Salmos 67:1", book: "Salmos", text: "", themes: ["bendicion"] },
+  { id: "heb-13-20", ref: "Hebreos 13:20-21", book: "Hebreos", text: "", themes: ["bendicion", "paz"] },
+  { id: "fil-4-19", ref: "Filipenses 4:19", book: "Filipenses", text: "", themes: ["bendicion", "fe"] },
+  { id: "2ts-3-16", ref: "2 Tesalonicenses 3:16", book: "2 Tesalonicenses", text: "", themes: ["bendicion", "paz"] },
+  { id: "prv-10-22", ref: "Proverbios 10:22", book: "Proverbios", text: "", themes: ["bendicion"] },
+  { id: "jer-17-7", ref: "Jeremías 17:7-8", book: "Jeremías", text: "", themes: ["bendicion", "fe"] },
+  { id: "sal-29-11", ref: "Salmos 29:11", book: "Salmos", text: "", themes: ["bendicion", "fortaleza"] },
+  { id: "ef-6-23", ref: "Efesios 6:23-24", book: "Efesios", text: "", themes: ["bendicion"] },
+  { id: "sal-5-12", ref: "Salmos 5:12", book: "Salmos", text: "", themes: ["bendicion"] },
+  { id: "ef-3-20", ref: "Efesios 3:20-21", book: "Efesios", text: "", themes: ["bendicion", "esperanza"] },
+  { id: "sal-121-7", ref: "Salmos 121:7-8", book: "Salmos", text: "", themes: ["bendicion", "consuelo"] },
+  { id: "2co-9-8", ref: "2 Corintios 9:8", book: "2 Corintios", text: "", themes: ["bendicion"] },
+  { id: "dt-28-6", ref: "Deuteronomio 28:6", book: "Deuteronomio", text: "", themes: ["bendicion"] },
 ];
 
 export function todayKey(date = new Date()) {
@@ -1592,10 +1609,45 @@ function hashString(value: string) {
   return h >>> 0;
 }
 
-export function getDailyVerse(offset = 0, date = new Date()) {
-  const index = (hashString(todayKey(date)) + offset) % VERSES.length;
-  return VERSES[index]!;
+/**
+ * The themes the verse of the day comes from: words that give courage and
+ * hope and lead to trust in God. "Otro" and the reflection follow the same.
+ */
+export const DAILY_THEMES: ThemeId[] = [
+  "fortaleza",
+  "esperanza",
+  "consuelo",
+  "amor",
+  "fe",
+  "paz",
+  "oracion",
+  "perdon",
+  "bendicion",
+];
+
+const DAILY_LISTS = DAILY_THEMES.map((theme) =>
+  VERSES.filter((verse) => verse.themes.includes(theme)),
+);
+
+/**
+ * Today's verse and the theme it was picked under. Each day lands on one of
+ * the nine themes (all equally, however many verses each has), then on a
+ * verse of it; "Otro" steps to the next theme and verse.
+ */
+export function getDailyPick(offset = 0, date = new Date()) {
+  const step = hashString(todayKey(date)) + offset;
+  const slot = step % DAILY_THEMES.length;
+  const list = DAILY_LISTS[slot]!;
+  return {
+    theme: DAILY_THEMES[slot]!,
+    verse: list[Math.floor(step / DAILY_THEMES.length) % list.length]!,
+  };
 }
+
+export function getDailyVerse(offset = 0, date = new Date()) {
+  return getDailyPick(offset, date).verse;
+}
+
 
 export function getVerseById(id: string) {
   return VERSES.find((verse) => verse.id === id) ?? EXTRA_BY_ID.get(id);
