@@ -12,13 +12,6 @@ export type ApiBibleChapter = {
   fumsId?: string;
 };
 
-type ApiBibleEdition = {
-  id?: string;
-  name?: string;
-  abbreviation?: string;
-  abbreviationLocal?: string;
-};
-
 type ContentNode = {
   type?: string;
   name?: string;
@@ -40,8 +33,6 @@ type ChapterResponse = {
 const API_BIBLE_URL = "https://rest.api.bible/v1";
 const LOCKMAN_URL = "https://www.lockman.org/";
 
-let licensedBibles: Promise<ApiBibleEdition[]> | null = null;
-
 function apiBibleKey() {
   const key = env("API_BIBLE_KEY");
   if (!key) throw new Error("api-bible-missing");
@@ -62,48 +53,19 @@ async function apiBibleRequest<T>(path: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-async function availableBibles() {
-  if (!licensedBibles) {
-    licensedBibles = apiBibleRequest<{ data?: ApiBibleEdition[] }>("/bibles")
-      .then((payload) => payload.data ?? [])
-      .catch((error) => {
-        licensedBibles = null;
-        throw error;
-      });
-  }
-  return licensedBibles;
-}
+/**
+ * The licensed editions on the owner's API.Bible account (its "Bible ID"s,
+ * which are not secret). API_BIBLE_LBLA_ID / API_BIBLE_NASB20_ID override
+ * them if the account ever changes.
+ */
+export const API_BIBLE_IDS = {
+  lbla: "e3f420b9665abaeb-01",
+  nasb20: "a761ca71e0b3ddcf-01",
+} as const;
 
-function normalizedEditionText(edition: ApiBibleEdition) {
-  return [edition.name, edition.abbreviation, edition.abbreviationLocal]
-    .filter(Boolean)
-    .join(" ")
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase();
-}
-
-export function matchesApiBibleVersion(
-  edition: ApiBibleEdition,
-  version: Extract<BibleVersion, "lbla" | "nasb20">,
-) {
-  const text = normalizedEditionText(edition);
-  if (version === "lbla") {
-    return /\blbla\b/.test(text) || text.includes("la biblia de las americas");
-  }
-  return (
-    /\bnasb\s*20\b/.test(text) ||
-    /\bnasb\s*2020\b/.test(text) ||
-    (text.includes("new american standard bible") && text.includes("2020"))
-  );
-}
-
-async function bibleId(version: Extract<BibleVersion, "lbla" | "nasb20">) {
+function bibleId(version: Extract<BibleVersion, "lbla" | "nasb20">) {
   const override = env(version === "lbla" ? "API_BIBLE_LBLA_ID" : "API_BIBLE_NASB20_ID");
-  if (override) return override;
-  const edition = (await availableBibles()).find((item) => matchesApiBibleVersion(item, version));
-  if (!edition?.id) throw new Error(`api-bible-license:${version}`);
-  return edition.id;
+  return override ?? API_BIBLE_IDS[version];
 }
 
 function verseFromAttrs(attrs: Record<string, unknown> | undefined) {
@@ -149,7 +111,7 @@ export async function loadChapterFromApiBible(
   _locale: Locale,
   version: Extract<BibleVersion, "lbla" | "nasb20">,
 ): Promise<ApiBibleChapter> {
-  const id = await bibleId(version);
+  const id = bibleId(version);
   const chapterId = `${book.id.toUpperCase()}.${chapter}`;
   const params = new URLSearchParams({
     "content-type": "json",
@@ -160,7 +122,14 @@ export async function loadChapterFromApiBible(
   });
   const payload = await apiBibleRequest<ChapterResponse>(
     `/bibles/${encodeURIComponent(id)}/chapters/${encodeURIComponent(chapterId)}?${params}`,
-  );
+  ).catch((error: unknown) => {
+    // API.Bible answers 403 when the key is fine but this edition is not
+    // licensed to it, so the reader is told which Bible to turn on.
+    if (error instanceof Error && error.message === "api-bible-http:403") {
+      throw new Error(`api-bible-license:${version}`);
+    }
+    throw error;
+  });
   const verses = apiBibleContentToVerses(payload.data?.content);
   if (!verses.length) throw new Error("api-bible-empty");
   return {

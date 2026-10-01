@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { apiBibleContentToVerses, matchesApiBibleVersion } from "./api-bible.ts";
+import { API_BIBLE_IDS, apiBibleContentToVerses, loadChapterFromApiBible } from "./api-bible.ts";
 
 /** Sets LSM access for one test; returns the undo. */
 function withLsmEnv(appid: string | undefined, token: string | undefined) {
@@ -18,25 +18,11 @@ function withLsmEnv(appid: string | undefined, token: string | undefined) {
 }
 
 
-test("recognizes the two licensed Lockman editions", () => {
-  assert.equal(
-    matchesApiBibleVersion(
-      { name: "La Biblia de las Américas", abbreviation: "LBLA" },
-      "lbla",
-    ),
-    true,
-  );
-  assert.equal(
-    matchesApiBibleVersion(
-      { name: "New American Standard Bible - 2020", abbreviation: "NASB20" },
-      "nasb20",
-    ),
-    true,
-  );
-  assert.equal(
-    matchesApiBibleVersion({ name: "New American Standard Bible - 1995" }, "nasb20"),
-    false,
-  );
+test("reads the two licensed Lockman editions by their fixed Bible ID", () => {
+  assert.deepEqual(API_BIBLE_IDS, {
+    lbla: "e3f420b9665abaeb-01",
+    nasb20: "a761ca71e0b3ddcf-01",
+  });
 });
 
 test("groups API.Bible JSON text under the correct verse number", () => {
@@ -167,5 +153,31 @@ test("without the key nothing is requested", async () => {
     await assert.rejects(loadChapterFromApiBible(book, 3, "en", "nasb20"), /api-bible-missing/);
   } finally {
     delete process.env.API_BIBLE_NASB20_ID;
+  }
+});
+
+test("asks API.Bible for the chapter by fixed Bible ID, and names a missing license", async () => {
+  const before = { key: process.env.API_BIBLE_KEY, fetch: globalThis.fetch };
+  process.env.API_BIBLE_KEY = "test-key";
+  const asked: string[] = [];
+  const book = { id: "gen" } as Parameters<typeof loadChapterFromApiBible>[0];
+  try {
+    globalThis.fetch = (async (url: string | URL) => {
+      asked.push(String(url));
+      return new Response(JSON.stringify({ data: { content: [] } }), { status: 403 });
+    }) as typeof fetch;
+    await assert.rejects(loadChapterFromApiBible(book, 1, "es", "lbla"), {
+      message: "api-bible-license:lbla",
+    });
+    assert.match(asked[0] ?? "", /\/bibles\/e3f420b9665abaeb-01\/chapters\/GEN\.1\?/);
+
+    globalThis.fetch = (async () => new Response("", { status: 401 })) as typeof fetch;
+    await assert.rejects(loadChapterFromApiBible(book, 1, "en", "nasb20"), {
+      message: "api-bible-http:401",
+    });
+  } finally {
+    globalThis.fetch = before.fetch;
+    if (before.key === undefined) delete process.env.API_BIBLE_KEY;
+    else process.env.API_BIBLE_KEY = before.key;
   }
 });
