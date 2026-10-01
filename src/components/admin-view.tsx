@@ -151,8 +151,13 @@ export function AdminView() {
         <h2 className="font-serif text-2xl tracking-tight">{t("adminTitle")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{t("adminSub")}</p>
       </div>
+      {/* Four tabs with their counts do not fit one row of the app's column
+          without breaking words, so the owner's tabs go two by two. */}
       <div
-        className="inline-flex w-full rounded-full border border-border bg-card p-0.5"
+        className={cn(
+          "w-full border border-border bg-card p-0.5",
+          data?.owner ? "grid grid-cols-2 gap-0.5 rounded-3xl" : "inline-flex rounded-full",
+        )}
         role="tablist"
         aria-label={t("adminTitle")}
         onKeyDown={onTabListKeyDown}
@@ -169,7 +174,7 @@ export function AdminView() {
             tabIndex={pane === id ? 0 : -1}
             onClick={() => setPane(id)}
             className={cn(
-              "h-11 flex-1 rounded-full px-4 text-sm font-medium transition-colors duration-150",
+              "min-h-11 flex-1 rounded-full px-3 py-1.5 text-sm leading-tight font-medium whitespace-normal transition-colors duration-150",
               pane === id
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground",
