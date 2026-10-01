@@ -65,7 +65,7 @@ export async function renderVerseCard(
   ctx.lineWidth = 2;
   ctx.strokeRect(52, 52, W - 104, H - 104);
 
-  const logo = await loadImage("/logo.svg?v=5");
+  const logo = await loadImage("/logo.png");
   let y = 120;
   if (logo) {
     const size = 128;

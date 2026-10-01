@@ -37,6 +37,7 @@ self.addEventListener("message", (event) => {
       self.registration.showNotification(title, {
         body,
         tag,
+        icon: "/icon-192.png",
         data: { url: "/" },
       }),
     );
