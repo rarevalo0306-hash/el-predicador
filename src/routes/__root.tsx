@@ -6,6 +6,11 @@ import { THEME_BOOT_SCRIPT } from "@/lib/color-theme";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "The Preacher APP";
+// Google Search Console "HTML tag" verification code (public, not a secret).
+// VITE_GOOGLE_SITE_VERIFICATION overrides it if the property is ever re-verified.
+const GOOGLE_SITE_VERIFICATION =
+  (import.meta.env.VITE_GOOGLE_SITE_VERIFICATION as string | undefined) ||
+  "y8HL-lbbHBQKYzYd5bzZfUdC69LHkjuVLPa9fcq5814";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -19,6 +24,9 @@ export const Route = createRootRoute({
         content:
           "The Preacher: mensajes de la Biblia / Bible messages for WhatsApp, SMS, or share.",
       },
+      ...(GOOGLE_SITE_VERIFICATION
+        ? [{ name: "google-site-verification", content: GOOGLE_SITE_VERIFICATION }]
+        : []),
     ],
     links: [
       { rel: "icon", type: "image/png", href: "/icon-192.png" },
