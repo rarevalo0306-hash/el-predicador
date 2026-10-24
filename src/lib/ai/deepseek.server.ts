@@ -1,4 +1,3 @@
-import { requireBibleAIPermission } from "../bible-policy.ts";
 /**
  * Short lines of encouragement to go with a verse, written once by DeepSeek
  * and kept in the database. Nothing here runs at send time: the worker only
@@ -135,7 +134,7 @@ export async function generateVerseNotes(
   config: Config = process.env,
   request: typeof fetch = fetch,
 ): Promise<Record<string, string[]>> {
-  requireBibleAIPermission();
+  if (!config.DEEPSEEK_API_KEY) throw new Error("deepseek_not_configured");
   const response = await request(
     `${config.DEEPSEEK_BASE_URL || "https://api.deepseek.com"}/chat/completions`,
     {
@@ -146,15 +145,16 @@ export async function generateVerseNotes(
       },
       body: JSON.stringify({
         model: config.DEEPSEEK_MODEL || "deepseek-flash",
+        thinking: { type: "disabled" },
         temperature: 1.1,
         max_tokens: 400 * verses.length + 200,
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: systemPrompt(locale, perVerse) },
+          { role: "system", content: systemPrompt(locale, perVerse) + "\nOnly references are supplied. Write original encouragement without quoting Scripture or claiming a particular translation." },
           {
             role: "user",
             content: JSON.stringify(
-              verses.map((v) => ({ id: v.id, ref: v.ref, text: v.text.slice(0, 600) })),
+              verses.map((v) => ({ id: v.id, ref: v.ref })),
             ),
           },
         ],

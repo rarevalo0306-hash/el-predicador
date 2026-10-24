@@ -89,21 +89,15 @@ test("cleanNote normalises whitespace and refuses the wrong shape", () => {
   assert.equal(cleanNote("x".repeat(221)), null);
 });
 
-test("LBLA edition blocks preparing verse notes even with a configured key", async () => {
-  let calls = 0;
-  const request = (async () => {
-    calls++;
-    throw new Error("must not fetch");
+test("prepared notes exclude Scripture text from the provider request", async () => {
+  let body = "";
+  const request = (async (_url, init) => {
+    body = String(init?.body);
+    return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ notes: { a: ["Que la paz del Señor acompañe cada paso que des hoy."] } }) } }] }));
   }) as typeof fetch;
-  await assert.rejects(
-    generateVerseNotes(
-      [{ id: "a", ref: "Ref", text: "fixture" }],
-      "es",
-      3,
-      { DEEPSEEK_API_KEY: "test" },
-      request,
-    ),
-    /licencia de LBLA/,
-  );
-  assert.equal(calls, 0);
+  const result = await generateVerseNotes([{ id: "a", ref: "Juan 3:16", text: "RESTRICTED_SCRIPTURE_FIXTURE" }], "es", 3, { DEEPSEEK_API_KEY: "test" }, request);
+  assert.equal(body.includes("RESTRICTED_SCRIPTURE_FIXTURE"), false);
+  assert.ok(body.includes("Juan 3:16"));
+  assert.equal(JSON.parse(body).thinking.type, "disabled");
+  assert.ok(result.a.length);
 });
