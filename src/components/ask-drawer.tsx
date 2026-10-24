@@ -148,8 +148,8 @@ export function AskDrawer({
   const lastLength = turns[turns.length - 1]?.content.length ?? 0;
   useEffect(() => {
     const list = listRef.current;
-    if (open && list) list.scrollTop = list.scrollHeight;
-  }, [open, turns.length, lastLength, busy, area?.height]);
+    if (open && list) list.scrollTop = userId === "" ? 0 : list.scrollHeight;
+  }, [open, turns.length, lastLength, busy, area?.height, userId]);
 
   useEffect(() => {
     if (passage) setAttached(passage);
