@@ -74,6 +74,7 @@ try {
   assert.equal((await exchange("wrong".repeat(12))).status, 401);
   const accepted = await exchange(verifier);
   assert.equal(accepted.status, 200);
+  assert.ok(accepted.headers.get("set-cookie").includes(`Max-Age=${context.sessionConfig.expiresIn}`), "Native session must persist across app relaunches");
   const installed = accepted.headers.get("set-cookie").split(";")[0];
   assert.equal(
     (

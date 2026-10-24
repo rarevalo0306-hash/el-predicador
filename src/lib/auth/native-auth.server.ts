@@ -134,7 +134,7 @@ export async function exchangeNativeAuth(request: Request): Promise<Response> {
     const headers = new Headers(privateHeaders);
     headers.append(
       "set-cookie",
-      `${SESSION_TOKEN_COOKIE}=${encodeURIComponent(signedCookie)}; Path=/; Secure; HttpOnly; SameSite=Lax`,
+      `${SESSION_TOKEN_COOKIE}=${encodeURIComponent(signedCookie)}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=${context.sessionConfig.expiresIn}`,
     );
     return Response.json({ ok: true }, { headers });
   } catch {
