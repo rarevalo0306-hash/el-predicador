@@ -54,31 +54,19 @@ test("references are still read from a fenced, listed or cut-off answer", () => 
   assert.deepEqual(readRefs("No tengo citas."), []);
 });
 
-test("LBLA edition blocks all automatic AI requests before the network", async () => {
-  let calls = 0;
-  const request = (async () => {
-    calls++;
-    throw new Error("must not fetch");
+test("automatic AI sends references only, never supplied Scripture text", async () => {
+  const bodies: string[] = [];
+  const request = (async (_url, init) => {
+    bodies.push(String(init?.body));
+    return new Response(JSON.stringify({ choices: [{ message: { content: "Que la paz del Señor acompañe cada paso que des hoy." }, finish_reason: "stop" }] }));
   }) as typeof fetch;
-  await assert.rejects(
-    writeReflection({ ref: "Ref", text: "fixture", locale: "es" }, config, request),
-    /licencia de LBLA/,
-  );
-  await assert.rejects(
-    writeSendNote(
-      { ref: "Ref", text: "fixture", locale: "es", theme: "Paz", name: "Ana" },
-      config,
-      request,
-    ),
-    /licencia de LBLA/,
-  );
-  await assert.rejects(
-    writeBlessing({ day: "2026-10-23", locale: "es" }, config, request),
-    /licencia de LBLA/,
-  );
-  await assert.rejects(
-    proposeThemeRefs({ theme: "Paz", line: "", existing: [], count: 1 }, config, request),
-    /licencia de LBLA/,
-  );
-  assert.equal(calls, 0);
+  await writeReflection({ ref: "Juan 3:16", text: "RESTRICTED_SCRIPTURE_FIXTURE", locale: "es" }, config, request);
+  await writeSendNote({ ref: "Juan 3:16", text: "RESTRICTED_SCRIPTURE_FIXTURE", locale: "es", theme: "Paz" }, config, request);
+  await writeBlessing({ day: "2026-10-24", locale: "es" }, config, request);
+  assert.equal(bodies.length, 3);
+  for (const body of bodies) {
+    assert.equal(body.includes("RESTRICTED_SCRIPTURE_FIXTURE"), false);
+    assert.equal(JSON.parse(body).thinking.type, "disabled");
+  }
+  assert.ok(bodies[0].includes("Juan 3:16"));
 });

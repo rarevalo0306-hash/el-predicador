@@ -102,7 +102,12 @@ export async function resolveThemeMessage(
       select text from verse_notes where verse_id = ${verse.id} and locale = ${schedule.message_locale}
       order by position`).map((row) => row.text);
     const turn = Math.max(0, count - 1);
-    const note = pickRotating(
+    const generated = fresh.write ? await fresh.write({
+      ref: full.ref, text: "", locale: schedule.message_locale,
+      theme: fresh.themeName ?? schedule.theme_id,
+      name: schedule.recipient_name ?? null,
+    }).catch(() => null) : null;
+    const note = generated ?? pickRotating(
       notes.length ? notes : fallbackNotes(schedule.message_locale),
       Math.floor(turn / list.length) + turn,
     );
