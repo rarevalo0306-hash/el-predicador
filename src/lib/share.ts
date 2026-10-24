@@ -10,7 +10,7 @@ export function formatVerseMessage(
   locale: Locale = "es",
 ) {
   const lines: string[] = [];
-  const englishPublicText = verse.source === "Berean Standard Bible (BSB)" || verse.source === "King James Version (KJV)";
+  const englishPublicText = verse.source === "Berean Standard Bible (BSB)";
   if (verse.copyright && !englishPublicText) {
     return [
       verse.ref,
@@ -36,7 +36,7 @@ export function formatVerseMessage(
       lines.push(verse.source);
     }
   }
-  if (verse.copyright) lines.push(verse.copyright, "API.Bible");
+  if (verse.copyright && !englishPublicText) lines.push(verse.copyright, "API.Bible");
   // The verse comes whole and first; the personal line follows it.
   const trimmedNote = note?.trim();
   if (trimmedNote) {

@@ -412,11 +412,11 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                   {shown.ref}
                 </p>
               </div>
-              {shown.copyright && messageLocale === "es" ? (
+              {shown.copyright && shown.source !== "Berean Standard Bible (BSB)" ? (
                 <p className="text-xs text-muted-foreground">
                   {locale === "es"
-                    ? "LBLA se comparte por referencia y enlace. La exportación del texto a imágenes o PDF no está habilitada."
-                    : "LBLA is shared as a reference and link. Exporting its text to images or PDF is not enabled."}
+                    ? "Esta versión se comparte por referencia y enlace. Para enviar el texto en inglés, selecciona BSB."
+                    : "This version is shared as a reference and link. Select BSB to send the English verse text."}
                 </p>
               ) : null}
               <div className="grid gap-2 rounded-lg border border-border bg-card px-3 py-3">
