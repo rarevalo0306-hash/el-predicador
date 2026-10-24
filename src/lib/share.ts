@@ -10,7 +10,8 @@ export function formatVerseMessage(
   locale: Locale = "es",
 ) {
   const lines: string[] = [];
-  if (verse.copyright) {
+  const englishPublicText = verse.source === "Berean Standard Bible (BSB)" || verse.source === "King James Version (KJV)";
+  if (verse.copyright && !englishPublicText) {
     return [
       verse.ref,
       verse.source,

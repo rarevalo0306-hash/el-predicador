@@ -77,6 +77,15 @@ try {
       meta: { fumsToken: "fixture-token" },
     });
   };
+  const { formatVerseMessage } = await server.ssrLoadModule("/src/lib/share.ts");
+  for (const translation of ["bsb", "kjv"]) {
+    const shared = formatVerseMessage({ id: "jhn-3-16", ref: "John 3:16", text: "Exact fixture.", source: BIBLE_TRANSLATIONS[translation].name, copyright: "Official notice", themes: [], book: "John" }, "Note", "", "en");
+    assert.ok(shared.includes("Exact fixture."));
+    assert.ok(shared.includes("Official notice"));
+    assert.ok(shared.includes(BIBLE_TRANSLATIONS[translation].name));
+  }
+  const spanish = formatVerseMessage({ id: "jhn-3-16", ref: "Juan 3:16", text: "Restricted fixture.", source: BIBLE_TRANSLATIONS.lbla.name, copyright: "Official notice", themes: [], book: "Juan" });
+  assert.ok(!spanish.includes("Restricted fixture."));
   const book = bookById("jhn");
   const results = await Promise.all(Array.from({ length: 20 }, () => loadApiBibleChapter(book, 3)));
   assert.equal(calls, 1, "20 simultaneous requests must make one upstream call");

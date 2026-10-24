@@ -412,7 +412,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                   {shown.ref}
                 </p>
               </div>
-              {shown.copyright ? (
+              {shown.copyright && messageLocale === "es" ? (
                 <p className="text-xs text-muted-foreground">
                   {locale === "es"
                     ? "LBLA se comparte por referencia y enlace. La exportación del texto a imágenes o PDF no está habilitada."
