@@ -23,7 +23,10 @@ const TASK = {
 
 export function askPrompt(locale: Locale) {
   const voice = VOICE[locale];
-  return [voice.who, TASK[locale], voice.tone, voice.forbidden].join("\n\n");
+  const language = locale === "en"
+    ? "Every part of this answer, including Scripture references and quotations, must be in English, even when earlier conversation turns are Spanish."
+    : "Toda la respuesta, incluidas referencias y citas bíblicas, debe estar en español aunque haya mensajes anteriores en inglés.";
+  return [voice.who, TASK[locale], voice.tone, voice.forbidden, language].join("\n\n");
 }
 
 /** The last few turns, each cut to a sane size, so a long chat stays cheap. */
