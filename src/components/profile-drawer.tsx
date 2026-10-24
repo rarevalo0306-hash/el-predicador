@@ -9,13 +9,14 @@ import {
 } from "@/components/ui/drawer";
 import { focusProfileButton } from "@/lib/panel-focus";
 import { SignInPanel } from "@/components/sign-in-panel";
+import { DeleteAccountPanel } from "@/components/delete-account-panel";
 import { ContactForm } from "@/components/contact-form";
 import { useI18n } from "@/components/language-switch";
 import { InviteContacts } from "@/components/invite-contacts";
 import { useEffect, useState } from "react";
 
-
-const BODY = "min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[calc(2rem+env(safe-area-inset-bottom))]";
+const BODY =
+  "min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[calc(2rem+env(safe-area-inset-bottom))]";
 
 type ProfileDrawerProps = {
   open: boolean;
@@ -73,13 +74,9 @@ export function ProfileDrawer({
           </DrawerDescription>
         </DrawerHeader>
         <div className={`${BODY} flex flex-col gap-5`}>
-          {isPending ? (
-            <div className="h-36 animate-pulse rounded-xl bg-card" />
-          ) : null}
+          {isPending ? <div className="h-36 animate-pulse rounded-xl bg-card" /> : null}
           <SignedOut>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              {t("profileGuest")}
-            </p>
+            <p className="text-sm leading-relaxed text-muted-foreground">{t("profileGuest")}</p>
             <SignInPanel
               key={initialMode}
               collectDetails
@@ -101,6 +98,7 @@ export function ProfileDrawer({
               <p className="text-sm font-medium">{t("contactTitle")}</p>
               <ContactForm compact />
             </div>
+            <DeleteAccountPanel />
           </SignedIn>
         </div>
       </DrawerContent>

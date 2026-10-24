@@ -40,9 +40,8 @@ export async function runScheduledMessages(
   // prepared ones are used so a busy minute never outlives its function.
   const freshUntil = Date.now() + 30_000;
   // Managers named in the app send too, each within a monthly cap.
-  const { messagingConfig, cappedSender, sendsThisMonth, MANAGER_MONTHLY_SMS } = await import(
-    "../roles.server.ts"
-  );
+  const { messagingConfig, cappedSender, sendsThisMonth, MANAGER_MONTHLY_SMS } =
+    await import("../roles.server.ts");
   const config = await messagingConfig(sql);
   const write = writer === undefined ? await defaultNoteWriter() : writer;
   const rows = await sql<ScheduleRow>`with due as (
@@ -103,17 +102,24 @@ export async function runScheduledMessages(
           result = result ?? { status: "failed", errorCode: "verse_unavailable" };
         } else {
           try {
-            result = await send(
-              {
-                userId: row.user_id,
-                channel: row.channel,
-                phone: row.phone,
-                recipientName: row.recipient_name,
-                message,
-                messageLocale: row.message_locale,
-              },
-              config,
-            );
+            // Account/schedule deletion may have happened while a theme or AI
+            // line was being prepared. Do not start a new external send then.
+            const active = await sql`select id from message_schedules
+              where id = ${row.id} and user_id = ${row.user_id} and lease_token = ${token}`;
+            if (!active.length) {
+              result = { status: "skipped", errorCode: "schedule_removed" };
+            } else
+              result = await send(
+                {
+                  userId: row.user_id,
+                  channel: row.channel,
+                  phone: row.phone,
+                  recipientName: row.recipient_name,
+                  message,
+                  messageLocale: row.message_locale,
+                },
+                config,
+              );
           } catch {
             result = { status: "unknown", errorCode: "unconfirmed_request" };
           }

@@ -1,5 +1,5 @@
 /**
- * Day (Pergamino) or night (Noche) colours, chosen per device. "system"
+ * Day or night (Noche) colours, chosen per device. "system"
  * follows the phone's own light/dark setting. The choice lives in
  * localStorage and is applied as the `dark` class on <html>, before the
  * first paint by THEME_BOOT_SCRIPT and afterwards by applyColorTheme.
@@ -11,7 +11,7 @@ export const COLOR_THEMES: ColorTheme[] = ["light", "dark", "system"];
 export const THEME_STORAGE_KEY = "preacher-color-theme";
 
 /** Browser bar colour for each look: the page background. */
-export const THEME_COLOR = { light: "#f4ead6", dark: "#17120e" } as const;
+export const THEME_COLOR = { light: "#faf9f5", dark: "#0c1524" } as const;
 
 export function isColorTheme(value: unknown): value is ColorTheme {
   return value === "system" || value === "light" || value === "dark";

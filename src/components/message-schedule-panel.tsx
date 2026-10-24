@@ -190,7 +190,7 @@ function MessageScheduleForm({
       update({
         verseId,
         messageLocale,
-        message: formatVerseMessage(verse, undefined, undefined, messageLocale),
+        message: `${verse.ref} — La Biblia de las Américas (LBLA)\nhttps://www.thepreacher.app\nAPI.Bible — https://api.bible`,
       });
     } catch {
       if (version === requestVersion.current) toast.error(languageCopy.error);
@@ -291,7 +291,7 @@ function MessageScheduleForm({
   return (
     <section className="min-w-0 space-y-5">
       <div>
-        <h2 className="flex items-center gap-2 font-serif text-2xl">
+        <h2 className="flex items-center gap-2 font-bold text-2xl">
           <CalendarClock className="size-5" />
           {copy.title}
         </h2>
@@ -352,7 +352,7 @@ function MessageScheduleForm({
       ) : null}
       <form
         ref={formRef}
-        className="min-w-0 scroll-mt-4 space-y-4 rounded-xl border border-border bg-card p-4 shadow-paper"
+        className="min-w-0 scroll-mt-4 space-y-4 rounded-xl border border-border bg-card p-4"
         onSubmit={(event) => void save(event)}
       >
         <h3 className="font-medium">{form.id ? copy.edit : copy.new}</h3>

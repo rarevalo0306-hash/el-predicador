@@ -1,3 +1,4 @@
+import { BibleCopyright } from "@/components/bible-copyright";
 import { Heart, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PreacherMark } from "@/components/mark";
@@ -30,7 +31,7 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
         <PreacherMark className="mx-auto mb-5 size-24" />
         {error ? (
           <div className="flex flex-col items-center gap-3 text-center">
-            <p className="text-sm text-muted-foreground">{t("couldNotRead")}</p>
+            <p className="text-sm text-muted-foreground">{error || t("couldNotRead")}</p>
             <Button type="button" variant="outline" onClick={retry}>
               {t("retry")}
             </Button>
@@ -46,6 +47,11 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
           {shown?.ref ?? meta.ref}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">{source}</p>
+        <BibleCopyright
+          notice={shown?.copyright}
+          fumsToken={shown?.fumsToken}
+          fumsId={shown?.fumsId}
+        />
         {/* With large text the labels may run to two lines and the buttons
             stack, rather than spilling past the card. */}
         <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -79,7 +85,7 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
     <article className="rounded-lg bg-card px-4 py-4 shadow-paper">
       {error ? (
         <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">{t("couldNotRead")}</p>
+          <p className="text-sm text-muted-foreground">{error || t("couldNotRead")}</p>
           <Button type="button" variant="ghost" size="sm" onClick={retry}>
             {t("retry")}
           </Button>
@@ -89,6 +95,11 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
       ) : (
         <p className="font-serif text-lg leading-snug text-foreground">{shown.text}</p>
       )}
+      <BibleCopyright
+        notice={shown?.copyright}
+        fumsToken={shown?.fumsToken}
+        fumsId={shown?.fumsId}
+      />
       <div className="mt-3 flex items-center justify-between gap-3">
         <p className="text-xs font-medium tracking-[0.12em] text-primary uppercase">
           {shown?.ref ?? meta.ref}

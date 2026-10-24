@@ -1,0 +1,7 @@
+The Preacher
+
+Read La Biblia de las Américas (LBLA) in Spanish, look up references and explore Bible themes. Keep favorites, bookmarks and your reading place. Write your own personal notes on your iPhone.
+
+The interface is available in English and Spanish. LBLA Scripture is in Spanish and requires an internet connection. Reading is subject to API.Bible service availability. Favorites store references, not Bible downloads. This edition does not provide offline Bible reading or AI processing of LBLA text.
+
+Free to use, with no ads, subscriptions, sponsorships or premium features. Scripture is provided through API.Bible with the publisher's copyright notice alongside each reading.

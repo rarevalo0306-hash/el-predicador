@@ -1,3 +1,4 @@
+import { requireBibleAIPermission } from "../bible-policy.ts";
 /**
  * A message written for one person, from a preaching case: the owner says
  * who the person is and what they are living, and the app writes the
@@ -54,7 +55,7 @@ export async function streamComposed(
   config: Config = process.env,
   request: typeof fetch = fetch,
 ): Promise<AsyncGenerator<string>> {
-  if (!config.DEEPSEEK_API_KEY) throw new Error("deepseek_not_configured");
+  requireBibleAIPermission();
   const response = await request(
     `${config.DEEPSEEK_BASE_URL || "https://api.deepseek.com"}/chat/completions`,
     {

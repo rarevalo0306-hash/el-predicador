@@ -1,0 +1,456 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		10467DA9AE4E84B4CC304C0E /* NativeAuthController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B97DB21D25D150BA1B297140 /* NativeAuthController.swift */; };
+		106A436AF27AC4E3A319CC19 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 795A02A63DC9C1E86758E98F /* Assets.xcassets */; };
+		1ADEA04D04211F871B7FD3CC /* OnlineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D24A6D047023AE17ECD0AAF6 /* OnlineView.swift */; };
+		209E2EB3C7E4B3CB960DEBB1 /* PreacherUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C516864939161C91D77CD37 /* PreacherUITests.swift */; };
+		7674EE2233F3386DEE24B5B6 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4CB372B53A4BA411C58D907 /* LibraryView.swift */; };
+		93A23B7AA381165D12FF1556 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 4272165E609CEB45988F02A0 /* Localizable.xcstrings */; };
+		B7D66182AEF0BEB805BBF75F /* PreacherApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F5F00FDCC06D17E06AFF42D /* PreacherApp.swift */; };
+		C1928097B47716434598E2A9 /* ReadingLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 380F4C06BEF4340D72A7FCA3 /* ReadingLibrary.swift */; };
+		E412E72AAC03B21399A8836E /* InformationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E92B8882B56C1F66802BC6C /* InformationView.swift */; };
+		ECD490AE5F0419D935179392 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 6D123AE8AB04EEE632CC6C18 /* PrivacyInfo.xcprivacy */; };
+		FB68B8B7554E43A513F14F97 /* ReadingLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42771D0826ACD42D0AD6A416 /* ReadingLibraryTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		0C3537635639131814CC9C08 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 985959785319747668373CC6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C960A37EA945942CC7A21E58;
+			remoteInfo = Preacher;
+		};
+		140A2D0D831CA0793DCECB72 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 985959785319747668373CC6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C960A37EA945942CC7A21E58;
+			remoteInfo = Preacher;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0C516864939161C91D77CD37 /* PreacherUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreacherUITests.swift; sourceTree = "<group>"; };
+		0F5F00FDCC06D17E06AFF42D /* PreacherApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreacherApp.swift; sourceTree = "<group>"; };
+		1481204C0032F1508B9667CC /* PreacherUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = PreacherUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1C73511B56642889ACD4A064 /* App.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = App.xcconfig; sourceTree = "<group>"; };
+		380F4C06BEF4340D72A7FCA3 /* ReadingLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingLibrary.swift; sourceTree = "<group>"; };
+		4272165E609CEB45988F02A0 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		42771D0826ACD42D0AD6A416 /* ReadingLibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingLibraryTests.swift; sourceTree = "<group>"; };
+		6D123AE8AB04EEE632CC6C18 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		795A02A63DC9C1E86758E98F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		7E92B8882B56C1F66802BC6C /* InformationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InformationView.swift; sourceTree = "<group>"; };
+		98088A843FEB4739D6F0C6EE /* Preacher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = Preacher.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9AC3B5AD93CBC0305C62F78F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A7855E1DE7EEA967C96019C6 /* PreacherTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = PreacherTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B97DB21D25D150BA1B297140 /* NativeAuthController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeAuthController.swift; sourceTree = "<group>"; };
+		C4CB372B53A4BA411C58D907 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		D24A6D047023AE17ECD0AAF6 /* OnlineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnlineView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		80E1E475A076969D92049B2F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D8B139465FF9A9E1B13F04F0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DB134FE3DBD863BDEC80491D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		31C4A36B989F52B2F97BF8C1 /* PreacherUITests */ = {
+			isa = PBXGroup;
+			children = (
+				0C516864939161C91D77CD37 /* PreacherUITests.swift */,
+			);
+			path = PreacherUITests;
+			sourceTree = "<group>";
+		};
+		44CB005EE2E65D9CC817B0A0 = {
+			isa = PBXGroup;
+			children = (
+				C31B363FD052643287C0F5FF /* Preacher */,
+				AC1F13F15E8A92F47869908D /* PreacherTests */,
+				31C4A36B989F52B2F97BF8C1 /* PreacherUITests */,
+				A15F74DB2759EF265D1A992A /* config */,
+				4EDC8BFAFC6BD936B849F38C /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		4EDC8BFAFC6BD936B849F38C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				98088A843FEB4739D6F0C6EE /* Preacher.app */,
+				A7855E1DE7EEA967C96019C6 /* PreacherTests.xctest */,
+				1481204C0032F1508B9667CC /* PreacherUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A15F74DB2759EF265D1A992A /* config */ = {
+			isa = PBXGroup;
+			children = (
+				1C73511B56642889ACD4A064 /* App.xcconfig */,
+			);
+			path = config;
+			sourceTree = "<group>";
+		};
+		AC1F13F15E8A92F47869908D /* PreacherTests */ = {
+			isa = PBXGroup;
+			children = (
+				42771D0826ACD42D0AD6A416 /* ReadingLibraryTests.swift */,
+			);
+			path = PreacherTests;
+			sourceTree = "<group>";
+		};
+		C31B363FD052643287C0F5FF /* Preacher */ = {
+			isa = PBXGroup;
+			children = (
+				7E92B8882B56C1F66802BC6C /* InformationView.swift */,
+				C4CB372B53A4BA411C58D907 /* LibraryView.swift */,
+				B97DB21D25D150BA1B297140 /* NativeAuthController.swift */,
+				D24A6D047023AE17ECD0AAF6 /* OnlineView.swift */,
+				0F5F00FDCC06D17E06AFF42D /* PreacherApp.swift */,
+				380F4C06BEF4340D72A7FCA3 /* ReadingLibrary.swift */,
+				4272165E609CEB45988F02A0 /* Localizable.xcstrings */,
+				9AC3B5AD93CBC0305C62F78F /* Info.plist */,
+				6D123AE8AB04EEE632CC6C18 /* PrivacyInfo.xcprivacy */,
+				795A02A63DC9C1E86758E98F /* Assets.xcassets */,
+			);
+			path = Preacher;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		7BECEB0AAA64EEB670CCBC12 /* PreacherTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0EE01E9B4796E777CDCF3C3C /* Build configuration list for PBXNativeTarget "PreacherTests" */;
+			buildPhases = (
+				B64C3590AF130DF9231DF3D1 /* Sources */,
+				D8B139465FF9A9E1B13F04F0 /* Frameworks */,
+				C2453A2D0067821EF91FD641 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D0E91074A24AC82266838293 /* PBXTargetDependency */,
+			);
+			name = PreacherTests;
+			productName = PreacherTests;
+			productReference = A7855E1DE7EEA967C96019C6 /* PreacherTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		9C275946CC00E130CC3754EE /* PreacherUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5CF47F004C0B3E603D27C53D /* Build configuration list for PBXNativeTarget "PreacherUITests" */;
+			buildPhases = (
+				6D9DA009207EC67A6A73A1CE /* Sources */,
+				DB134FE3DBD863BDEC80491D /* Frameworks */,
+				6E262F31A3F4449EA19FE47B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3991BD5740E6BF6C1B0377EE /* PBXTargetDependency */,
+			);
+			name = PreacherUITests;
+			productName = PreacherUITests;
+			productReference = 1481204C0032F1508B9667CC /* PreacherUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		C960A37EA945942CC7A21E58 /* Preacher */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5943E9AF692502BD8A505D59 /* Build configuration list for PBXNativeTarget "Preacher" */;
+			buildPhases = (
+				E3AEA0545AF3B1B6D1FEFB44 /* Sources */,
+				80E1E475A076969D92049B2F /* Frameworks */,
+				B224353248B5A0753C2149AD /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Preacher;
+			productName = Preacher;
+			productReference = 98088A843FEB4739D6F0C6EE /* Preacher.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		985959785319747668373CC6 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2700;
+			};
+			buildConfigurationList = 3C05BEEE7303EE3FA7B250FA /* Build configuration list for PBXProject "Preacher" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = es;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				es,
+				en,
+				Base,
+			);
+			mainGroup = 44CB005EE2E65D9CC817B0A0;
+			productRefGroup = 4EDC8BFAFC6BD936B849F38C /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C960A37EA945942CC7A21E58 /* Preacher */,
+				7BECEB0AAA64EEB670CCBC12 /* PreacherTests */,
+				9C275946CC00E130CC3754EE /* PreacherUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		6E262F31A3F4449EA19FE47B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B224353248B5A0753C2149AD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ECD490AE5F0419D935179392 /* PrivacyInfo.xcprivacy in Resources */,
+				106A436AF27AC4E3A319CC19 /* Assets.xcassets in Resources */,
+				93A23B7AA381165D12FF1556 /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C2453A2D0067821EF91FD641 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		6D9DA009207EC67A6A73A1CE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				209E2EB3C7E4B3CB960DEBB1 /* PreacherUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B64C3590AF130DF9231DF3D1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FB68B8B7554E43A513F14F97 /* ReadingLibraryTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E3AEA0545AF3B1B6D1FEFB44 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E412E72AAC03B21399A8836E /* InformationView.swift in Sources */,
+				7674EE2233F3386DEE24B5B6 /* LibraryView.swift in Sources */,
+				10467DA9AE4E84B4CC304C0E /* NativeAuthController.swift in Sources */,
+				1ADEA04D04211F871B7FD3CC /* OnlineView.swift in Sources */,
+				B7D66182AEF0BEB805BBF75F /* PreacherApp.swift in Sources */,
+				C1928097B47716434598E2A9 /* ReadingLibrary.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		3991BD5740E6BF6C1B0377EE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C960A37EA945942CC7A21E58 /* Preacher */;
+			targetProxy = 140A2D0D831CA0793DCECB72 /* PBXContainerItemProxy */;
+		};
+		D0E91074A24AC82266838293 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C960A37EA945942CC7A21E58 /* Preacher */;
+			targetProxy = 0C3537635639131814CC9C08 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		337CFDC0046D60D6D87303B7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.thepreacher.ios.PreacherUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = Preacher;
+			};
+			name = Release;
+		};
+		433548979C024CC63B5F3B8D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		7BD7266420F8EE6002B34E81 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1C73511B56642889ACD4A064 /* App.xcconfig */;
+			buildSettings = {
+				DEVELOPMENT_TEAM = 7687NAN4DQ;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		81899A0EB456E5DF015D1599 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.thepreacher.ios.PreacherTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Preacher.app/Preacher";
+			};
+			name = Debug;
+		};
+		89D1B8A4D5D4C09D05F6460A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.thepreacher.ios.PreacherTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Preacher.app/Preacher";
+			};
+			name = Release;
+		};
+		8AAD87A519617874181B651B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.thepreacher.ios.PreacherUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = Preacher;
+			};
+			name = Debug;
+		};
+		B800A40FDE6F0A0218D9BCD2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		E1419083502FE82F360C0C5F /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1C73511B56642889ACD4A064 /* App.xcconfig */;
+			buildSettings = {
+				DEVELOPMENT_TEAM = 7687NAN4DQ;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0EE01E9B4796E777CDCF3C3C /* Build configuration list for PBXNativeTarget "PreacherTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				81899A0EB456E5DF015D1599 /* Debug */,
+				89D1B8A4D5D4C09D05F6460A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3C05BEEE7303EE3FA7B250FA /* Build configuration list for PBXProject "Preacher" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				433548979C024CC63B5F3B8D /* Debug */,
+				B800A40FDE6F0A0218D9BCD2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5943E9AF692502BD8A505D59 /* Build configuration list for PBXNativeTarget "Preacher" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7BD7266420F8EE6002B34E81 /* Debug */,
+				E1419083502FE82F360C0C5F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5CF47F004C0B3E603D27C53D /* Build configuration list for PBXNativeTarget "PreacherUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8AAD87A519617874181B651B /* Debug */,
+				337CFDC0046D60D6D87303B7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 985959785319747668373CC6 /* Project object */;
+}

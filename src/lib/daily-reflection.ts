@@ -1,3 +1,4 @@
+import { requireBibleAIPermission } from "@/lib/bible-policy";
 import { createServerFn } from "@tanstack/react-start";
 import type { Locale } from "@/lib/i18n";
 
@@ -47,6 +48,7 @@ export const getDailyReflection = createServerFn({ method: "POST" })
         const [stored] = await sql<{ ref: string; text: string }>`
           select ref, text from verse_texts where verse_id = ${verse.id} and locale = ${data.locale}`;
         if (stored?.text.trim()) return stored;
+        requireBibleAIPermission();
         const { hydrateVerse } = await import("@/lib/recobro");
         const full = await hydrateVerse(verse, data.locale);
         if (full.text.trim()) {

@@ -16,13 +16,7 @@ export const searchConcordance = createServerFn({ method: "POST" })
     if (data.words.replace(/\s/g, "").length < 3) {
       return { status: "ok", words: data.words, hits: [], total: 0 };
     }
-    const { searchLsmWords } = await import("@/lib/lsm-api");
-    const payload = await searchLsmWords(data.words, data.locale).catch(() => null);
-    if (!payload) return { status: "unavailable", words: data.words };
-    return {
-      status: "ok",
-      words: data.words,
-      ...readHits(payload),
-      copyright: payload.copyright?.trim() || undefined,
-    };
+    // Full-text search awaits a quota-aware API.Bible implementation. Reference
+    // lookup remains available in the reader; never fall back to another text.
+    return { status: "unavailable", words: data.words };
   });

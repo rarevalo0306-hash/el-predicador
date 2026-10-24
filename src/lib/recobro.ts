@@ -1,3 +1,4 @@
+import { selectedVerseText } from "./verse-selection";
 import { createServerFn } from "@tanstack/react-start";
 import {
   BIBLE_BOOKS,
@@ -24,6 +25,9 @@ export type RecobroChapter = {
   url: string;
   copyright: string;
   verses: RecobroVerse[];
+  expiresAt: number;
+  fumsToken?: string;
+  fumsId?: string;
 };
 
 function decodeEntities(value: string) {
@@ -43,9 +47,7 @@ function decodeEntities(value: string) {
   };
   return value
     .replace(/&([a-z]+);/gi, (_full, name: string) => named[name.toLowerCase()] ?? _full)
-    .replace(/&#(\d+);/g, (_full, code: string) =>
-      String.fromCharCode(Number(code)),
-    )
+    .replace(/&#(\d+);/g, (_full, code: string) => String.fromCharCode(Number(code)))
     .replace(/&#x([0-9a-f]+);/gi, (_full, hex: string) =>
       String.fromCharCode(Number.parseInt(hex, 16)),
     );
@@ -63,8 +65,7 @@ function stripHtml(value: string) {
 
 export function parseRecobroChapter(html: string): RecobroVerse[] {
   const verses: RecobroVerse[] = [];
-  const pattern =
-    /<p id="[^"]*-(\d+)" class="verse">[\s\S]*?<\/b>([\s\S]*?)<\/p>/gi;
+  const pattern = /<p id="[^"]*-(\d+)" class="verse">[\s\S]*?<\/b>([\s\S]*?)<\/p>/gi;
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(html))) {
     const n = Number(match[1]);
@@ -74,12 +75,7 @@ export function parseRecobroChapter(html: string): RecobroVerse[] {
   return verses;
 }
 
-function toVerse(
-  book: BibleBook,
-  chapter: number,
-  item: RecobroVerse,
-  locale: Locale,
-): Verse {
+function toVerse(book: BibleBook, chapter: number, item: RecobroVerse, locale: Locale): Verse {
   const name = bookName(book, locale);
   return {
     id: recobroVerseId(book.id, chapter, item.n, locale),
@@ -96,45 +92,18 @@ async function loadRecobro(
   chapter: number,
   locale: Locale,
 ): Promise<RecobroChapter> {
-  try {
-    const { loadChapterFromLsm } = await import("@/lib/lsm-api");
-    const api = await loadChapterFromLsm(book, chapter, locale);
-    if (api && api.verses.length > 0) {
-      return {
-        bookId: book.id,
-        bookName: bookName(book, locale),
-        chapter,
-        url: api.url,
-        copyright: api.copyright,
-        verses: api.verses,
-      };
-    }
-  } catch {
-    /* fall through to the public Recobro pages */
-  }
-  const url = recobroChapterUrl(book, chapter, locale);
-  const response = await fetch(url, {
-    headers: {
-      Accept: "text/html",
-      "User-Agent": "ThePreacher/1.0 (Recovery Version reader)",
-    },
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!response.ok) {
-    throw new Error(t(locale, "chapterOpenFail"));
-  }
-  const html = await response.text();
-  const verses = parseRecobroChapter(html);
-  if (verses.length === 0) {
-    throw new Error(t(locale, "chapterEmpty"));
-  }
+  const { loadApiBibleChapter } = await import("@/lib/api-bible.server");
+  const { payload, expiresAt } = await loadApiBibleChapter(book, chapter);
   return {
     bookId: book.id,
     bookName: bookName(book, locale),
     chapter,
-    url,
-    copyright: recobroCopyright(locale),
-    verses,
+    url: "https://api.bible",
+    copyright: payload.copyright as string,
+    verses: payload.verses as RecobroVerse[],
+    expiresAt,
+    fumsToken: payload.fumsToken as string | undefined,
+    fumsId: payload.fumsId as string | undefined,
   };
 }
 
@@ -154,6 +123,8 @@ export const fetchRecobroChapter = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data }): Promise<RecobroChapter> => {
+    const { setResponseHeader } = await import("@tanstack/react-start/server");
+    setResponseHeader("Cache-Control", "no-store");
     const book = bookById(data.bookId);
     if (!book) throw new Error(t(data.locale, "bookNotFound"));
     return loadRecobro(book, data.chapter, data.locale);
@@ -164,7 +135,13 @@ export function chapterToVerses(
   chapter: RecobroChapter,
   locale: Locale = "es",
 ): Verse[] {
-  return chapter.verses.map((item) => toVerse(book, chapter.chapter, item, locale));
+  return chapter.verses.map((item) => ({
+    ...toVerse(book, chapter.chapter, item, locale),
+    copyright: chapter.copyright,
+    expiresAt: chapter.expiresAt,
+    fumsToken: chapter.fumsToken,
+    fumsId: chapter.fumsId,
+  }));
 }
 
 export function booksForTestament(testament: "at" | "nt") {
@@ -185,7 +162,8 @@ export function loadCachedChapter(
 ): Promise<RecobroChapter> {
   const key = chapterKey(bookId, chapter, locale);
   const hit = chapterMemory.get(key);
-  if (hit) return Promise.resolve(hit);
+  if (hit instanceof Promise || (hit && hit.expiresAt > Date.now())) return Promise.resolve(hit);
+  chapterMemory.delete(key);
   const pending = fetchRecobroChapter({ data: { bookId, chapter, locale } })
     .then((result) => {
       chapterMemory.set(key, result);
@@ -203,9 +181,7 @@ function joinRange(chapter: RecobroChapter, from: number, to: number) {
   return chapter.verses
     .filter((item) => item.n >= from && item.n <= to)
     .map((item) => item.text)
-    .join(" ")
-    .replace(/\s+/g, " ")
-    .trim();
+    .join(" ");
 }
 
 function builtFromChapter(
@@ -214,11 +190,12 @@ function builtFromChapter(
   chapter: RecobroChapter,
   locale: Locale,
 ): Verse | null {
-  const text = joinRange(chapter, span.from, span.to);
+  const text = selectedVerseText(chapter.verses, span);
   if (!text) return null;
   const name = bookName(span.book, locale);
-  const ref =
-    span.from === span.to
+  const ref = span.selected
+    ? `${name} ${span.chapter}:${span.selected.join(", ")}`
+    : span.from === span.to
       ? `${name} ${span.chapter}:${span.from}`
       : `${name} ${span.chapter}:${span.from}-${span.to}`;
   const catalog = getVerseById(verse.id);
@@ -229,28 +206,32 @@ function builtFromChapter(
     book: name,
     text,
     source: recobroSource(locale),
+    copyright: chapter.copyright,
+    expiresAt: chapter.expiresAt,
+    fumsToken: chapter.fumsToken,
+    fumsId: chapter.fumsId,
   };
 }
 
 export function canChangeMessageLanguage(verse: Verse): boolean {
-  return !isComposedVerse(verse.id) || verse.id.startsWith("doctrina-") ||
+  return (
+    !isComposedVerse(verse.id) ||
+    verse.id.startsWith("doctrina-") ||
     (verse.id.startsWith("caso-") && verse.id !== "caso-testigos-nwt") ||
-    verse.id === "evangelio-camino" || verse.id === "evangelio-oracion";
+    verse.id === "evangelio-camino" ||
+    verse.id === "evangelio-oracion"
+  );
 }
 
 export function peekHydratedVerse(verse: Verse, locale: Locale): Verse | null {
-  if (isComposedVerse(verse.id)) {
-    if (!canChangeMessageLanguage(verse) || verse.source === recobroSource(locale)) return verse;
-    return null;
-  }
-  if (verse.id.startsWith("rcv-") && verse.source === recobroSource(locale)) return verse;
+  if (isComposedVerse(verse.id)) return null;
   const span = catalogSpan(getVerseById(verse.id) ?? verse);
   if (!span) {
     if (getVerseById(verse.id)) return null;
-    return { ...verse, source: recobroSource(locale) };
+    return null;
   }
   const hit = chapterMemory.get(chapterKey(span.book.id, span.chapter, locale));
-  if (!hit || hit instanceof Promise) return null;
+  if (!hit || hit instanceof Promise || hit.expiresAt <= Date.now()) return null;
   return builtFromChapter(verse, span, hit, locale);
 }
 
@@ -276,7 +257,9 @@ export async function hydrateVerse(verse: Verse, locale: Locale): Promise<Verse>
     if (getVerseById(verse.id)) {
       throw new Error(t(locale, "chapterOpenFail"));
     }
-    return { ...verse, source: recobroSource(locale) };
+    throw new Error(
+      "Esta lectura guardada pertenece a una versión retirada. Busca la referencia en LBLA.",
+    );
   }
   const chapter = await loadCachedChapter(span.book.id, span.chapter, locale);
   const built = builtFromChapter(verse, span, chapter, locale);
@@ -296,13 +279,11 @@ export async function hydrateVerses(verses: Verse[], locale: Locale) {
     });
   }
   await Promise.all(
-    [...unique.values()].map((item) =>
-      loadCachedChapter(item.bookId, item.chapter, locale),
-    ),
+    [...unique.values()].map((item) => loadCachedChapter(item.bookId, item.chapter, locale)),
   );
   return Promise.all(verses.map((verse) => hydrateVerse(verse, locale)));
 }
 
-export function prefetchVerses(verses: Verse[], locale: Locale) {
-  void hydrateVerses(verses, locale).catch(() => undefined);
+export function prefetchVerses(_verses: Verse[], _locale: Locale) {
+  // On-demand only: do not spend the shared budget on speculative reads.
 }

@@ -33,7 +33,8 @@ export const DOCTRINE_TOPICS: DoctrineTopic[] = [
     id: "identidad",
     title: "Identidad de Dios",
     who: "Un solo Dios, eterno, invisible y Espíritu, manifestado plenamente en Jesucristo.",
-    issue: "Dios sobre nosotros como Padre. Dios con nosotros en el Hijo. Dios en nosotros por su Espíritu.",
+    issue:
+      "Dios sobre nosotros como Padre. Dios con nosotros en el Hijo. Dios en nosotros por su Espíritu.",
     verseIds: [
       "dt-6-4",
       "is-43-10",
@@ -144,9 +145,7 @@ export const DOCTRINE_TOPICS: DoctrineTopic[] = [
       {
         name: "Fórmula de tres títulos",
         line: "Pronunciar «Padre, Hijo y Espíritu Santo» como las palabras del agua.",
-        biblical: [
-          "Mateo 28:19 está en la Biblia y no se elimina.",
-        ],
+        biblical: ["Mateo 28:19 está en la Biblia y no se elimina."],
         notBiblical: [
           "En Hechos no aparece esa frase dicha sobre el agua.",
           "Hacer de la receta el centro, y no de Cristo, el arrepentimiento y la nueva vida.",
@@ -158,7 +157,8 @@ export const DOCTRINE_TOPICS: DoctrineTopic[] = [
     id: "cena",
     title: "La Santa Cena",
     who: "Primero lo que Jesús instituyó y lo que Pablo enseña. Después las escuelas sobre los elementos.",
-    issue: "Memoria, proclamación, comunión, examen y esperanza: Cristo crucificado, hasta que Él venga.",
+    issue:
+      "Memoria, proclamación, comunión, examen y esperanza: Cristo crucificado, hasta que Él venga.",
     verseIds: ["mt-26-26", "lc-22-19", "1co-11-26", "1co-11-28", "1co-10-16"],
     letter:
       "Nuestra visión de la Santa Cena\n\nLa Cena del Señor fue instituida por Jesucristo para que sus discípulos recordaran su sacrificio, anunciaran su muerte y mantuvieran comunión como cuerpo de Cristo hasta su regreso.\n\nJesús tomó pan: «Tomad, comed; esto es mi cuerpo» (Mateo 26:26). Tomó la copa: «Esto es mi sangre del nuevo pacto, que por muchos es derramada para remisión de los pecados» (Mateo 26:27-28). «Haced esto en memoria de mí» (Lucas 22:19).\n\nPablo: todas las veces que comiereis este pan y bebiereis esta copa, la muerte del Señor anunciáis hasta que él venga (1 Corintios 11:26). El pan mira al cuerpo entregado; la copa, a su sangre y al nuevo pacto.\n\nLa Cena mira hacia atrás: recordamos la muerte de Cristo. Hacia adentro: examinamos nuestra vida. Hacia adelante: esperamos su regreso.\n\nNo es simplemente un ritual. «Pruébese cada uno a sí mismo, y coma así» (1 Corintios 11:28). En Corinto había divisiones, egoísmo y desprecio. «Indignamente» no significa que solo el perfecto puede participar. Habla de participar sin discernir lo que representa la Cena ni al cuerpo reunido.\n\nLa copa es comunión de la sangre de Cristo; el pan, comunión de su cuerpo. Siendo uno solo el pan, con ser muchos somos un cuerpo (1 Corintios 10:16-17). No es solo mi relación individual con Jesús: declara nuestra unidad.\n\n¿Se convierten el pan y el vino literalmente? Hay quien enseña presencia real, quien enseña presencia espiritual, y quien enseña memorial. No convertimos esa diferencia en prueba de quién pertenece a Cristo. El texto sí establece: Jesús lo ordenó, relacionó el pan con su cuerpo y la copa con su sangre, mandó hacerlo en memoria de Él, y Pablo lo presenta como comunión y proclamación.\n\n¿Quién participa? Quienes han puesto su fe en Jesucristo y desean la comunión de su cuerpo. Pablo no dice «si alguien tiene pecado, no coma». Dice: pruébese, y coma así. El examen conduce a participar correctamente, no a excluirse automáticamente.\n\nCristo → su cuerpo entregado → su sangre derramada → nuevo pacto → comunión → examen personal → esperanza de su regreso.\n\nNo usamos la mesa para alimentar divisiones. Precisamente en una iglesia dividida Pablo recordó: siendo muchos, somos un cuerpo. Memoria, proclamación, comunión, examen y esperanza: recordamos a Cristo crucificado mientras esperamos a Cristo que viene.",
@@ -203,9 +203,7 @@ export const DOCTRINE_TOPICS: DoctrineTopic[] = [
       {
         name: "Presencia real / transubstanciación",
         line: "El pan y el vino se convierten, o contienen, el cuerpo y la sangre de Cristo.",
-        biblical: [
-          "Jesús dijo: esto es mi cuerpo; esto es mi sangre.",
-        ],
+        biblical: ["Jesús dijo: esto es mi cuerpo; esto es mi sangre."],
         notBiblical: [
           "Un versículo que explique el cambio de sustancia como dogma. Eso es escuela, no el texto plano.",
         ],
@@ -227,7 +225,8 @@ export const DOCTRINE_TOPICS: DoctrineTopic[] = [
     id: "diezmo",
     title: "Diezmo y ofrendas",
     who: "Antes de la Ley, bajo la Ley, y lo que enseñan Jesús y los apóstoles. Sin imponer una carga.",
-    issue: "Bajo la Ley, diezmo establecido. Bajo el Nuevo Pacto: generosidad, proporcionalidad, libertad y responsabilidad.",
+    issue:
+      "Bajo la Ley, diezmo establecido. Bajo el Nuevo Pacto: generosidad, proporcionalidad, libertad y responsabilidad.",
     verseIds: [
       "gn-14-20",
       "gn-28-22",
@@ -298,7 +297,8 @@ export const DOCTRINE_TOPICS: DoctrineTopic[] = [
     id: "apostoles",
     title: "Apóstoles, profetas y profecía",
     who: "Distinguir oficio, don y lo que el texto dice frente a lo que inferimos.",
-    issue: "Apóstoles: fundamento cumplido. Profetas: no el oficio revelador de entonces. Don de profecía: vigente, y se juzga.",
+    issue:
+      "Apóstoles: fundamento cumplido. Profetas: no el oficio revelador de entonces. Don de profecía: vigente, y se juzga.",
     verseIds: [
       "ef-2-20",
       "ap-21-14",
@@ -355,9 +355,7 @@ export const DOCTRINE_TOPICS: DoctrineTopic[] = [
       {
         name: "Cinco ministerios vigentes",
         line: "Hoy hay apóstoles y profetas como cargo, con autoridad sobre la iglesia.",
-        biblical: [
-          "Él dio apóstoles, profetas, evangelistas, pastores y maestros (Efesios 4:11).",
-        ],
+        biblical: ["Él dio apóstoles, profetas, evangelistas, pastores y maestros (Efesios 4:11)."],
         notBiblical: [
           "Igualar ese texto con la autoridad de los Doce o de los profetas que escribieron Escritura.",
           "Un intermediario necesario otra vez, cuando Hebreos abre el Lugar Santísimo por Cristo.",
@@ -369,7 +367,8 @@ export const DOCTRINE_TOPICS: DoctrineTopic[] = [
     id: "mujer-ministerio",
     title: "La mujer y el ministerio pastoral",
     who: "Igual dignidad. Distintas funciones. Sin inferioridad.",
-    issue: "Igualdad en Cristo → diversidad de funciones → gobierno pastoral reservado al varón calificado → Cristo cabeza de todos.",
+    issue:
+      "Igualdad en Cristo → diversidad de funciones → gobierno pastoral reservado al varón calificado → Cristo cabeza de todos.",
     verseIds: [
       "gal-3-28",
       "hch-18-26",
@@ -440,7 +439,8 @@ export const DOCTRINE_TOPICS: DoctrineTopic[] = [
     id: "arrebatamiento",
     title: "El arrebatamiento",
     who: "Primero lo que está claro. Después las escuelas sobre el cuándo.",
-    issue: "Cristo regresará → los muertos en Cristo resucitarán → los creyentes serán reunidos con Él.",
+    issue:
+      "Cristo regresará → los muertos en Cristo resucitarán → los creyentes serán reunidos con Él.",
     verseIds: [
       "1ts-4-16",
       "1co-15-51",
@@ -499,9 +499,7 @@ export const DOCTRINE_TOPICS: DoctrineTopic[] = [
       {
         name: "Mesotribulación",
         line: "El arrebatamiento a mitad de la tribulación, a menudo con las trompetas.",
-        biblical: [
-          "La final trompeta de 1 Corintios 15:52, leída junto al curso de Apocalipsis.",
-        ],
+        biblical: ["La final trompeta de 1 Corintios 15:52, leída junto al curso de Apocalipsis."],
         notBiblical: [
           "Un versículo que fije el punto medio como ley. Hay variantes dentro de esta escuela.",
         ],
@@ -539,10 +537,7 @@ export const DOCTRINE_TOPICS: DoctrineTopic[] = [
           "Si pecamos voluntariamente, queda juicio (Hebreos 10:26).",
           "Si confesamos, Él es fiel para perdonar (1 Juan 1:9).",
         ],
-        notBiblical: [
-          "«Peca, total ya estás salvado».",
-          "«Un tropiezo y ya no eres hijo».",
-        ],
+        notBiblical: ["«Peca, total ya estás salvado».", "«Un tropiezo y ya no eres hijo»."],
       },
     ],
   },
@@ -565,10 +560,7 @@ export const DOCTRINE_TOPICS: DoctrineTopic[] = [
           "Justificados por la fe de Cristo, no por la ley (Gálatas 2:16).",
           "Fe sin obras, muerta (Santiago 2:17).",
         ],
-        notBiblical: [
-          "Ganar el cielo con conducta.",
-          "Una fe que no toca la vida y se llama fe.",
-        ],
+        notBiblical: ["Ganar el cielo con conducta.", "Una fe que no toca la vida y se llama fe."],
       },
     ],
   },
@@ -637,9 +629,7 @@ export const DOCTRINE_TOPICS: DoctrineTopic[] = [
       {
         name: "Lenguas como evidencia",
         line: "Todo el que es bautizado en el Espíritu habla en lenguas.",
-        biblical: [
-          "En Hechos 2 hablaron en otras lenguas.",
-        ],
+        biblical: ["En Hechos 2 hablaron en otras lenguas."],
         notBiblical: [
           "Pablo pregunta: ¿hablan todos lenguas? La respuesta esperada es no (1 Corintios 12:30).",
           "Hacer de un don la medida de quién es de Cristo (Mateo 7:22-23).",
@@ -648,9 +638,7 @@ export const DOCTRINE_TOPICS: DoctrineTopic[] = [
       {
         name: "Los dones cesaron",
         line: "Los dones milagrosos se acabaron con los apóstoles.",
-        biblical: [
-          "La Escritura es suficiente para doctrina y vida.",
-        ],
+        biblical: ["La Escritura es suficiente para doctrina y vida."],
         notBiblical: [
           "Un versículo que diga: «después de los apóstoles, ningún don». Pablo manda no apagar al Espíritu.",
         ],
@@ -685,7 +673,10 @@ export const DOCTRINE_TOPICS: DoctrineTopic[] = [
   },
 ];
 
-const DOCTRINE_EN: Record<string, Pick<DoctrineTopic, "title" | "who" | "issue" | "letter" | "sides">> = {
+const DOCTRINE_EN: Record<
+  string,
+  Pick<DoctrineTopic, "title" | "who" | "issue" | "letter" | "sides">
+> = {
   identidad: {
     title: "The identity of God",
     who: "One God, eternal, invisible and Spirit, fully manifested in Jesus Christ.",
@@ -783,7 +774,8 @@ const DOCTRINE_EN: Record<string, Pick<DoctrineTopic, "title" | "who" | "issue" 
   cena: {
     title: "The Lord’s Supper",
     who: "What Jesus instituted and what Paul teaches first. Then the schools about the elements.",
-    issue: "Remembrance, proclamation, communion, examination, and hope: Christ crucified, until He comes.",
+    issue:
+      "Remembrance, proclamation, communion, examination, and hope: Christ crucified, until He comes.",
     letter:
       "Our vision of the Lord’s Supper\n\nThe Lord’s Supper was instituted by Jesus Christ so that His disciples would remember His sacrifice, proclaim His death, and keep communion as the body of Christ until He returns.\n\nJesus took bread: Take, eat; this is my body (Matthew 26:26). He took the cup: this is my blood of the new covenant, shed for many for the remission of sins (Matthew 26:27-28). This do in remembrance of me (Luke 22:19).\n\nPaul: as often as you eat this bread and drink this cup, you proclaim the Lord’s death till He come (1 Corinthians 11:26). The bread looks to the body given; the cup, to His blood and the new covenant.\n\nThe Supper looks backward: we remember Christ’s death. Inward: we examine our life. Forward: we wait for His return.\n\nIt is not merely a ritual. Let a man examine himself, and so let him eat (1 Corinthians 11:28). In Corinth there were divisions, selfishness, and contempt. “Unworthily” does not mean only the perfect may partake. It speaks of taking part without discerning what the Supper means, or the gathered body.\n\nThe cup is the communion of the blood of Christ; the bread, of His body. Being many, we are one body (1 Corinthians 10:16-17). It is not only my private relation to Jesus: it declares our unity.\n\nDo the bread and wine become body and blood? Some teach real presence, some spiritual presence, some memorial. We do not make that difference a test of who belongs to Christ. The text does establish: Jesus commanded it, related the bread to His body and the cup to His blood, said do this in remembrance of Him, and Paul presents it as communion and proclamation.\n\nWho partakes? Those who have put their faith in Jesus Christ and want the communion of His body. Paul does not say “if anyone has sin, do not eat.” He says: examine yourself, and so eat. Examination leads to taking part rightly, not to automatic exclusion.\n\nChrist → His body given → His blood shed → new covenant → communion → personal examination → hope of His return.\n\nWe will not use the table to feed needless divisions. In a divided church Paul remembered: being many, we are one body. Remembrance, proclamation, communion, examination, and hope: we remember Christ crucified while we wait for Christ who comes.",
     sides: [
@@ -848,7 +840,8 @@ const DOCTRINE_EN: Record<string, Pick<DoctrineTopic, "title" | "who" | "issue" 
   diezmo: {
     title: "Tithe and offerings",
     who: "Before the Law, under the Law, and what Jesus and the apostles teach. Without laying a burden.",
-    issue: "Under the Law, the tithe is established. Under the New Covenant: generosity, proportion, freedom, and responsibility.",
+    issue:
+      "Under the Law, the tithe is established. Under the New Covenant: generosity, proportion, freedom, and responsibility.",
     letter:
       "Our vision of the tithe and offerings\n\nThe tithe is studied through the whole Bible: what happened before the Law, what God commanded Israel under Moses, and what Jesus and the apostles taught. The purpose is not to impose an economic burden, but to see what the Scriptures teach.\n\nBefore the Law, Abram gave tithes of all to Melchizedek (Genesis 14:20). It describes what Abraham did; it does not command every believer to give 10% of income forever. Jacob vowed: of all that you give me I will give the tenth (Genesis 28:22). A personal vow, not universal legislation.\n\nUnder the Law the tithe belongs to the covenant. The tithe of the land is the LORD’s (Leviticus 27:30). Tithes were given to the Levites, who had no inheritance like the other tribes (Numbers 18:21). Deuteronomy also speaks of feasts and of Levites, strangers, orphans, and widows. It was wider than handing 10% of a wage to a religious leader.\n\nMalachi 3:10 lives inside God’s covenant with Israel: temple, priests, Levites, and the Law. It is not sound method to take it in isolation and say it binds every Christian under the New Covenant to 10% of salary.\n\nJesus told scribes and Pharisees they tithed mint and left the weightier matters of the law: justice, mercy, and faith (Matthew 23:23). He did not condemn those Jews for tithing. He was speaking to people under Moses, before His death and the New Covenant. By itself that verse does not settle whether Gentile Christians were bound to exactly 10%.\n\nThe apostles teach giving, but they do not command: every Christian must give exactly ten percent. Paul: on the first day, as he has prospered (1 Corinthians 16:2). Each one as he purposes in his heart: not grudgingly or of necessity; God loves a cheerful giver (2 Corinthians 9:7). Christian giving is voluntary, conscious, proportional, generous, and cheerful.\n\nMust the ministry be supported? Yes. The Lord ordained that those who preach the gospel should live of the gospel (1 Corinthians 9:14). Let him who is taught share all good things with him who teaches (Galatians 6:6). There is also help for the needy, the poor, and widows.\n\nThe 10% was an explicit institution of the Mosaic covenant. Abraham and Jacob show a tenth before Moses, but not a universal command to the church. In the New Testament the believer must give generously and support the work. There is no unequivocal apostolic mandate of 10% as a requirement. Anyone may use 10% as a personal reference. He may even give more.\n\nThere is not enough ground to teach that a person automatically loses salvation for not giving exactly 10%. Greed is treated seriously. Making a specific percentage a condition of salvation is a claim the New Testament does not make.\n\nOur vision is not “you need not give.” It is the opposite: a heart so generous that the question is no longer “what is the minimum?” but “how can I use what God entrusted, to serve others and advance His work?” Whoever gives 10% may do it as a discipline of generosity. Whoever gives otherwise must do it responsibly, not grudgingly or of necessity.\n\nWe do not impose the tithe as a condition of salvation, nor condemn the one who practices it. We teach giving with freedom, responsibility, generosity, and joy.",
     sides: [
@@ -906,7 +899,8 @@ const DOCTRINE_EN: Record<string, Pick<DoctrineTopic, "title" | "who" | "issue" 
   apostoles: {
     title: "Apostles, prophets, and prophecy",
     who: "Distinguish office, gift, and what the text says from what we infer.",
-    issue: "Apostles: foundation laid. Prophets: not that revelatory office. Gift of prophecy: still given, and it is judged.",
+    issue:
+      "Apostles: foundation laid. Prophets: not that revelatory office. Gift of prophecy: still given, and it is judged.",
     letter:
       "Our vision of apostles, prophets, and prophecy\n\nWe distinguish the ministry of apostle, the ministry of prophet, and the gift of prophecy. They are not interchangeable terms.\n\nThe apostles fulfilled a foundational function. The church is built on the foundation of the apostles and prophets; the chief cornerstone is Jesus Christ (Ephesians 2:20). A foundation is laid to establish the building; it is not laid again and again. Revelation 21:14 gives a singular place to the twelve apostles of the Lamb. So the foundational apostolic ministry has served its purpose. We do not recognize today persons with the position and authority of Peter, John, Paul, and the New Testament apostles.\n\nGod spoke of old by the prophets; in these last days He has spoken by the Son (Hebrews 1:1-2). In Christ the culminating revelation arrives. The veil was torn (Matthew 27:51). By the blood of Jesus we have boldness to enter the Holiest (Hebrews 10:19-20). The Christian does not need a prophet as intermediary between him and God. The prophet’s ministry as revelatory authority comparable to the biblical prophets does not continue in that way.\n\nA precision: the torn veil shows direct access to God through Christ. The New Testament does not say explicitly: “because the veil was torn, the office of prophet ceased.” That is our doctrinal inference, not a textual statement.\n\nThe gift of prophecy continues. Desire spiritual gifts, but rather that you may prophesy (1 Corinthians 14:1). He who prophesies speaks to men for edification, exhortation, and comfort (1 Corinthians 14:3). The Spirit may still give that gift. To prophesy does not automatically make someone a prophet. You may all prophesy one by one (1 Corinthians 14:31); that does not make all of them prophets by office. One may teach without being “the teacher,” and one may prophesy without being “the prophet” of the congregation.\n\nAll prophecy must be judged. Let the prophets speak two or three, and let the others judge (1 Corinthians 14:29). Despise not prophesyings. Prove all things; hold fast that which is good (1 Thessalonians 5:20-21). Try the spirits (1 John 4:1). No prophecy sits above the Word. It does not establish another gospel.\n\nChrist is enough. Access to God is through Him. We do not need new apostles to lay the foundation again, nor prophets as necessary intermediaries. We also do not quench the Spirit or despise prophesyings. What someone claims to have received from God is examined. To prophesy does not make a prophet, and no contemporary prophecy corrects, replaces, or sits above Scripture.",
     sides: [
@@ -963,7 +957,8 @@ const DOCTRINE_EN: Record<string, Pick<DoctrineTopic, "title" | "who" | "issue" 
   "mujer-ministerio": {
     title: "Women and pastoral ministry",
     who: "Equal dignity. Distinct functions. Not inferiority.",
-    issue: "Equality in Christ → diversity of functions → pastoral government reserved to the qualified man → Christ the head of all.",
+    issue:
+      "Equality in Christ → diversity of functions → pastoral government reserved to the qualified man → Christ the head of all.",
     letter:
       "Our vision of women and pastoral ministry\n\nMen and women have equal dignity and worth before God, share salvation in Jesus Christ, and may be used by the Holy Spirit. There is neither male nor female; you are all one in Christ Jesus (Galatians 3:28). Equal worth does not necessarily mean identical functions in the government of the congregation.\n\nGod uses women. Priscilla, with Aquila, expounded to Apollos the way of God more perfectly (Acts 18:26). Phoebe is a diakonos of the church at Cenchrea (Romans 16:1). Philip’s daughters prophesied (Acts 21:9). Women prayed and prophesied in the congregation (1 Corinthians 11:5). Titus 2: older women teach what is good and train other women. We do not read Scripture as if God forbade women to speak, teach in every setting, prophesy, evangelize, disciple, or serve.\n\nOur distinction is in pastoral government. Scripture reserves to the qualified man the responsibility of elder or bishop who exercises doctrinal and pastoral government. A bishop, husband of one wife (1 Timothy 3:1-2). Elders: blameless, husband of one wife (Titus 1:5-6). 1 Timothy 2:11-12: I do not permit a woman to teach, nor to exercise authority over the man. We read this as a restriction on authoritative teaching and congregational government, not a ban on every form of teaching. That harmonizes with Priscilla, Titus 2, and women who prophesied.\n\nIt is not male superiority. Peter: feed the flock, not as lords, but as examples (1 Peter 5:2-3). Pastoral authority is responsibility, service, teaching, care, and accountability; not abusive rule. Jesus Christ is the head of the church.\n\nThere is another reading: 1 Timothy 2 and 1 Corinthians 14 as circumstances of those churches, and therefore female pastorate. We do not adopt it. Paul’s argument in 1 Timothy 2:13 goes back to Adam and Eve, not only to Ephesus. There is a principle of church order that outruns that congregation. That difference does not authorize us to despise women or deny the gifts God has given them.\n\nGod calls women to serve, disciple, teach within biblical order, evangelize, prophesy, serve in diaconal functions, and build up the body. The office of pastor, elder, or bishop with doctrinal and governing authority belongs to the man who meets the biblical qualifications. Therefore we do not ordain women to the pastoral ministry. Not because a woman is less able, less spiritual, or less valuable, but because of our reading of ministerial order. Man and woman obey Christ and use their gifts under His authority.",
     sides: [
@@ -1070,9 +1065,7 @@ const DOCTRINE_EN: Record<string, Pick<DoctrineTopic, "title" | "who" | "issue" 
       {
         name: "Mid-tribulation",
         line: "The rapture at the midpoint of the tribulation, often with the trumpets.",
-        biblical: [
-          "The last trump of 1 Corinthians 15:52, read with the course of Revelation.",
-        ],
+        biblical: ["The last trump of 1 Corinthians 15:52, read with the course of Revelation."],
         notBiblical: [
           "A verse that fixes the midpoint as law. There are variants inside this school.",
         ],
@@ -1231,10 +1224,11 @@ const DOCTRINE_EN: Record<string, Pick<DoctrineTopic, "title" | "who" | "issue" 
 };
 
 export function localizedDoctrine(entry: DoctrineTopic, locale: Locale): DoctrineTopic {
-  if (locale !== "en") return entry;
+  if (locale !== "en") return { ...entry, letter: entry.issue };
   const en = DOCTRINE_EN[entry.id];
   if (!en) return entry;
-  return { ...entry, ...en };
+  const result = { ...entry, ...en };
+  return { ...result, letter: result.issue };
 }
 
 export function doctrineVerses(entry: DoctrineTopic, locale: Locale = "es") {
@@ -1249,10 +1243,9 @@ export async function doctrineMessageVerse(
   locale: Locale = "es",
 ): Promise<Verse> {
   const localized = localizedDoctrine(entry, locale);
-  const hydrated = await hydrateVerses(doctrineVerses(entry, locale), locale);
+  const hydrated = doctrineVerses(entry, locale);
   const lines = [localized.letter, ""];
   for (const verse of hydrated) {
-    lines.push(`«${verse.text}»`);
     lines.push(`— ${verse.ref}`);
     lines.push("");
   }
@@ -1262,6 +1255,6 @@ export async function doctrineMessageVerse(
     book: t(locale, "doctrine"),
     text: lines.join("\n").trim(),
     themes: ["evangelio"],
-    source: recobroSource(locale),
+    source: locale === "en" ? "Reference guide" : "Guía de referencias",
   };
 }

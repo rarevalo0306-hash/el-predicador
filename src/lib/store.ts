@@ -1,3 +1,4 @@
+import { referenceOnly, referenceMemory } from "@/lib/bible-policy";
 import { create } from "zustand";
 import { normalizePhone, restorePhone } from "@/lib/phone";
 import type { MessageKind } from "@/lib/messages";
@@ -180,7 +181,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     })),
   rememberVerse: (verse) =>
     set((state) => ({
-      verseMemory: { ...state.verseMemory, [verse.id]: verse },
+      verseMemory: { ...state.verseMemory, [verse.id]: referenceOnly(verse) },
     })),
   toggleFavorite: (id, verse) =>
     set((state) => {
@@ -191,7 +192,9 @@ export const useAppStore = create<AppState>()((set, get) => ({
         favorites: saved ? state.favorites.filter((item) => item !== id) : [...state.favorites, id],
         favoriteKinds: nextKinds,
         verseMemory:
-          verse && !saved ? { ...state.verseMemory, [verse.id]: verse } : state.verseMemory,
+          verse && !saved
+            ? { ...state.verseMemory, [verse.id]: referenceOnly(verse) }
+            : state.verseMemory,
       };
     }),
   saveMessage: (item) => {
@@ -343,7 +346,10 @@ export const useAppStore = create<AppState>()((set, get) => ({
         highlights: on
           ? state.highlights.filter((id) => id !== verseId)
           : [verseId, ...state.highlights].slice(0, 200),
-        verseMemory: verse && !on ? { ...state.verseMemory, [verse.id]: verse } : state.verseMemory,
+        verseMemory:
+          verse && !on
+            ? { ...state.verseMemory, [verse.id]: referenceOnly(verse) }
+            : state.verseMemory,
       };
     }),
   setFontScale: (fontScale) => set({ fontScale }),
@@ -364,6 +370,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     set({
       ...EMPTY_CLOUD,
       ...payload,
+      verseMemory: referenceMemory(payload.verseMemory),
       notifyHour:
         typeof payload.notifyHour === "number" && Number.isFinite(payload.notifyHour)
           ? Math.min(23, Math.max(0, Math.round(payload.notifyHour)))
@@ -382,7 +389,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     return {
       favorites: state.favorites,
       favoriteKinds: state.favoriteKinds,
-      verseMemory: state.verseMemory,
+      verseMemory: referenceMemory(state.verseMemory),
       savedMessages: state.savedMessages,
       displayName: state.displayName,
       notify: state.notify,

@@ -85,6 +85,18 @@ export async function resolveThemeMessage(
   verses: VerseSource = catalogVerseSource,
   fresh: { write?: NoteWriter | null; themeName?: string } = {},
 ): Promise<{ message: string; verseId: string } | { error: "theme_empty" | "verse_unavailable" }> {
+  if (verses === catalogVerseSource) {
+    const list = await catalogVerseSource(schedule.theme_id);
+    if (!list.length) return { error: "theme_empty" };
+    const [{ count }] = await sql<{
+      count: number;
+    }>`select count(*)::int as count from message_deliveries where schedule_id=${schedule.id}`;
+    const verse = pickRotating(list, Math.max(0, count - 1))!;
+    return {
+      verseId: verse.id,
+      message: `${verse.ref} — La Biblia de las Américas (LBLA)\n${schedule.message_locale === "en" ? "Read the passage in Spanish at" : "Consulta la lectura en"} https://www.thepreacher.app\nAPI.Bible — https://api.bible`,
+    };
+  }
   const list = await verses(schedule.theme_id);
   if (!list.length) return { error: "theme_empty" };
   const [{ count }] = await sql<{ count: number }>`

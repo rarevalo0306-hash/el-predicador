@@ -1,3 +1,4 @@
+import { BibleCopyright } from "@/components/bible-copyright";
 import { MessageLanguageSelect } from "@/components/message-language-select";
 import { messageLanguageCopy } from "@/lib/message-language";
 import type { Locale } from "@/lib/i18n";
@@ -370,7 +371,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
           </div>
         ) : error ? (
           <div className="flex flex-col gap-3 px-5 pb-6">
-            <p className="text-sm text-muted-foreground">{t("couldNotRead")}</p>
+            <p className="text-sm text-muted-foreground">{error || t("couldNotRead")}</p>
             <Button type="button" variant="outline" onClick={retry}>
               {t("retry")}
             </Button>
@@ -385,10 +386,22 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                 >
                   {shown.text}
                 </p>
+                <BibleCopyright
+                  notice={shown.copyright}
+                  fumsToken={shown.fumsToken}
+                  fumsId={shown.fumsId}
+                />
                 <p className="mt-2 text-xs font-medium tracking-[0.12em] text-primary uppercase">
                   {shown.ref}
                 </p>
               </div>
+              {shown.copyright ? (
+                <p className="text-xs text-muted-foreground">
+                  {locale === "es"
+                    ? "LBLA se comparte por referencia y enlace. La exportación del texto a imágenes o PDF no está habilitada."
+                    : "LBLA is shared as a reference and link. Exporting its text to images or PDF is not enabled."}
+                </p>
+              ) : null}
               <div className="grid gap-2 rounded-lg border border-border bg-card px-3 py-3">
                 <div className="flex items-center gap-2">
                   <Users className="size-4 text-primary" />
@@ -559,7 +572,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                   label={t("saveImage")}
                   hint={t("saveImageHint")}
                   onClick={() => void withCard("save", handleSaveImage)}
-                  disabled={making !== null}
+                  disabled={making !== null || Boolean(shown?.copyright)}
                   busy={making === "save"}
                 />
                 <ChannelButton
@@ -567,7 +580,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                   label={t("printAction")}
                   hint={t("printHint")}
                   onClick={() => void withCard("print", handlePrint)}
-                  disabled={making !== null}
+                  disabled={making !== null || Boolean(shown?.copyright)}
                   busy={making === "print"}
                 />
                 <ChannelButton
@@ -576,7 +589,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                   hint={t("otherApps")}
                   className="col-span-2"
                   onClick={() => void withCard("share", handleShare)}
-                  disabled={making !== null}
+                  disabled={making !== null || Boolean(shown?.copyright)}
                   busy={making === "share"}
                 />
               </div>

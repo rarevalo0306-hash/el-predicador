@@ -1,3 +1,4 @@
+import { referenceMemory } from "./bible-policy.ts";
 import { restorePhone } from "./phone.ts";
 import { isLocale } from "./i18n.ts";
 import { isThemeId, normalizeChurch } from "./church.ts";
@@ -56,8 +57,9 @@ export function parsePayload(raw: string | null | undefined): CloudPayload | nul
       favorites: Array.isArray(value.favorites) ? value.favorites : [],
       favoriteKinds:
         value.favoriteKinds && typeof value.favoriteKinds === "object" ? value.favoriteKinds : {},
-      verseMemory:
+      verseMemory: referenceMemory(
         value.verseMemory && typeof value.verseMemory === "object" ? value.verseMemory : {},
+      ),
       savedMessages: Array.isArray(value.savedMessages) ? value.savedMessages : [],
       displayName: typeof value.displayName === "string" ? value.displayName : "",
       notify: Boolean(value.notify),

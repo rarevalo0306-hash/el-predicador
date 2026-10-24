@@ -81,6 +81,10 @@ export async function renderVerseCard(
   note?: string,
   fromName?: string,
 ): Promise<Blob> {
+  if (verse.copyright)
+    throw new Error(
+      "La exportación de imágenes de LBLA no está habilitada. Comparte la referencia o el texto con su copyright.",
+    );
   if (typeof document !== "undefined" && document.fonts?.ready) {
     await document.fonts.ready.catch(() => undefined);
   }

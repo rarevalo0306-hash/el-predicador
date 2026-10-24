@@ -57,84 +57,12 @@ export const prepareVerseNotes = createServerFn({ method: "POST" })
       : [];
     return { locale: data.locale, batch: Math.min(8, Math.max(1, data.batch ?? 6)), skip };
   })
-  .handler(async ({ data, context }): Promise<PrepareResult> => {
+  .handler(async ({ context }): Promise<PrepareResult> => {
     await requireAdmin(context.userId);
-    const { getSql } = await import("@/lib/db");
-    const { hydrateVerse } = await import("@/lib/recobro");
-    const { generateVerseNotes } = await import("./ai/deepseek.server.ts");
-    const sql = await getSql();
-    const verses = await catalogVerses();
-    const done = new Set(
-      (
-        await sql<{ verse_id: string }>`
-          select distinct verse_id from verse_notes where locale = ${data.locale}`
-      ).map((r) => r.verse_id),
-    );
-    // Verses that already failed this session are left for another day, so
-    // one stubborn verse never keeps the loop, and the owner's balance, busy.
-    const skip = new Set(data.skip);
-    const pending = verses.filter((v) => !done.has(v.id) && !skip.has(v.id));
-    const batch = pending.slice(0, data.batch);
-    const errors: string[] = [];
-    const ready: { id: string; ref: string; text: string }[] = [];
-    // Texts stored on an earlier pass are reused, so writing the lines again
-    // never waits on the Bible service.
-    const stored = new Map(
-      (
-        await sql<{ verse_id: string; ref: string; text: string }>`
-          select verse_id, ref, text from verse_texts
-          where locale = ${data.locale} and verse_id = any(${batch.map((v) => v.id)})`
-      ).map((row) => [row.verse_id, row]),
-    );
-    for (const verse of batch) {
-      const kept = stored.get(verse.id);
-      if (kept?.text.trim()) {
-        ready.push({ id: verse.id, ref: kept.ref, text: kept.text });
-        continue;
-      }
-      try {
-        const full = await hydrateVerse(verse, data.locale);
-        if (!full.text.trim()) throw new Error("empty");
-        await sql`insert into verse_texts (verse_id, locale, ref, text, source, updated_at)
-          values (${verse.id}, ${data.locale}, ${full.ref}, ${full.text}, ${full.source ?? null}, now())
-          on conflict (verse_id, locale) do update set ref = excluded.ref, text = excluded.text,
-            source = excluded.source, updated_at = now()`;
-        ready.push({ id: verse.id, ref: full.ref, text: full.text });
-      } catch {
-        errors.push(`${verse.ref}: texto no disponible`);
-      }
-    }
-    const sample: PrepareResult["sample"] = [];
-    if (ready.length) {
-      const notes = await generateVerseNotes(ready, data.locale);
-      for (const verse of ready) {
-        const lines = notes[verse.id] ?? [];
-        if (!lines.length) {
-          errors.push(`${verse.ref}: sin frases`);
-          continue;
-        }
-        for (const [position, text] of lines.entries()) {
-          await sql`insert into verse_notes (verse_id, locale, position, text)
-            values (${verse.id}, ${data.locale}, ${position}, ${text})
-            on conflict (verse_id, locale, position) do update set text = excluded.text`;
-        }
-        if (sample.length < 2) sample.push({ ref: verse.ref, notes: lines });
-      }
-    }
-    const written = new Set(
-      ready.filter((v) => !errors.some((e) => e.startsWith(v.ref + ":"))).map((v) => v.id),
-    );
-    const failedIds = batch.filter((v) => !written.has(v.id)).map((v) => v.id);
-    const nowDone = new Set([...done, ...written]);
-    return {
-      processed: batch.length,
-      // What is still ahead once this batch and the skipped verses are set aside.
-      remaining: verses.filter((v) => !nowDone.has(v.id) && !skip.has(v.id) && !batch.includes(v))
-        .length,
-      sample,
-      errors,
-      failedIds,
-    };
+    const { requireBibleAIPermission } = await import("./bible-policy");
+    requireBibleAIPermission();
+    // No provider reads or persistence are permitted by this edition.
+    throw new Error("Bible AI preparation is unavailable");
   });
 
 /**

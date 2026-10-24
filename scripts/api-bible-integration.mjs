@@ -1,0 +1,140 @@
+#!/usr/bin/env node
+import assert from "node:assert/strict";
+import { createServer } from "vite";
+if (process.env.DATABASE_URL?.trim()) throw new Error("Refusing test against configured database");
+const originalFetch = globalThis.fetch;
+const originalKey = process.env.API_BIBLE_KEY;
+process.env.API_BIBLE_KEY = "test-backend-only";
+const server = await createServer({ server: { middlewareMode: true }, appType: "custom" });
+try {
+  const { loadApiBibleChapter } = await server.ssrLoadModule("/src/lib/api-bible.server.ts");
+  const { parseVerseRef } = await server.ssrLoadModule("/src/lib/verses.ts");
+  const { referenceOnly } = await server.ssrLoadModule("/src/lib/bible-policy.ts");
+  const { selectedVerseText } = await server.ssrLoadModule("/src/lib/verse-selection.ts");
+  const saved = referenceOnly({
+    id: "rcv-jhn-3-range-16,18",
+    ref: "Jn 3:16, 18",
+    book: "Juan",
+    text: "must not persist",
+    themes: [],
+  });
+  assert.equal(saved.text, "");
+  const selection = parseVerseRef(saved.ref);
+  assert.deepEqual(selection.selected, [16, 18]);
+  assert.equal(selection.book.id, "jhn");
+  assert.equal(
+    selectedVerseText(
+      [
+        { n: 16, text: "fixture16" },
+        { n: 17, text: "excluded" },
+        { n: 18, text: "fixture18" },
+      ],
+      selection,
+    ),
+    "fixture16 fixture18",
+  );
+  const { getSql } = await server.ssrLoadModule("/src/lib/db.ts");
+  const sql = await getSql();
+  const { bookById, LBLA_BIBLE_ID } = await server.ssrLoadModule("/src/lib/bible.ts");
+  let calls = 0;
+  let status = 200;
+  let omitCopyright = false;
+  globalThis.fetch = async (url, init) => {
+    calls++;
+    assert.match(
+      String(url),
+      /^https:\/\/rest.api.bible\/v1\/bibles\/e3f420b9665abaeb-01\/chapters\//,
+    );
+    assert.equal(init.headers["api-key"], "test-backend-only");
+    const id = new URL(url).pathname.split("/").at(-1);
+    if (status !== 200) return new Response("upstream", { status });
+    return Response.json({
+      data: {
+        id,
+        bibleId: LBLA_BIBLE_ID,
+        copyright: omitCopyright ? "" : "Official fixture © test — unchanged",
+        content: [
+          {
+            name: "para",
+            type: "tag",
+            items: [
+              {
+                name: "verse",
+                type: "tag",
+                attrs: { number: "1" },
+                items: [{ type: "text", text: "1" }],
+              },
+              {
+                type: "text",
+                text: "  Fixture, punctuation—unchanged. ",
+                attrs: { verseId: `${id}.1` },
+              },
+            ],
+          },
+        ],
+      },
+      meta: { fumsToken: "fixture-token" },
+    });
+  };
+  const book = bookById("jhn");
+  const results = await Promise.all(Array.from({ length: 20 }, () => loadApiBibleChapter(book, 3)));
+  assert.equal(calls, 1, "20 simultaneous requests must make one upstream call");
+  assert.equal(results[0].payload.verses[0].text, "  Fixture, punctuation—unchanged. ");
+  assert.equal(results[0].payload.copyright, "Official fixture © test — unchanged");
+  assert.equal(results[0].payload.fumsToken, "fixture-token");
+  assert.ok(results[0].expiresAt <= Date.now() + 28 * 86400000);
+  await loadApiBibleChapter(book, 3);
+  assert.equal(calls, 1, "persistent cache");
+  await sql`update api_bible_cache set expires_at=now()-interval '1 second'`;
+  await loadApiBibleChapter(book, 3);
+  assert.equal(calls, 2, "expired text refreshes");
+  await sql`update api_bible_cache set expires_at=now()-interval '1 second'`;
+  status = 503;
+  await assert.rejects(loadApiBibleChapter(book, 3), /no está disponible/);
+  assert.equal(calls, 3, "failed requests count toward budget");
+  status = 200;
+  omitCopyright = true;
+  await assert.rejects(loadApiBibleChapter(book, 4), /no está disponible/);
+  omitCopyright = false;
+  // Fill sliding budget atomically; requests on different chapters still share it.
+  await sql`update api_bible_budget set calls=4899, attempts=array_fill(now(),array[4899])`;
+  await Promise.allSettled([
+    loadApiBibleChapter(book, 5),
+    loadApiBibleChapter(book, 6),
+    loadApiBibleChapter(book, 7),
+  ]);
+  assert.equal(calls, 5, "only one of concurrent requests can reserve the last slot");
+  const [budget] = await sql`select calls,cardinality(attempts) as attempts from api_bible_budget`;
+  assert.deepEqual(budget, { calls: 4900, attempts: 4900 });
+  await assert.rejects(loadApiBibleChapter(book, 8), /límite/);
+  // Warm content remains available at quota exhaustion.
+  await loadApiBibleChapter(book, 5);
+  assert.equal(calls, 5);
+  // Expiring old attempts restores capacity without a month-boundary burst.
+  await sql`update api_bible_budget set attempts=array[now()-interval '32 days'],calls=1`;
+  status = 429;
+  await assert.rejects(loadApiBibleChapter(book, 9), /límite/);
+  status = 200;
+  await assert.rejects(loadApiBibleChapter(book, 10), /límite/);
+  assert.equal(calls, 6, "provider rate-limit stops further upstream calls");
+  const { Route: ask } = await server.ssrLoadModule("/src/routes/api/ask.ts");
+  const { Route: compose } = await server.ssrLoadModule("/src/routes/api/compose.ts");
+  for (const route of [ask, compose]) {
+    const response = await route.options.server.handlers.POST({
+      request: new Request("http://localhost/api/ask", {
+        method: "POST",
+        body: JSON.stringify({ aiConsent: true, question: "fixture" }),
+      }),
+    });
+    assert.equal(response.status, 403);
+    assert.equal((await response.json()).error, "bible_ai_not_licensed");
+  }
+  console.log(
+    "PASS: API.Bible concurrency, exact text/copyright, cache expiry, 4900 shared rolling quota, provider failures and AI endpoint denial. All responses are synthetic; no live key used.",
+  );
+} finally {
+  globalThis.fetch = originalFetch;
+  if (originalKey === undefined) delete process.env.API_BIBLE_KEY;
+  else process.env.API_BIBLE_KEY = originalKey;
+  await server.close();
+}

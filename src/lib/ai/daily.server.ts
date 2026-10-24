@@ -1,3 +1,4 @@
+import { requireBibleAIPermission } from "../bible-policy.ts";
 import { STYLE, VOICE, cleanNote } from "./deepseek.server.ts";
 
 /**
@@ -116,7 +117,7 @@ async function chat(
   request: typeof fetch,
   options: { json?: boolean } = {},
 ): Promise<{ text: string; cutOff: boolean; finish: string; reasoning: string }> {
-  if (!config.DEEPSEEK_API_KEY) throw new Error("deepseek_not_configured");
+  requireBibleAIPermission();
   const response = await request(
     `${config.DEEPSEEK_BASE_URL || "https://api.deepseek.com"}/chat/completions`,
     {

@@ -1,3 +1,4 @@
+import { designCopy } from "@/lib/design-copy";
 import { messageLanguageName } from "@/lib/message-language";
 import { MessageSchedulePanel } from "@/components/message-schedule-panel";
 import { scheduleCopy } from "@/lib/schedule-copy";
@@ -425,19 +426,21 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
   return (
     <div className="flex flex-col gap-5">
       <header>
-        <h1 className="font-serif text-3xl tracking-tight">{t("preachTitle")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("preachSub")}</p>
+        <h1 className="screen-title">{designCopy(locale).peopleTitle}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{designCopy(locale).peopleSub}</p>
       </header>
 
       <Button
         type="button"
-        className="h-auto min-h-12 py-2 whitespace-normal w-full"
+        variant="outline"
+        className="h-auto min-h-12 justify-between rounded-xl py-3 whitespace-normal w-full"
         onClick={() => {
           setSchedulePerson(null);
           setSection("schedules");
         }}
         aria-pressed={section === "schedules"}
       >
+        <CalendarClock className="size-5" aria-hidden />
         {scheduleCopy(locale).title}
       </Button>
       <div
@@ -534,7 +537,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
           initialLocale={schedulePerson?.messageLocale}
         />
       ) : section === "church" ? (
-        <div className="flex flex-col gap-4 rounded-xl bg-card px-4 py-5 shadow-paper">
+        <div className="flex flex-col gap-4 rounded-xl bg-card px-4 py-5">
           <p className="text-sm text-muted-foreground">{t("churchHint")}</p>
           <div className="grid gap-2">
             <Label htmlFor="church-name">{t("churchName")}</Label>
@@ -754,11 +757,13 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
           ) : null}
 
           {recipients.length === 0 ? (
-            <p className="rounded-xl bg-card px-4 py-6 text-center text-sm text-muted-foreground shadow-paper">
-              {t("peopleEmpty")}
-            </p>
+            <div className="empty-state">
+              <Users aria-hidden className="size-8 text-primary" />
+              <h2 className="text-xl font-bold">{designCopy(locale).peopleEmptyTitle}</h2>
+              <p className="max-w-xs text-sm text-muted-foreground">{t("peopleEmpty")}</p>
+            </div>
           ) : matches.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-xl bg-card px-4 py-6 text-center shadow-paper">
+            <div className="flex flex-col items-center gap-3 rounded-xl bg-card px-4 py-6 text-center">
               <p className="text-sm text-muted-foreground">{t("peopleNoMatch")}</p>
               <Button
                 type="button"
@@ -774,10 +779,7 @@ export function PeoplePreachView({ onSend }: PeoplePreachViewProps) {
           ) : (
             <ul className="flex flex-col gap-3">
               {shown.map((row) => (
-                <li
-                  key={row.id}
-                  className="rounded-xl border border-border bg-card px-4 py-4 shadow-paper"
-                >
+                <li key={row.id} className="rounded-xl border border-border bg-card px-4 py-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="font-medium break-words">{row.name}</p>

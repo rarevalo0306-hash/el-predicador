@@ -1,8 +1,9 @@
+import { bibleErrorCopy } from "@/lib/bible-error-copy";
 import { recobroSource } from "@/lib/bible";
 import { useEffect, useRef, useState } from "react";
 import type { Locale } from "@/lib/i18n";
 import { hydrateVerse, peekHydratedVerse } from "@/lib/recobro";
-import type { Verse } from "@/lib/verses";
+import { isComposedVerse, type Verse } from "@/lib/verses";
 
 export function useHydratedVerse(verse: Verse | null, locale: Locale) {
   const verseId = verse?.id ?? "";
@@ -36,16 +37,30 @@ export function useHydratedVerse(verse: Verse | null, locale: Locale) {
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : "error");
+        setError(bibleErrorCopy(err, locale));
       });
     return () => {
       cancelled = true;
     };
   }, [verseId, locale, tick]);
 
+  useEffect(() => {
+    const refresh = () => setTick((n) => n + 1);
+    const timer = window.setInterval(refresh, 60_000);
+    window.addEventListener("online", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("online", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, []);
   const shown =
     peeked ??
-    (hydrated && hydrated.id === verseId && hydrated.source === recobroSource(locale)
+    (hydrated &&
+    hydrated.id === verseId &&
+    (hydrated.source === recobroSource(locale) || isComposedVerse(hydrated.id)) &&
+    (!hydrated.expiresAt || hydrated.expiresAt > Date.now())
       ? hydrated
       : null);
 

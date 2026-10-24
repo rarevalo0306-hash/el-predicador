@@ -96,7 +96,16 @@ export const PREACH_CASES: PreachCase[] = [
       "El arrebatamiento es para todos: los muertos en Cristo resucitan y los que vivimos somos arrebatados con ellos.",
       "Cristo reina desde su resurrección. La fecha 1914 no está escrita en la Biblia.",
     ],
-    verseIds: ["jn-1-1", "ro-10-13", "col-2-9", "mt-26-26", "1co-11-28", "1ts-4-16", "1co-15-51", "hch-4-12"],
+    verseIds: [
+      "jn-1-1",
+      "ro-10-13",
+      "col-2-9",
+      "mt-26-26",
+      "1co-11-28",
+      "1ts-4-16",
+      "1co-15-51",
+      "hch-4-12",
+    ],
     letter: TESTIGOS_LETTER_ES,
   },
   {
@@ -214,7 +223,8 @@ const CASES_EN: Record<
   testigos: {
     title: "Jehovah’s Witnesses",
     who: "A follower of the Watchtower: denies that Jesus is God and reads a Bible translated by their own organization.",
-    issue: "Sincerity does not turn a doctrine into truth. Test all things; hold fast what is good.",
+    issue:
+      "Sincerity does not turn a doctrine into truth. Test all things; hold fast what is good.",
     approach:
       "With respect, not to fight. Compare the Greek, the New King James Version and the New World Translation, and ask: does the doctrine conform to Scripture, or is the translation made to conform to the doctrine?",
     points: [
@@ -274,10 +284,12 @@ const CASES_EN: Record<
 };
 
 export function localizedCase(entry: PreachCase, locale: Locale): PreachCase {
-  if (locale !== "en") return entry;
+  if (locale !== "en")
+    return { ...entry, letter: [entry.issue, entry.approach, ...entry.points].join("\n\n") };
   const en = CASES_EN[entry.id];
   if (!en) return entry;
-  return { ...entry, ...en };
+  const result = { ...entry, ...en };
+  return { ...result, letter: [result.issue, result.approach, ...result.points].join("\n\n") };
 }
 
 export function caseVerses(entry: PreachCase, locale: Locale = "es") {
@@ -290,10 +302,9 @@ export function caseVerses(entry: PreachCase, locale: Locale = "es") {
 export async function composeCaseText(entry: PreachCase, locale: Locale = "es") {
   const localized = localizedCase(entry, locale);
   if (hasMarkdown(localized.letter)) return messageText(localized.letter);
-  const hydrated = await hydrateVerses(caseVerses(entry, locale), locale);
+  const hydrated = caseVerses(entry, locale);
   const lines = [localized.letter, ""];
   for (const verse of hydrated) {
-    lines.push(`«${verse.text}»`);
     lines.push(`— ${verse.ref}`);
     lines.push("");
   }
@@ -308,10 +319,7 @@ export function caseBrief(entry: PreachCase): string {
   return hasMarkdown(entry.letter) ? `${entry.issue} ${entry.approach}` : entry.letter;
 }
 
-export async function caseMessageVerse(
-  entry: PreachCase,
-  locale: Locale = "es",
-): Promise<Verse> {
+export async function caseMessageVerse(entry: PreachCase, locale: Locale = "es"): Promise<Verse> {
   const localized = localizedCase(entry, locale);
   return {
     id: `caso-${entry.id}`,
@@ -319,6 +327,6 @@ export async function caseMessageVerse(
     book: t(locale, "preachFor"),
     text: await composeCaseText(entry, locale),
     themes: ["evangelio"],
-    source: recobroSource(locale),
+    source: locale === "en" ? "Reference guide" : "Guía de referencias",
   };
 }

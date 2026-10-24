@@ -18,7 +18,7 @@ export class AskError extends Error {
  * `ask_quota`, `ask_unavailable`, `ask_failed:<code>`.
  */
 export async function askStream(
-  input: { question: string; history: AskTurn[]; locale: "es" | "en" },
+  input: { question: string; history: AskTurn[]; locale: "es" | "en"; aiConsent: true },
   onText: (text: string) => void,
   signal?: AbortSignal,
 ): Promise<{ remaining: number | null }> {
@@ -27,7 +27,7 @@ export async function askStream(
 
 /** A message for one person from a preaching case, written as it streams. */
 export async function composeStream(
-  input: { caseId: string; details: string; locale: "es" | "en" },
+  input: { caseId: string; details: string; locale: "es" | "en"; aiConsent: true },
   onText: (text: string) => void,
   signal?: AbortSignal,
 ): Promise<{ remaining: number | null }> {

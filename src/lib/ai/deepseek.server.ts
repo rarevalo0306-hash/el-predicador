@@ -1,3 +1,4 @@
+import { requireBibleAIPermission } from "../bible-policy.ts";
 /**
  * Short lines of encouragement to go with a verse, written once by DeepSeek
  * and kept in the database. Nothing here runs at send time: the worker only
@@ -97,7 +98,7 @@ export function systemPrompt(locale: "es" | "en", perVerse: number) {
 }
 
 export function deepseekConfigured(config: Config = process.env) {
-  return Boolean(config.DEEPSEEK_API_KEY);
+  return false; // LBLA Starter: no licensed text in runtime AI prompts.
 }
 
 /**
@@ -134,7 +135,7 @@ export async function generateVerseNotes(
   config: Config = process.env,
   request: typeof fetch = fetch,
 ): Promise<Record<string, string[]>> {
-  if (!config.DEEPSEEK_API_KEY) throw new Error("deepseek_not_configured");
+  requireBibleAIPermission();
   const response = await request(
     `${config.DEEPSEEK_BASE_URL || "https://api.deepseek.com"}/chat/completions`,
     {

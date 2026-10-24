@@ -39,7 +39,9 @@ const BY_NUM = new Map<string, BibleBook>(BIBLE_BOOKS.map((book) => [book.num, b
  * ("  13:3"), so the place is read from its link instead:
  * "47_2Corinthians_3.htm#SCo3-18" is book 47, chapter 3, verse 18.
  */
-export function placeOf(urlpfx: string): { book: BibleBook; chapter: number; verse: number } | null {
+export function placeOf(
+  urlpfx: string,
+): { book: BibleBook; chapter: number; verse: number } | null {
   const match = /^(\d{2})_[^_]+_(\d+)\.htm#[^-]*-(\d+)$/.exec(urlpfx.trim());
   if (!match) return null;
   const book = BY_NUM.get(match[1]);
@@ -60,7 +62,9 @@ export function readHits(payload: { verses?: LsmVerse[]; detected?: unknown }): 
   const hits: ConcordanceHit[] = [];
   for (const item of payload.verses ?? []) {
     const place = placeOf(String(item.urlpfx ?? ""));
-    const text = String(item.text ?? "").replace(/\s+/g, " ").trim();
+    const text = String(item.text ?? "")
+      .replace(/\s+/g, " ")
+      .trim();
     if (!place || !text) continue;
     const key = `${place.book.id}-${place.chapter}-${place.verse}`;
     if (seen.has(key)) continue;
@@ -104,8 +108,7 @@ export function markWords(text: string, words: string): { text: string; mark: bo
   return parts;
 }
 
-/** LSM's own search page, for when this app has no key of its own yet. */
-export function lsmSearchPage(words: string, locale: "es" | "en"): string {
-  const params = new URLSearchParams({ String: words, Lang: locale === "en" ? "eng" : "spa" });
-  return `https://text.recoveryversion.bible/list/?${params.toString()}`;
+/** Compatibility helper: the withdrawn provider is never offered as fallback. */
+export function lsmSearchPage(_words: string, _locale: "es" | "en"): string {
+  return "https://api.bible";
 }

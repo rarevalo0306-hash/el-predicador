@@ -1,4 +1,11 @@
-import { findBook, recobroSource, SOURCE_RECOBRO, SOURCE_RECOBRO_EN, type BibleBook } from "@/lib/bible";
+import { parseVerseSelection } from "./verse-selection";
+import {
+  findBook,
+  recobroSource,
+  SOURCE_RECOBRO,
+  SOURCE_RECOBRO_EN,
+  type BibleBook,
+} from "@/lib/bible";
 import { t, type Locale, type StringKey } from "@/lib/i18n";
 import { VERSE_EN } from "@/lib/verses-en";
 import type { ScheduleThemeId } from "@/lib/message-schedule";
@@ -12,6 +19,10 @@ export type Verse = {
   text: string;
   themes: ThemeId[];
   source?: string;
+  copyright?: string;
+  expiresAt?: number;
+  fumsToken?: string;
+  fumsId?: string;
 };
 
 export const THEMES: {
@@ -88,6 +99,7 @@ export function isComposedVerse(id: string) {
 }
 
 export type VerseSpan = {
+  selected?: number[];
   book: BibleBook;
   chapter: number;
   from: number;
@@ -95,26 +107,14 @@ export type VerseSpan = {
 };
 
 export function parseVerseRef(ref: string): VerseSpan | null {
-  const match = ref
-    .trim()
-    .match(/^(.+?)\s+(\d+):(\d+)(?:\s*[-–—]\s*(\d+))?$/);
+  const match = ref.trim().match(/^(.+?)\s+(\d+):(.+)$/);
   if (!match) return null;
   const book = findBook(match[1] ?? "");
-  if (!book) return null;
   const chapter = Number(match[2]);
-  const from = Number(match[3]);
-  const to = match[4] ? Number(match[4]) : from;
-  if (
-    !Number.isInteger(chapter) ||
-    !Number.isInteger(from) ||
-    !Number.isInteger(to) ||
-    chapter < 1 ||
-    from < 1 ||
-    to < from
-  ) {
+  const selection = parseVerseSelection(match[3] ?? "");
+  if (!book || !selection || !Number.isInteger(chapter) || chapter < 1 || chapter > book.chapters)
     return null;
-  }
-  return { book, chapter, from, to };
+  return { book, chapter, ...selection };
 }
 
 export function catalogSpan(verse: Verse): VerseSpan | null {
@@ -130,14 +130,19 @@ export function localizedTheme(id: ThemeId, locale: Locale) {
   };
 }
 
-
 export const VERSES: Verse[] = [
   { id: "1ti-4-12", ref: "1 Timoteo 4:12", book: "1 Timoteo", text: "", themes: ["jovenes"] },
   { id: "ecl-12-1", ref: "Eclesiastés 12:1", book: "Eclesiastés", text: "", themes: ["jovenes"] },
   { id: "ef-5-25", ref: "Efesios 5:25", book: "Efesios", text: "", themes: ["matrimonios"] },
   { id: "ecl-4-9", ref: "Eclesiastés 4:9-10", book: "Eclesiastés", text: "", themes: ["amistad"] },
   { id: "prv-17-17", ref: "Proverbios 17:17", book: "Proverbios", text: "", themes: ["amistad"] },
-  { id: "1ts-5-17", ref: "1 Tesalonicenses 5:17-18", book: "1 Tesalonicenses", text: "", themes: ["oracion"] },
+  {
+    id: "1ts-5-17",
+    ref: "1 Tesalonicenses 5:17-18",
+    book: "1 Tesalonicenses",
+    text: "",
+    themes: ["oracion"],
+  },
   { id: "mt-6-6", ref: "Mateo 6:6", book: "Mateo", text: "", themes: ["oracion"] },
   { id: "mt-7-7", ref: "Mateo 7:7", book: "Mateo", text: "", themes: ["oracion"] },
   { id: "jer-33-3", ref: "Jeremías 33:3", book: "Jeremías", text: "", themes: ["oracion"] },
@@ -154,11 +159,35 @@ export const VERSES: Verse[] = [
   { id: "mt-19-6", ref: "Mateo 19:6", book: "Mateo", text: "", themes: ["matrimonios"] },
   { id: "ef-5-31", ref: "Efesios 5:31-32", book: "Efesios", text: "", themes: ["matrimonios"] },
   { id: "ef-5-33", ref: "Efesios 5:33", book: "Efesios", text: "", themes: ["matrimonios"] },
-  { id: "col-3-18", ref: "Colosenses 3:18-19", book: "Colosenses", text: "", themes: ["matrimonios"] },
+  {
+    id: "col-3-18",
+    ref: "Colosenses 3:18-19",
+    book: "Colosenses",
+    text: "",
+    themes: ["matrimonios"],
+  },
   { id: "1pe-3-7", ref: "1 Pedro 3:7", book: "1 Pedro", text: "", themes: ["matrimonios"] },
-  { id: "ecl-4-12", ref: "Eclesiastés 4:12", book: "Eclesiastés", text: "", themes: ["matrimonios"] },
-  { id: "prv-18-22", ref: "Proverbios 18:22", book: "Proverbios", text: "", themes: ["matrimonios"] },
-  { id: "prv-31-10", ref: "Proverbios 31:10-11", book: "Proverbios", text: "", themes: ["matrimonios"] },
+  {
+    id: "ecl-4-12",
+    ref: "Eclesiastés 4:12",
+    book: "Eclesiastés",
+    text: "",
+    themes: ["matrimonios"],
+  },
+  {
+    id: "prv-18-22",
+    ref: "Proverbios 18:22",
+    book: "Proverbios",
+    text: "",
+    themes: ["matrimonios"],
+  },
+  {
+    id: "prv-31-10",
+    ref: "Proverbios 31:10-11",
+    book: "Proverbios",
+    text: "",
+    themes: ["matrimonios"],
+  },
   { id: "heb-13-4", ref: "Hebreos 13:4", book: "Hebreos", text: "", themes: ["matrimonios"] },
   { id: "cnt-8-7", ref: "Cantares 8:7", book: "Cantares", text: "", themes: ["matrimonios"] },
   { id: "1pe-4-8", ref: "1 Pedro 4:8", book: "1 Pedro", text: "", themes: ["matrimonios"] },
@@ -1579,18 +1608,66 @@ export const VERSES: Verse[] = [
   // Bendición: what the Lord puts on His own, for the verse of the day.
   { id: "ef-1-3", ref: "Efesios 1:3", book: "Efesios", text: "", themes: ["bendicion"] },
   { id: "sal-67-1", ref: "Salmos 67:1", book: "Salmos", text: "", themes: ["bendicion"] },
-  { id: "heb-13-20", ref: "Hebreos 13:20-21", book: "Hebreos", text: "", themes: ["bendicion", "paz"] },
-  { id: "fil-4-19", ref: "Filipenses 4:19", book: "Filipenses", text: "", themes: ["bendicion", "fe"] },
-  { id: "2ts-3-16", ref: "2 Tesalonicenses 3:16", book: "2 Tesalonicenses", text: "", themes: ["bendicion", "paz"] },
+  {
+    id: "heb-13-20",
+    ref: "Hebreos 13:20-21",
+    book: "Hebreos",
+    text: "",
+    themes: ["bendicion", "paz"],
+  },
+  {
+    id: "fil-4-19",
+    ref: "Filipenses 4:19",
+    book: "Filipenses",
+    text: "",
+    themes: ["bendicion", "fe"],
+  },
+  {
+    id: "2ts-3-16",
+    ref: "2 Tesalonicenses 3:16",
+    book: "2 Tesalonicenses",
+    text: "",
+    themes: ["bendicion", "paz"],
+  },
   { id: "prv-10-22", ref: "Proverbios 10:22", book: "Proverbios", text: "", themes: ["bendicion"] },
-  { id: "jer-17-7", ref: "Jeremías 17:7-8", book: "Jeremías", text: "", themes: ["bendicion", "fe"] },
-  { id: "sal-29-11", ref: "Salmos 29:11", book: "Salmos", text: "", themes: ["bendicion", "fortaleza"] },
+  {
+    id: "jer-17-7",
+    ref: "Jeremías 17:7-8",
+    book: "Jeremías",
+    text: "",
+    themes: ["bendicion", "fe"],
+  },
+  {
+    id: "sal-29-11",
+    ref: "Salmos 29:11",
+    book: "Salmos",
+    text: "",
+    themes: ["bendicion", "fortaleza"],
+  },
   { id: "ef-6-23", ref: "Efesios 6:23-24", book: "Efesios", text: "", themes: ["bendicion"] },
   { id: "sal-5-12", ref: "Salmos 5:12", book: "Salmos", text: "", themes: ["bendicion"] },
-  { id: "ef-3-20", ref: "Efesios 3:20-21", book: "Efesios", text: "", themes: ["bendicion", "esperanza"] },
-  { id: "sal-121-7", ref: "Salmos 121:7-8", book: "Salmos", text: "", themes: ["bendicion", "consuelo"] },
+  {
+    id: "ef-3-20",
+    ref: "Efesios 3:20-21",
+    book: "Efesios",
+    text: "",
+    themes: ["bendicion", "esperanza"],
+  },
+  {
+    id: "sal-121-7",
+    ref: "Salmos 121:7-8",
+    book: "Salmos",
+    text: "",
+    themes: ["bendicion", "consuelo"],
+  },
   { id: "2co-9-8", ref: "2 Corintios 9:8", book: "2 Corintios", text: "", themes: ["bendicion"] },
-  { id: "dt-28-6", ref: "Deuteronomio 28:6", book: "Deuteronomio", text: "", themes: ["bendicion"] },
+  {
+    id: "dt-28-6",
+    ref: "Deuteronomio 28:6",
+    book: "Deuteronomio",
+    text: "",
+    themes: ["bendicion"],
+  },
 ];
 
 export function todayKey(date = new Date()) {
@@ -1648,7 +1725,6 @@ export function getDailyVerse(offset = 0, date = new Date()) {
   return getDailyPick(offset, date).verse;
 }
 
-
 export function getVerseById(id: string) {
   return VERSES.find((verse) => verse.id === id) ?? EXTRA_BY_ID.get(id);
 }
@@ -1703,7 +1779,13 @@ export function setThemeExtras(list: ThemeExtra[]) {
     const known = EXTRA_BY_ID.get(item.id);
     const verse: Verse = known
       ? { ...known, themes: [...known.themes, item.themeId] }
-      : { id: item.id, ref: passage.ref, book: passage.span.book.name, text: "", themes: [item.themeId] };
+      : {
+          id: item.id,
+          ref: passage.ref,
+          book: passage.span.book.name,
+          text: "",
+          themes: [item.themeId],
+        };
     EXTRA_BY_ID.set(item.id, verse);
     EXTRAS.set(item.themeId, [...(EXTRAS.get(item.themeId) ?? []), verse]);
   }
@@ -1729,9 +1811,9 @@ export function searchVerses(query: string) {
       verse.book.toLowerCase().includes(needle) ||
       Boolean(
         en &&
-          (en.text.toLowerCase().includes(needle) ||
-            en.ref.toLowerCase().includes(needle) ||
-            en.book.toLowerCase().includes(needle)),
+        (en.text.toLowerCase().includes(needle) ||
+          en.ref.toLowerCase().includes(needle) ||
+          en.book.toLowerCase().includes(needle)),
       )
     );
   });

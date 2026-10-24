@@ -10,6 +10,18 @@ export function formatVerseMessage(
   locale: Locale = "es",
 ) {
   const lines: string[] = [];
+  if (verse.copyright) {
+    return [
+      verse.ref,
+      verse.source,
+      "https://www.thepreacher.app",
+      note?.trim(),
+      fromName?.trim() ? t(locale, "signOff", { name: fromName.trim() }) : "",
+      "API.Bible — https://api.bible",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
   if (
     verse.id === "evangelio-camino" ||
     verse.id.startsWith("caso-") ||
@@ -23,6 +35,7 @@ export function formatVerseMessage(
       lines.push(verse.source);
     }
   }
+  if (verse.copyright) lines.push(verse.copyright, "API.Bible — https://api.bible");
   // The verse comes whole and first; the personal line follows it.
   const trimmedNote = note?.trim();
   if (trimmedNote) {

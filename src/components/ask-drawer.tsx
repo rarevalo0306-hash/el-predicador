@@ -1,3 +1,4 @@
+import { requestAIConsent } from "@/lib/ai-consent";
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Send, Square, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -159,6 +160,7 @@ export function AskDrawer({
   async function send(typed = question) {
     const raw = typed.trim();
     if (!raw || busy || asking.current) return;
+    if (!requestAIConsent(locale, "ask")) return;
     const controller = new AbortController();
     asking.current = controller;
     askedAt.current = Date.now();
@@ -175,7 +177,7 @@ export function AskDrawer({
     let answer = "";
     try {
       const { remaining: left } = await askStream(
-        { question: text, history, locale },
+        { question: text, history, locale, aiConsent: true },
         (piece) => {
           // The answer grows on screen as it is written.
           answer += piece;
