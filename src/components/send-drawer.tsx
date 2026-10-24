@@ -504,7 +504,22 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                 ))}
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="note">{t("personalNote")}</Label>
+                <Label htmlFor="note">{locale === "es" ? "Saludo o nota personal" : "Personal greeting or note"}</Label>
+                <div className="flex flex-wrap gap-2" aria-label={locale === "es" ? "Saludos sugeridos" : "Suggested greetings"}>
+                  {(messageLocale === "es"
+                    ? ["Con cariño, Dios te bendiga.", "Pensando en ti. Que tengas un día lleno de paz.", "Te comparto esta palabra con mucho cariño."]
+                    : ["With love. God bless you.", "Thinking of you. May your day be filled with peace.", "Sharing this word with you with love."]
+                  ).map((greeting) => (
+                    <button key={greeting} type="button"
+                      className="rounded-xl border border-border bg-card px-3 py-2 text-left text-sm hover:bg-secondary"
+                      onClick={() => {
+                        setNote((current) => current.includes(greeting) ? current : current.trim() ? `${current.trim()}\n\n${greeting}` : greeting);
+                        setActiveTemplate(null);
+                      }}>
+                      {greeting}
+                    </button>
+                  ))}
+                </div>
                 <Textarea
                   id="note"
                   value={note}
@@ -517,6 +532,10 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                 />
               </div>
 
+              <div className="rounded-xl border border-border bg-secondary/40 p-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{locale === "es" ? "Así se enviará" : "Message preview"}</p>
+                <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{message}</p>
+              </div>
               <Button type="button" className="w-full" onClick={() => setScheduling(true)}>
                 {scheduleCopy(locale).scheduleThis}
               </Button>

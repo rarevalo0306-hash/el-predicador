@@ -31,7 +31,7 @@ export function formatVerseMessage(
   ) {
     lines.push(verse.text);
   } else {
-    lines.push(`«${verse.text}»`, `— ${verse.ref}`);
+    lines.push(verse.text, "", verse.ref);
     if (verse.source) {
       lines.push(verse.source);
     }
