@@ -1,5 +1,5 @@
 import { BibleCopyright } from "@/components/bible-copyright";
-import { Heart, Send } from "lucide-react";
+import { ArrowRight, Bookmark, Heart, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PreacherMark } from "@/components/mark";
 import { useI18n } from "@/components/language-switch";
@@ -12,11 +12,12 @@ import { TextSkeleton } from "@/components/text-skeleton";
 
 type VerseCardProps = {
   verse: Verse;
-  variant?: "hero" | "list";
+  variant?: "hero" | "list" | "post";
+  onReadChapter?: () => void;
   onSend: (verse: Verse) => void;
 };
 
-export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
+export function VerseCard({ verse, variant = "list", onSend, onReadChapter }: VerseCardProps) {
   const { locale, t } = useI18n();
   const meta = localizeVerse(verse, locale);
   const { verse: shown, loading, error, retry } = useHydratedVerse(verse, locale);
@@ -25,10 +26,11 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
   const saved = favorites.includes(verse.id);
   const source = shown?.source ?? recobroSource(locale);
 
-  if (variant === "hero") {
+  if (variant === "hero" || variant === "post") {
+    const post = variant === "post";
     return (
-      <article className="rounded-xl bg-card px-6 py-8 shadow-paper sm:px-8 sm:py-10">
-        <PreacherMark className="mx-auto mb-5 size-24" />
+      <article className={post ? "daily-post-content" : "rounded-xl bg-card px-6 py-8 shadow-paper sm:px-8 sm:py-10"}>
+        {!post && <PreacherMark className="mx-auto mb-5 size-24" />}
         {error ? (
           <div className="flex flex-col items-center gap-3 text-center">
             <p className="text-sm text-muted-foreground">{error || t("couldNotRead")}</p>
@@ -39,7 +41,7 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
         ) : loading || !shown ? (
           <TextSkeleton label={t("loadingVerse")} lines={3} lineClassName="h-7" />
         ) : (
-          <blockquote className="reader-verse-text tracking-tight text-foreground sm:text-[1.15em]">
+          <blockquote className={post ? "whitespace-pre-wrap text-xl leading-relaxed tracking-[-0.015em] text-foreground sm:text-2xl" : "reader-verse-text tracking-tight text-foreground sm:text-[1.15em]"}>
             {shown.text}
           </blockquote>
         )}
@@ -54,29 +56,36 @@ export function VerseCard({ verse, variant = "list", onSend }: VerseCardProps) {
         />
         {/* With large text the labels may run to two lines and the buttons
             stack, rather than spilling past the card. */}
-        <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <div className={post ? "mt-5 grid grid-cols-2 gap-3" : "mt-8 flex flex-col gap-2 sm:flex-row sm:flex-wrap"}>
           <Button
-            className="h-auto min-h-12 py-2 whitespace-normal sm:flex-1"
+            className={cn("h-auto min-h-12 py-2 whitespace-normal sm:flex-1", post && "order-2 rounded-full")}
+            variant={post ? "outline" : "default"}
             size="lg"
             disabled={!shown}
             onClick={() => shown && onSend(shown)}
           >
             <Send />
-            {t("sendThisVerse")}
+            {post ? (locale === "en" ? "Share" : "Compartir") : t("sendThisVerse")}
           </Button>
           <Button
             type="button"
             variant={saved ? "secondary" : "outline"}
             size="lg"
-            className="h-auto min-h-12 py-2 whitespace-normal sm:w-auto"
+            className={cn("h-auto min-h-12 py-2 whitespace-normal sm:w-auto", post && "order-1 rounded-full")}
             disabled={!shown}
             onClick={() => shown && toggleFavorite(verse.id, shown)}
             aria-pressed={saved}
           >
-            <Heart className={cn(saved && "fill-primary text-primary")} />
+            {post ? <Bookmark className={cn(saved && "fill-primary text-primary")} /> : <Heart className={cn(saved && "fill-primary text-primary")} />}
             {saved ? t("saved") : t("save")}
           </Button>
         </div>
+        {post && onReadChapter ? (
+          <button type="button" className="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary" onClick={onReadChapter}>
+            {locale === "en" ? "Read the full chapter" : "Leer el capítulo completo"}
+            <ArrowRight aria-hidden className="size-4" />
+          </button>
+        ) : null}
       </article>
     );
   }

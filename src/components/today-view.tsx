@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { enUS, es } from "date-fns/locale";
-import { ArrowRight, Bookmark, ChevronRight, RefreshCw } from "lucide-react";
+import { Bookmark, ChevronRight, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VerseCard } from "@/components/verse-card";
 import { ContactForm } from "@/components/contact-form";
@@ -62,7 +62,6 @@ type TodayViewProps = {
 export function TodayView({ mood, onMoodChange, onSend, onRead, onExplore }: TodayViewProps) {
   const { locale, t } = useI18n();
   const readingPlace = useAppStore((s) => s.readingPlace);
-  const [showVerse, setShowVerse] = useState(false);
   const dailyOffset = useAppStore((s) => s.dailyOffset);
   // Re-read the themes when the verses DeepSeek added arrive.
   useAppStore((s) => s.themeExtrasVersion);
@@ -176,9 +175,7 @@ export function TodayView({ mood, onMoodChange, onSend, onRead, onExplore }: Tod
 
   const span = catalogSpan(verse);
   const readingBook = readingPlace ? bookById(readingPlace.bookId) : null;
-  const chapterLabel = span
-    ? `${locale === "en" ? (BOOK_EN[span.book.id]?.name ?? span.book.name) : span.book.name} ${span.chapter}`
-    : verse.ref;
+
 
   return (
     <div className="today-screen flex flex-col gap-7">
@@ -187,33 +184,17 @@ export function TodayView({ mood, onMoodChange, onSend, onRead, onExplore }: Tod
           {dateLabel}
         </p>
         <h1 className="mt-2 text-[clamp(1.8rem,7.5vw,2.4rem)] font-bold leading-[1.08] tracking-[-0.035em]">
-          {locale === "en" ? "A moment for you." : "Un momento para ti."}
+          {locale === "en" ? "Your word for today" : "Tu palabra de hoy"}
         </h1>
       </header>
-      <section
-        className="daily-landscape"
-        aria-label={locale === "en" ? "Daily reading" : "Lectura del día"}
-      >
-        <img src="/images/coast.jpg" alt="" fetchPriority="high" width="1086" height="1448" />
-        <div className="daily-landscape-content">
-          <p className="text-xs font-medium tracking-[0.12em] uppercase">
-            {mood ? moodLabel[mood] : locale === "en" ? "Daily reading" : "Lectura del día"}
-          </p>
-          <h2 className="mt-1 text-4xl font-bold tracking-[-0.03em]">{chapterLabel}</h2>
-          <p className="mt-1 text-sm">{locale === "en" ? "BSB · English" : "LBLA · Español"}</p>
-          <button
-            type="button"
-            className="reading-cta mt-4"
-            disabled={!span}
-            onClick={() =>
-              span &&
-              onRead({ bookId: span.book.id, chapter: span.chapter, from: span.from, to: span.to })
-            }
-          >
-            <span>{locale === "en" ? "Open reading" : "Abrir lectura"}</span>
-            <ArrowRight aria-hidden className="size-5" />
-          </button>
-        </div>
+      <section className="daily-post" aria-label={locale === "en" ? "Daily reading" : "Lectura del día"}>
+        <img className="daily-post-photo" src="/images/coast.jpg" alt={locale === "en" ? "Sunlight over a peaceful coast" : "Luz del sol sobre una costa tranquila"} fetchPriority="high" width="1086" height="1448" />
+        <VerseCard
+          verse={verse}
+          variant="post"
+          onReadChapter={span ? () => onRead({ bookId: span.book.id, chapter: span.chapter, from: span.from, to: span.to }) : undefined}
+          onSend={(shown) => onSend(shown, reflection && shown.id === reflection.verseId ? { note: reflection.text } : undefined)}
+        />
       </section>
       {readingPlace && readingBook ? (
         <section>
@@ -277,32 +258,6 @@ export function TodayView({ mood, onMoodChange, onSend, onRead, onExplore }: Tod
             </button>
           ))}
         </div>
-      </section>
-      <section>
-        <button
-          type="button"
-          className="min-h-11 text-sm font-semibold text-primary underline underline-offset-4"
-          aria-expanded={showVerse}
-          onClick={() => setShowVerse(!showVerse)}
-        >
-          {locale === "en"
-            ? "Today's verse · save and share"
-            : "Versículo de hoy · guardar y compartir"}
-        </button>
-        {showVerse ? (
-          <VerseCard
-            verse={verse}
-            variant="hero"
-            onSend={(shown) =>
-              onSend(
-                shown,
-                reflection && shown.id === reflection.verseId
-                  ? { note: reflection.text }
-                  : undefined,
-              )
-            }
-          />
-        ) : null}
       </section>
       {name ? (
         <section>

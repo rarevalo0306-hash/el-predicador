@@ -433,3 +433,9 @@ html.dark {
     border-color: var(--color-border);
   }
 }
+
+/* Daily Scripture remains readable as a complete post, including large text. */
+.daily-post { overflow: hidden; border-radius: 1.5rem; background: var(--card); }
+.daily-post-photo { display: block; width: 100%; height: clamp(11rem, 48vw, 17rem); object-fit: cover; object-position: center 45%; }
+.daily-post-content { padding: 1.25rem; }
+@media (min-width: 640px) { .daily-post-content { padding: 1.75rem; } }
