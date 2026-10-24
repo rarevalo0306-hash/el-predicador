@@ -105,6 +105,49 @@ test("history keeps only the last turns, well formed and trimmed", () => {
   assert.ok(trimmed.every((t) => t.content.length <= 1200));
 });
 
+test("a question goes out with the brief, the history and the key, and the answer comes back", async () => {
+  let seen: { init: RequestInit } | null = null;
+  const answer = await answerQuestion(
+    {
+      question: "  ¿Qué significa nacer de nuevo?  ",
+      history: [
+        { role: "user", content: "Hola" },
+        { role: "assistant", content: "Paz a ti." },
+      ],
+      locale: "es",
+    },
+    config,
+    async (_url, init) => {
+      seen = { init: init! };
+      return reply("Nacer de nuevo es recibir la vida de Dios (Juan 3:3).");
+    },
+  );
+  assert.equal(answer, "Nacer de nuevo es recibir la vida de Dios (Juan 3:3).");
+  const body = JSON.parse(String(seen!.init.body));
+  assert.equal(body.messages[0].role, "system");
+  assert.equal(body.messages[0].content, askPrompt("es"));
+  assert.deepEqual(body.messages.slice(1), [
+    { role: "user", content: "Hola" },
+    { role: "assistant", content: "Paz a ti." },
+    { role: "user", content: "¿Qué significa nacer de nuevo?" },
+  ]);
+  assert.equal(body.response_format, undefined);
+  assert.equal((seen!.init.headers as Record<string, string>).Authorization, "Bearer sk-test");
+});
+
+test("a missing key, a failed call or an empty answer fail loudly", async () => {
+  const input = { question: "¿Quién es Jesús?", history: [], locale: "en" as const };
+  await assert.rejects(answerQuestion(input, {}), /deepseek_not_configured/);
+  await assert.rejects(
+    answerQuestion(input, config, async () => new Response("no", { status: 503 })),
+    /deepseek_503/,
+  );
+  await assert.rejects(
+    answerQuestion(input, config, async () => reply("   ")),
+    /deepseek_empty/,
+  );
+});
+
 function sse(events: (string | object)[]) {
   const text = events
     .map((e) => `data: ${typeof e === "string" ? e : JSON.stringify(e)}\n\n`)
@@ -130,16 +173,28 @@ test("streamed events come back as text, in order, and stop at [DONE]", async ()
   assert.deepEqual(pieces, ["Nacer ", "de nuevo"]);
 });
 
-test("LBLA edition blocks questions and streaming before any AI request", async () => {
-  let calls = 0;
-  const request = (async () => {
-    calls++;
-    throw new Error("must not fetch");
-  }) as typeof fetch;
-  for (const fn of [answerQuestion, streamAnswer])
-    await assert.rejects(
-      fn({ question: "fixture", history: [], locale: "es" }, { DEEPSEEK_API_KEY: "test" }, request),
-      /licencia de LBLA/,
-    );
-  assert.equal(calls, 0);
+test("a streamed answer asks with stream on and fails before streaming when the call fails", async () => {
+  let body: Record<string, unknown> = {};
+  const gen = await streamAnswer(
+    { question: "¿Qué es la fe?", history: [], locale: "es" },
+    config,
+    async (_url, init) => {
+      body = JSON.parse(String(init!.body));
+      return new Response(sse([delta("La fe "), delta("es…"), "[DONE]"]), {
+        headers: { "Content-Type": "text/event-stream" },
+      });
+    },
+  );
+  assert.equal(body.stream, true);
+  let text = "";
+  for await (const piece of gen) text += piece;
+  assert.equal(text, "La fe es…");
+  await assert.rejects(
+    streamAnswer(
+      { question: "x", history: [], locale: "en" },
+      config,
+      async () => new Response("no", { status: 402 }),
+    ),
+    /deepseek_402/,
+  );
 });

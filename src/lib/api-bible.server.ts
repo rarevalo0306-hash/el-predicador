@@ -11,10 +11,12 @@ import {
 const pending = new Map<string, Promise<{ payload: Record<string, unknown>; expiresAt: number }>>();
 // Rolling 31-day window is deliberately conservative: no calendar-boundary burst
 // can exceed 5,000 calls even if the provider bills on an account anniversary.
-async function requestChapter(
-  book: BibleBook,
-  chapter: number,
-  translation: BibleTranslation = "lbla",
+async function requestResource(
+  translation: BibleTranslation,
+  resource: string,
+  cacheSuffix: string,
+  params: URLSearchParams,
+  decode: (body: any) => Record<string, unknown>,
 ) {
   const bibleId = BIBLE_TRANSLATIONS[translation]?.id;
   if (!bibleId) throw new Error(BIBLE_UNAVAILABLE);
@@ -22,7 +24,7 @@ async function requestChapter(
   if (!apiKey || (process.env.NODE_ENV === "production" && dbSource === "pglite"))
     throw new Error(BIBLE_UNAVAILABLE);
   const sql = await getSql();
-  const key = `${bibleId}:${book.id}:${chapter}`;
+  const key = `${bibleId}:${cacheSuffix}`;
   const cached = await sql<{ payload: Record<string, unknown>; expires_at: string }>`
     select payload, expires_at from api_bible_cache where key=${key} and expires_at > now() and payload is not null`;
   if (cached[0])
@@ -47,15 +49,8 @@ async function requestChapter(
       where (api_bible_budget.blocked_until is null or api_bible_budget.blocked_until <= now())
       and cardinality(array(select t from unnest(api_bible_budget.attempts) t where t > now()-interval '31 days')) < 4900 returning calls`;
     if (!budget.length) throw new Error(BIBLE_LIMIT);
-    const params = new URLSearchParams({
-      "content-type": "json",
-      "include-notes": "false",
-      "include-titles": "false",
-      "include-chapter-numbers": "false",
-      "include-verse-numbers": "true",
-    });
     const response = await fetch(
-      `https://rest.api.bible/v1/bibles/${bibleId}/chapters/${book.id.toUpperCase()}.${chapter}?${params}`,
+      `https://rest.api.bible/v1/bibles/${bibleId}${resource ? `/${resource}` : ""}?${params}`,
       {
         headers: { "api-key": apiKey, Accept: "application/json" },
         signal: AbortSignal.timeout(12000),
@@ -71,23 +66,8 @@ async function requestChapter(
     }
     if (!response.ok) throw new Error(BIBLE_UNAVAILABLE);
     const body = await response.json();
-    const data = body.data;
-    if (
-      !data ||
-      data.bibleId !== bibleId ||
-      data.id !== `${book.id.toUpperCase()}.${chapter}` ||
-      typeof data.copyright !== "string" ||
-      !data.copyright.trim()
-    )
-      throw new Error(BIBLE_UNAVAILABLE);
-    const verses = apiBibleVerses(data.content);
+    const payload = decode(body);
     const expiresAt = Date.now() + BIBLE_CACHE_MS;
-    const payload = {
-      verses,
-      copyright: data.copyright,
-      fumsId: typeof body.meta?.fumsId === "string" ? body.meta.fumsId : undefined,
-      fumsToken: typeof body.meta?.fumsToken === "string" ? body.meta.fumsToken : undefined,
-    };
     await sql`update api_bible_cache set payload=${JSON.stringify(payload)}::jsonb, expires_at=${new Date(expiresAt).toISOString()}, lease_until=null, lease_token=null where key=${key} and lease_token=${token}`;
     // Delete expired licensed content; never return stale data on failure.
     await sql`delete from api_bible_cache where expires_at <= now() and (lease_until is null or lease_until < now())`;
@@ -95,6 +75,67 @@ async function requestChapter(
   } finally {
     await sql`update api_bible_cache set lease_until=null, lease_token=null where key=${key} and lease_token=${token}`;
   }
+}
+async function requestChapter(book: BibleBook, chapter: number, translation: BibleTranslation) {
+  const params = new URLSearchParams({
+    "content-type": "json",
+    "include-notes": "false",
+    "include-titles": "false",
+    "include-chapter-numbers": "false",
+    "include-verse-numbers": "true",
+  });
+  return requestResource(
+    translation,
+    `chapters/${book.id.toUpperCase()}.${chapter}`,
+    `${book.id}:${chapter}`,
+    params,
+    (body) => {
+      const data = body.data;
+      if (
+        !data ||
+        data.bibleId !== BIBLE_TRANSLATIONS[translation].id ||
+        data.id !== `${book.id.toUpperCase()}.${chapter}` ||
+        typeof data.copyright !== "string" ||
+        !data.copyright.trim()
+      )
+        throw new Error(BIBLE_UNAVAILABLE);
+      return {
+        verses: apiBibleVerses(data.content),
+        copyright: data.copyright,
+        fumsId: typeof body.meta?.fumsId === "string" ? body.meta.fumsId : undefined,
+        fumsToken: typeof body.meta?.fumsToken === "string" ? body.meta.fumsToken : undefined,
+      };
+    },
+  );
+}
+export async function searchApiBible(words: string, translation: BibleTranslation) {
+  const metadata = await requestResource(
+    translation,
+    "",
+    "metadata",
+    new URLSearchParams(),
+    (body) => {
+      if (body.data?.id !== BIBLE_TRANSLATIONS[translation].id || !body.data?.copyright)
+        throw new Error(BIBLE_UNAVAILABLE);
+      return { copyright: body.data.copyright };
+    },
+  );
+  const result = await requestResource(
+    translation,
+    "search",
+    `search:${words.toLowerCase()}`,
+    new URLSearchParams({ query: words, limit: "50", sort: "canonical" }),
+    (body) => {
+      if (!Array.isArray(body.data?.verses)) throw new Error(BIBLE_UNAVAILABLE);
+      return {
+        verses: body.data.verses,
+        total: body.data.total,
+        fumsId: body.meta?.fumsId,
+        fumsToken: body.meta?.fumsToken,
+      };
+    },
+  );
+  return { ...result, copyright: String(metadata.payload.copyright) };
 }
 export function loadApiBibleChapter(
   book: BibleBook,

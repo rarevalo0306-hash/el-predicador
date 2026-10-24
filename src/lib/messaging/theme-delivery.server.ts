@@ -92,9 +92,15 @@ export async function resolveThemeMessage(
       count: number;
     }>`select count(*)::int as count from message_deliveries where schedule_id=${schedule.id}`;
     const verse = pickRotating(list, Math.max(0, count - 1))!;
+    const { hydrateVerse } = await import("../recobro");
+    const { formatVerseMessage } = await import("../share");
+    const full = await hydrateVerse(
+      { ...verse, source: verse.source ?? undefined, book: "", themes: [] },
+      schedule.message_locale,
+    );
     return {
       verseId: verse.id,
-      message: `${verse.ref} — La Biblia de las Américas (LBLA)\n${schedule.message_locale === "en" ? "Read the passage in Spanish at" : "Consulta la lectura en"} https://www.thepreacher.app\nAPI.Bible — https://api.bible`,
+      message: formatVerseMessage(full, undefined, undefined, schedule.message_locale),
     };
   }
   const list = await verses(schedule.theme_id);

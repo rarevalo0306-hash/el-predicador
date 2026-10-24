@@ -42,3 +42,16 @@ test("LBLA edition blocks composing before sending passages to AI", async () => 
   await assert.rejects(streamComposed(input, config, request), /licencia de LBLA/);
   assert.equal(calls, 0);
 });
+
+
+test("reference-only composition streams without fetching Bible text", async () => {
+  const request = (async (_url: unknown, init: RequestInit) => {
+    const body = JSON.parse(String(init.body));
+    assert.ok(!JSON.stringify(body).includes(input.verses[0].text));
+    return new Response('data: {"choices":[{"delta":{"content":"A personal message"}}]}\n\ndata: [DONE]\n\n');
+  }) as typeof fetch;
+  const stream = await streamComposed({ ...input, verses: [{ ref: "1 Timoteo 2:5", text: "" }] }, config, request);
+  let output = "";
+  for await (const chunk of stream) output += chunk;
+  assert.equal(output, "A personal message");
+});

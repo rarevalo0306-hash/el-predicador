@@ -2,9 +2,9 @@ import type { Verse } from "@/lib/verses";
 
 const W = 1080;
 const H = 1350;
-const PAPER = "#F4EAD6";
+const PAPER = "#F8F5EE";
 const INK = "#221711";
-const WINE = "#6B2C38";
+const WINE = "#142640";
 const GOLD = "#A67C2D";
 const MUTED = "#6E5B45";
 
@@ -81,7 +81,7 @@ export async function renderVerseCard(
   note?: string,
   fromName?: string,
 ): Promise<Blob> {
-  if (verse.copyright)
+  if (verse.copyright && verse.source !== "Berean Standard Bible (BSB)")
     throw new Error(
       "La exportación de imágenes de LBLA no está habilitada. Comparte la referencia o el texto con su copyright.",
     );

@@ -7,7 +7,7 @@ const originalKey = process.env.API_BIBLE_KEY;
 process.env.API_BIBLE_KEY = "test-backend-only";
 const server = await createServer({ server: { middlewareMode: true }, appType: "custom" });
 try {
-  const { loadApiBibleChapter } = await server.ssrLoadModule("/src/lib/api-bible.server.ts");
+  const { loadApiBibleChapter, searchApiBible } = await server.ssrLoadModule("/src/lib/api-bible.server.ts");
   const { parseVerseRef } = await server.ssrLoadModule("/src/lib/verses.ts");
   const { referenceOnly } = await server.ssrLoadModule("/src/lib/bible-policy.ts");
   const { selectedVerseText } = await server.ssrLoadModule("/src/lib/verse-selection.ts");
@@ -113,6 +113,20 @@ try {
   for (const translation of Object.values(BIBLE_TRANSLATIONS)) {
     assert.ok(keys.some((row) => row.key === `${translation.id}:jhn:3`));
   }
+  const chapterFetch = globalThis.fetch;
+  let searchCalls = 0;
+  globalThis.fetch = async (url) => {
+    searchCalls++;
+    const path = new URL(url).pathname;
+    if (path.endsWith("/search")) return Response.json({ data: { total: 1, verses: [{ id: "JHN.3.16", text: "Exact search fixture." }] } });
+    return Response.json({ data: { id: BIBLE_TRANSLATIONS.bsb.id, copyright: "Official search copyright" } });
+  };
+  const search = await searchApiBible("love", "bsb");
+  assert.equal(search.copyright, "Official search copyright");
+  assert.equal(search.payload.verses[0].text, "Exact search fixture.");
+  await searchApiBible("love", "bsb");
+  assert.equal(searchCalls, 2, "metadata and identical search cached within shared budget");
+  globalThis.fetch = chapterFetch;
   calls = 1; // Existing quota/failure assertions below use a fresh counter.
   await sql`update api_bible_cache set expires_at=now()-interval '1 second'`;
   await loadApiBibleChapter(book, 3);
@@ -146,20 +160,8 @@ try {
   status = 200;
   await assert.rejects(loadApiBibleChapter(book, 10), /límite/);
   assert.equal(calls, 6, "provider rate-limit stops further upstream calls");
-  const { Route: ask } = await server.ssrLoadModule("/src/routes/api/ask.ts");
-  const { Route: compose } = await server.ssrLoadModule("/src/routes/api/compose.ts");
-  for (const route of [ask, compose]) {
-    const response = await route.options.server.handlers.POST({
-      request: new Request("http://localhost/api/ask", {
-        method: "POST",
-        body: JSON.stringify({ aiConsent: true, question: "fixture" }),
-      }),
-    });
-    assert.equal(response.status, 403);
-    assert.equal((await response.json()).error, "bible_ai_not_licensed");
-  }
   console.log(
-    "PASS: API.Bible concurrency, exact text/copyright, cache expiry, 4900 shared rolling quota, provider failures and AI endpoint denial. All responses are synthetic; no live key used.",
+    "PASS: API.Bible concurrency, exact text/copyright, cache expiry, 4900 shared rolling quota, provider failures and translation-aware sharing. All responses are synthetic; no live key used.",
   );
 } finally {
   globalThis.fetch = originalFetch;

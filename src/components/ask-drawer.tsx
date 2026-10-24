@@ -165,7 +165,7 @@ export function AskDrawer({
     asking.current = controller;
     askedAt.current = Date.now();
     const about = attached;
-    const text = about ? passageQuestion(about.ref, about.text, raw) : raw;
+    const text = about ? `${about.ref}\n\n${raw}` : raw;
     setAttached(null);
     const history = turns;
     const asked = [...turns, { role: "user" as const, content: text }];

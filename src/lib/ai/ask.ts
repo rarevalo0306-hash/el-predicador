@@ -1,4 +1,3 @@
-import { requireBibleAIPermission } from "../bible-policy.ts";
 /**
  * "Pregunta": a signed-in person asks about the Word and the app answers in
  * the same voice as the verse lines. Each answer is one DeepSeek call paid
@@ -125,7 +124,7 @@ export async function streamAnswer(
   config: Config = process.env,
   request: typeof fetch = fetch,
 ): Promise<AsyncGenerator<string>> {
-  requireBibleAIPermission();
+  if (!config.DEEPSEEK_API_KEY) throw new Error("deepseek_not_configured");
   const question = input.question.trim().slice(0, QUESTION_MAX);
   const response = await request(
     `${config.DEEPSEEK_BASE_URL || "https://api.deepseek.com"}/chat/completions`,
@@ -159,7 +158,7 @@ export async function answerQuestion(
   config: Config = process.env,
   request: typeof fetch = fetch,
 ): Promise<string> {
-  requireBibleAIPermission();
+  if (!config.DEEPSEEK_API_KEY) throw new Error("deepseek_not_configured");
   const question = input.question.trim().slice(0, QUESTION_MAX);
   const response = await request(
     `${config.DEEPSEEK_BASE_URL || "https://api.deepseek.com"}/chat/completions`,

@@ -9,7 +9,16 @@ export type ConcordanceHit = {
 };
 
 export type ConcordanceResult =
-  | { status: "ok"; words: string; hits: ConcordanceHit[]; total: number; copyright?: string }
+  | {
+      status: "ok";
+      words: string;
+      hits: ConcordanceHit[];
+      total: number;
+      expiresAt?: number;
+      fumsId?: string;
+      fumsToken?: string;
+      copyright?: string;
+    }
   | { status: "unavailable"; words: string };
 
 /** LSM answers at most this many verses for one search. */

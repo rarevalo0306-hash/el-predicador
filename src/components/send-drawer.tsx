@@ -504,18 +504,40 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                 ))}
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="note">{locale === "es" ? "Saludo o nota personal" : "Personal greeting or note"}</Label>
-                <div className="flex flex-wrap gap-2" aria-label={locale === "es" ? "Saludos sugeridos" : "Suggested greetings"}>
+                <Label htmlFor="note">
+                  {locale === "es" ? "Saludo o nota personal" : "Personal greeting or note"}
+                </Label>
+                <div
+                  className="flex flex-wrap gap-2"
+                  aria-label={locale === "es" ? "Saludos sugeridos" : "Suggested greetings"}
+                >
                   {(messageLocale === "es"
-                    ? ["Con cariño, Dios te bendiga.", "Pensando en ti. Que tengas un día lleno de paz.", "Te comparto esta palabra con mucho cariño."]
-                    : ["With love. God bless you.", "Thinking of you. May your day be filled with peace.", "Sharing this word with you with love."]
+                    ? [
+                        "Con cariño, Dios te bendiga.",
+                        "Pensando en ti. Que tengas un día lleno de paz.",
+                        "Te comparto esta palabra con mucho cariño.",
+                      ]
+                    : [
+                        "With love. God bless you.",
+                        "Thinking of you. May your day be filled with peace.",
+                        "Sharing this word with you with love.",
+                      ]
                   ).map((greeting) => (
-                    <button key={greeting} type="button"
+                    <button
+                      key={greeting}
+                      type="button"
                       className="rounded-xl border border-border bg-card px-3 py-2 text-left text-sm hover:bg-secondary"
                       onClick={() => {
-                        setNote((current) => current.includes(greeting) ? current : current.trim() ? `${current.trim()}\n\n${greeting}` : greeting);
+                        setNote((current) =>
+                          current.includes(greeting)
+                            ? current
+                            : current.trim()
+                              ? `${current.trim()}\n\n${greeting}`
+                              : greeting,
+                        );
                         setActiveTemplate(null);
-                      }}>
+                      }}
+                    >
                       {greeting}
                     </button>
                   ))}
@@ -533,7 +555,9 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
               </div>
 
               <div className="rounded-xl border border-border bg-secondary/40 p-4">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{locale === "es" ? "Así se enviará" : "Message preview"}</p>
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {locale === "es" ? "Así se enviará" : "Message preview"}
+                </p>
                 <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{message}</p>
               </div>
               <Button type="button" className="w-full" onClick={() => setScheduling(true)}>
@@ -608,7 +632,10 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                   label={t("saveImage")}
                   hint={t("saveImageHint")}
                   onClick={() => void withCard("save", handleSaveImage)}
-                  disabled={making !== null || Boolean(shown?.copyright)}
+                  disabled={
+                    making !== null ||
+                    (Boolean(shown?.copyright) && shown?.source !== "Berean Standard Bible (BSB)")
+                  }
                   busy={making === "save"}
                 />
                 <ChannelButton
@@ -616,7 +643,10 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                   label={t("printAction")}
                   hint={t("printHint")}
                   onClick={() => void withCard("print", handlePrint)}
-                  disabled={making !== null || Boolean(shown?.copyright)}
+                  disabled={
+                    making !== null ||
+                    (Boolean(shown?.copyright) && shown?.source !== "Berean Standard Bible (BSB)")
+                  }
                   busy={making === "print"}
                 />
                 <ChannelButton
@@ -625,7 +655,10 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                   hint={t("otherApps")}
                   className="col-span-2"
                   onClick={() => void withCard("share", handleShare)}
-                  disabled={making !== null || Boolean(shown?.copyright)}
+                  disabled={
+                    making !== null ||
+                    (Boolean(shown?.copyright) && shown?.source !== "Berean Standard Bible (BSB)")
+                  }
                   busy={making === "share"}
                 />
               </div>

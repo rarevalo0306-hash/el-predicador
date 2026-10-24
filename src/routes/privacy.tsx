@@ -120,8 +120,7 @@ const en: LegalText = {
               <strong>API.Bible</strong> supplies LBLA, BSB and KJV. It receives Bible references requested by
               the backend and licensing usage reports from the web reader, including anonymous
               device/session identifiers and network information. We do not send it your account ID,
-              email or contacts. AI features are disabled in this edition; LBLA text is not sent to
-              DeepSeek or other AI providers.
+              email or contacts. With your consent, AI questions, conversation history, Bible references and personal drafting details are sent to DeepSeek. Bible text is not automatically attached.
             </li>
             <li>
               <strong>Google and Apple</strong> authenticate you if you choose their login. They
@@ -332,8 +331,7 @@ const es: LegalText = {
               <strong>API.Bible</strong> proporciona LBLA, BSB y KJV. Recibe las referencias consultadas por el
               servidor y los informes de uso del lector web para la licencia, con identificadores
               anónimos de dispositivo/sesión e información de red. No le enviamos tu identificador
-              de cuenta, correo ni contactos. La IA está desactivada en esta edición; no enviamos
-              texto LBLA a DeepSeek ni a otros proveedores de IA.
+              de cuenta, correo ni contactos. Con tu consentimiento, enviamos a DeepSeek preguntas, historial, referencias bíblicas y detalles para redactar. No adjuntamos automáticamente texto bíblico.
             </li>
             <li>
               <strong>Google y Apple</strong> te autentican si eliges ese acceso. Proporcionan un

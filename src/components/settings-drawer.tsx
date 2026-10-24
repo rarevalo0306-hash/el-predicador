@@ -91,10 +91,10 @@ export function SettingsDrawer({
     await ensurePreacherServiceWorker();
     setNotify(true);
     try {
-      const verse = getDailyVerse();
+      const verse = locale === "en" ? await hydrateVerse(getDailyVerse(), "en") : getDailyVerse();
       await showDailyNotification({
         title: t("notifyBodyTitle"),
-        body: `${verse.ref} — La Biblia de las Américas (LBLA)`,
+        body: locale === "en" ? `${verse.ref} (BSB): ${verse.text}` : `${verse.ref} — La Biblia de las Américas (LBLA)`,
         tag: `daily-${new Date().toISOString().slice(0, 10)}`,
       });
     } catch {

@@ -190,7 +190,7 @@ function MessageScheduleForm({
       update({
         verseId,
         messageLocale,
-        message: `${verse.ref} — La Biblia de las Américas (LBLA)\nhttps://www.thepreacher.app\nAPI.Bible — https://api.bible`,
+        message: formatVerseMessage(verse, undefined, undefined, messageLocale),
       });
     } catch {
       if (version === requestVersion.current) toast.error(languageCopy.error);

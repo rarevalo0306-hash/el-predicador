@@ -1,6 +1,14 @@
 import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Ellipsis, Compass, House, UserRound, Users } from "lucide-react";
+import {
+  BookOpen,
+  Ellipsis,
+  Compass,
+  House,
+  MessageCircleQuestion,
+  UserRound,
+  Users,
+} from "lucide-react";
 import { AdminView } from "@/components/admin-view";
 import { useIsAdmin } from "@/lib/use-is-admin";
 import { Logo } from "@/components/mark";
@@ -18,7 +26,7 @@ import { focusMoreButton, focusProfileButton } from "@/lib/panel-focus";
 import { ProfileDrawer } from "@/components/profile-drawer";
 import { AskDrawer, type AskPassage } from "@/components/ask-drawer";
 import { WELCOME_PARAM } from "@/components/invite-contacts";
-import { useI18n } from "@/components/language-switch";
+import { LanguageSwitch, useI18n } from "@/components/language-switch";
 import { useCloudSync } from "@/components/cloud-sync";
 import { Button } from "@/components/ui/button";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -170,12 +178,15 @@ function PreacherApp({ userId, sessionReady }: { userId?: string; sessionReady: 
       const key = `pv-notified-${todayKey()}`;
       try {
         if (localStorage.getItem(key)) return;
-        const verse = getDailyVerse();
+        const verse = locale === "en" ? await hydrateVerse(getDailyVerse(), "en") : getDailyVerse();
         if (cancelled) return;
         const { showDailyNotification } = await import("@/lib/notify");
         await showDailyNotification({
           title: t("notifyBodyTitle"),
-          body: `${verse.ref} — La Biblia de las Américas (LBLA)`,
+          body:
+            locale === "en"
+              ? `${verse.ref} (BSB): ${verse.text}`
+              : `${verse.ref} — La Biblia de las Américas (LBLA)`,
           tag: key,
         });
         localStorage.setItem(key, "1");
@@ -240,7 +251,16 @@ function PreacherApp({ userId, sessionReady }: { userId?: string; sessionReady: 
       <header className="@container flex flex-wrap items-center justify-between gap-2 px-3 pt-5 pb-3 min-[360px]:px-4 sm:gap-3 sm:px-5">
         <Logo fit className="min-w-10 sm:min-w-12" />
         <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1">
-          {/* Pregunta and the profile stay side by side when the bar wraps. */}
+          <LanguageSwitch compact />
+          <button
+            type="button"
+            onClick={() => setAskOpen(true)}
+            aria-label={t("askButton")}
+            className="inline-flex h-11 min-w-11 items-center justify-center rounded-full bg-primary px-3 text-primary-foreground"
+          >
+            <MessageCircleQuestion className="size-5" />
+          </button>
+          {/* Profile */}
           <div className="flex flex-wrap items-center justify-end gap-1">
             {isPending ? (
               <span className="inline-flex h-11 w-16 animate-pulse rounded-full bg-secondary" />

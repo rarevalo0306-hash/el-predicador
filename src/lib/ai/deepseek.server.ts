@@ -98,7 +98,7 @@ export function systemPrompt(locale: "es" | "en", perVerse: number) {
 }
 
 export function deepseekConfigured(config: Config = process.env) {
-  return false; // LBLA Starter: no licensed text in runtime AI prompts.
+  return Boolean(config.DEEPSEEK_API_KEY);
 }
 
 /**
