@@ -36,7 +36,7 @@ export function formatVerseMessage(
       lines.push(verse.source);
     }
   }
-  if (verse.copyright) lines.push(verse.copyright, "API.Bible — https://api.bible");
+  if (verse.copyright) lines.push(verse.copyright, "API.Bible");
   // The verse comes whole and first; the personal line follows it.
   const trimmedNote = note?.trim();
   if (trimmedNote) {

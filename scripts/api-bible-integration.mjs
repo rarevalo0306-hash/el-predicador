@@ -82,6 +82,7 @@ try {
     const shared = formatVerseMessage({ id: "jhn-3-16", ref: "John 3:16", text: "Exact fixture.", source: BIBLE_TRANSLATIONS[translation].name, copyright: "Official notice", themes: [], book: "John" }, "Note", "", "en");
     assert.ok(shared.includes("Exact fixture."));
     assert.ok(shared.includes("Official notice"));
+    assert.ok(!shared.includes("https://api.bible"), "English sharing must not generate a developer-portal link preview");
     assert.ok(shared.includes(BIBLE_TRANSLATIONS[translation].name));
   }
   const spanish = formatVerseMessage({ id: "jhn-3-16", ref: "Juan 3:16", text: "Restricted fixture.", source: BIBLE_TRANSLATIONS.lbla.name, copyright: "Official notice", themes: [], book: "Juan" });
