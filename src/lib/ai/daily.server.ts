@@ -117,7 +117,7 @@ async function chat(
   request: typeof fetch,
   options: { json?: boolean } = {},
 ): Promise<{ text: string; cutOff: boolean; finish: string; reasoning: string }> {
-  requireBibleAIPermission();
+  if (!config.DEEPSEEK_API_KEY) throw new Error("deepseek_not_configured");
   const response = await request(
     `${config.DEEPSEEK_BASE_URL || "https://api.deepseek.com"}/chat/completions`,
     {
@@ -128,6 +128,7 @@ async function chat(
       },
       body: JSON.stringify({
         model: config.DEEPSEEK_MODEL || "deepseek-flash",
+        thinking: { type: "disabled" },
         temperature: 1.1,
         max_tokens: maxTokens,
         ...(options.json ? { response_format: { type: "json_object" } } : {}),
@@ -189,6 +190,7 @@ export async function writeReflection(
   config: Config = process.env,
   request: typeof fetch = fetch,
 ): Promise<string | null> {
+  requireBibleAIPermission();
   const raw = await chat(
     reflectionPrompt(input.locale),
     JSON.stringify({
@@ -212,6 +214,7 @@ export async function writeSendNote(
   request: typeof fetch = fetch,
   timeoutMs = 8_000,
 ): Promise<string | null> {
+  requireBibleAIPermission();
   const name = firstName(input.name);
   const raw = await chat(
     sendNotePrompt(input.locale),

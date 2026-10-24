@@ -75,6 +75,7 @@ export async function streamComposed(
       },
       body: JSON.stringify({
         model: config.DEEPSEEK_MODEL || "deepseek-flash",
+        thinking: { type: "disabled" },
         temperature: 0.8,
         max_tokens: 600,
         stream: true,

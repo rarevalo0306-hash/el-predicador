@@ -136,6 +136,7 @@ export async function streamAnswer(
       },
       body: JSON.stringify({
         model: config.DEEPSEEK_MODEL || "deepseek-flash",
+        thinking: { type: "disabled" },
         temperature: 0.7,
         max_tokens: 700,
         stream: true,
@@ -170,6 +171,7 @@ export async function answerQuestion(
       },
       body: JSON.stringify({
         model: config.DEEPSEEK_MODEL || "deepseek-flash",
+        thinking: { type: "disabled" },
         temperature: 0.7,
         max_tokens: 700,
         messages: [

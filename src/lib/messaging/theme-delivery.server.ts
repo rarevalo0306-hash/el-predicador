@@ -98,9 +98,17 @@ export async function resolveThemeMessage(
       { ...verse, source: verse.source ?? undefined, book: "", themes: [] },
       schedule.message_locale,
     );
+    const notes = (await sql<{ text: string }>`
+      select text from verse_notes where verse_id = ${verse.id} and locale = ${schedule.message_locale}
+      order by position`).map((row) => row.text);
+    const turn = Math.max(0, count - 1);
+    const note = pickRotating(
+      notes.length ? notes : fallbackNotes(schedule.message_locale),
+      Math.floor(turn / list.length) + turn,
+    );
     return {
       verseId: verse.id,
-      message: formatVerseMessage(full, undefined, undefined, schedule.message_locale),
+      message: formatVerseMessage(full, note ?? undefined, schedule.sender_name ?? undefined, schedule.message_locale),
     };
   }
   const list = await verses(schedule.theme_id);
