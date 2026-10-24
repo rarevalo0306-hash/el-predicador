@@ -47,7 +47,8 @@ export function askLimit(access: Access) {
  * automatically. Everything else (sender, credentials) stays the owner's.
  */
 export async function messagingConfig(sql: Sql, config: Config = process.env): Promise<Config> {
-  const listed = (config.MESSAGING_ALLOWED_USER_IDS ?? "")
+  const listed = [config.MESSAGING_ALLOWED_USER_IDS, config.MESSAGING_ADDITIONAL_USER_IDS]
+    .filter(Boolean).join(",")
     .split(",")
     .map((v) => v.trim())
     .filter(Boolean);
