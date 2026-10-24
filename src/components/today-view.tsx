@@ -200,7 +200,7 @@ export function TodayView({ mood, onMoodChange, onSend, onRead, onExplore }: Tod
             {mood ? moodLabel[mood] : locale === "en" ? "Daily reading" : "Lectura del día"}
           </p>
           <h2 className="mt-1 text-4xl font-bold tracking-[-0.03em]">{chapterLabel}</h2>
-          <p className="mt-1 text-sm">LBLA · {locale === "en" ? "Spanish" : "Español"}</p>
+          <p className="mt-1 text-sm">{locale === "en" ? "BSB · English" : "LBLA · Español"}</p>
           <button
             type="button"
             className="reading-cta mt-4"

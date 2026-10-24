@@ -22,12 +22,12 @@ const en: Record<keyof typeof es, string> = {
   moreThemes: "View all themes",
   fewerThemes: "Show fewer themes",
   bibleTitle: "Your Bible, close at hand.",
-  bibleSub: "La Biblia de las Américas · Spanish",
+  bibleSub: "BSB · King James Version",
   peopleTitle: "Close to your people.",
   peopleSub: "Encourage, share and remember what matters.",
   peopleEmptyTitle: "Start with one person",
   savedTitle: "Words to return to.",
   unavailableComparison:
-    "Comparison removed. Look up references in La Biblia de las Américas (LBLA).",
+    "Comparison removed. Look up references in the Bible reader.",
 };
 export const designCopy = (locale: Locale) => (locale === "en" ? en : es);

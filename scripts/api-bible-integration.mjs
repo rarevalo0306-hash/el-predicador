@@ -35,7 +35,8 @@ try {
   );
   const { getSql } = await server.ssrLoadModule("/src/lib/db.ts");
   const sql = await getSql();
-  const { bookById, LBLA_BIBLE_ID } = await server.ssrLoadModule("/src/lib/bible.ts");
+  const { bookById, BIBLE_TRANSLATIONS, validateBibleTranslation } =
+    await server.ssrLoadModule("/src/lib/bible.ts");
   let calls = 0;
   let status = 200;
   let omitCopyright = false;
@@ -43,7 +44,7 @@ try {
     calls++;
     assert.match(
       String(url),
-      /^https:\/\/rest.api.bible\/v1\/bibles\/e3f420b9665abaeb-01\/chapters\//,
+      /^https:\/\/rest.api.bible\/v1\/bibles\/(?:e3f420b9665abaeb-01|bba9f40183526463-01|de4e12af7f28f599-02)\/chapters\//,
     );
     assert.equal(init.headers["api-key"], "test-backend-only");
     const id = new URL(url).pathname.split("/").at(-1);
@@ -51,7 +52,7 @@ try {
     return Response.json({
       data: {
         id,
-        bibleId: LBLA_BIBLE_ID,
+        bibleId: new URL(url).pathname.split("/")[3],
         copyright: omitCopyright ? "" : "Official fixture © test — unchanged",
         content: [
           {
@@ -85,6 +86,24 @@ try {
   assert.ok(results[0].expiresAt <= Date.now() + 28 * 86400000);
   await loadApiBibleChapter(book, 3);
   assert.equal(calls, 1, "persistent cache");
+  assert.equal(validateBibleTranslation(undefined, "en"), "bsb");
+  assert.equal(validateBibleTranslation(undefined, "es"), "lbla");
+  assert.throws(() => validateBibleTranslation("other", "en"));
+  assert.throws(() => validateBibleTranslation("lbla", "en"));
+  const english = await Promise.all([
+    loadApiBibleChapter(book, 3, "bsb"),
+    loadApiBibleChapter(book, 3, "kjv"),
+    loadApiBibleChapter(book, 3, "bsb"),
+  ]);
+  assert.equal(calls, 3, "translations have separate requests, same translation deduplicates");
+  assert.notEqual(english[0], english[1]);
+  await loadApiBibleChapter(book, 3, "kjv");
+  assert.equal(calls, 3, "KJV persistent cache");
+  const keys = await sql`select key from api_bible_cache where payload is not null`;
+  for (const translation of Object.values(BIBLE_TRANSLATIONS)) {
+    assert.ok(keys.some((row) => row.key === `${translation.id}:jhn:3`));
+  }
+  calls = 1; // Existing quota/failure assertions below use a fresh counter.
   await sql`update api_bible_cache set expires_at=now()-interval '1 second'`;
   await loadApiBibleChapter(book, 3);
   assert.equal(calls, 2, "expired text refreshes");

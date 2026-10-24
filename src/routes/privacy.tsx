@@ -117,7 +117,7 @@ const en: LegalText = {
               <strong>Supabase</strong> hosts the database where account data is stored.
             </li>
             <li>
-              <strong>API.Bible</strong> supplies LBLA. It receives Bible references requested by
+              <strong>API.Bible</strong> supplies LBLA, BSB and KJV. It receives Bible references requested by
               the backend and licensing usage reports from the web reader, including anonymous
               device/session identifiers and network information. We do not send it your account ID,
               email or contacts. AI features are disabled in this edition; LBLA text is not sent to
@@ -329,7 +329,7 @@ const es: LegalText = {
               cuenta.
             </li>
             <li>
-              <strong>API.Bible</strong> proporciona LBLA. Recibe las referencias consultadas por el
+              <strong>API.Bible</strong> proporciona LBLA, BSB y KJV. Recibe las referencias consultadas por el
               servidor y los informes de uso del lector web para la licencia, con identificadores
               anónimos de dispositivo/sesión e información de red. No le enviamos tu identificador
               de cuenta, correo ni contactos. La IA está desactivada en esta edición; no enviamos

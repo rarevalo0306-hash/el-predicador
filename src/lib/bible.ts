@@ -13,12 +13,28 @@ export type BibleBook = {
   aliases: string[];
 };
 
-// Compatibility names retained for existing reference IDs; all live text is LBLA.
+// Compatibility names retained for existing reference IDs; live text comes from the selected authorized translation.
 export const LBLA_BIBLE_ID = "e3f420b9665abaeb-01";
 export const RECOBRO_ORIGIN = "https://api.bible";
 export const RECOVERY_ORIGIN = RECOBRO_ORIGIN;
 export const SOURCE_RECOBRO = "La Biblia de las Américas (LBLA)";
-export const SOURCE_RECOBRO_EN = SOURCE_RECOBRO;
+export const SOURCE_RECOBRO_EN = "Berean Standard Bible (BSB)";
+export const BIBLE_TRANSLATIONS = {
+  lbla: { id: LBLA_BIBLE_ID, name: SOURCE_RECOBRO, locale: "es" },
+  bsb: { id: "bba9f40183526463-01", name: SOURCE_RECOBRO_EN, locale: "en" },
+  kjv: { id: "de4e12af7f28f599-02", name: "King James Version (KJV)", locale: "en" },
+} as const;
+export type BibleTranslation = keyof typeof BIBLE_TRANSLATIONS;
+export function defaultBibleTranslation(locale: Locale): BibleTranslation {
+  return locale === "en" ? "bsb" : "lbla";
+}
+export function validateBibleTranslation(value: unknown, locale: Locale): BibleTranslation {
+  if (value === undefined) return defaultBibleTranslation(locale);
+  if (value !== "lbla" && value !== "bsb" && value !== "kjv")
+    throw new Error("Invalid Bible translation");
+  if (BIBLE_TRANSLATIONS[value].locale !== locale) throw new Error("Bible language mismatch");
+  return value;
+}
 // Never invent publisher copyright: it must come from the API response.
 export const RECOBRO_COPYRIGHT = "";
 export const RECOBRO_COPYRIGHT_EN = "";
@@ -325,8 +341,11 @@ export function recobroOrigin(locale: Locale = "es") {
   return locale === "en" ? RECOVERY_ORIGIN : RECOBRO_ORIGIN;
 }
 
-export function recobroSource(locale: Locale = "es") {
-  return locale === "en" ? SOURCE_RECOBRO_EN : SOURCE_RECOBRO;
+export function recobroSource(
+  locale: Locale = "es",
+  translation = defaultBibleTranslation(locale),
+) {
+  return BIBLE_TRANSLATIONS[translation].name;
 }
 
 export function recobroCopyright(locale: Locale = "es") {

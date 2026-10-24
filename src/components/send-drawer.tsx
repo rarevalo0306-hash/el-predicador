@@ -1,3 +1,4 @@
+import { BibleTranslationSelect } from "./bible-translation-select";
 import { BibleCopyright } from "@/components/bible-copyright";
 import { MessageLanguageSelect } from "@/components/message-language-select";
 import { messageLanguageCopy } from "@/lib/message-language";
@@ -75,6 +76,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
   const rememberVerse = useAppStore((s) => s.rememberVerse);
   const saveMessage = useAppStore((s) => s.saveMessage);
   const [messageLocale, setMessageLocale] = useState<Locale>(draft?.messageLocale ?? locale);
+  const [englishTranslation, setEnglishTranslation] = useState<"bsb" | "kjv">("bsb");
   const [scheduling, setScheduling] = useState(false);
   const [note, setNote] = useState("");
   const [phone, setPhone] = useState("");
@@ -83,11 +85,16 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
   const [queue, setQueue] = useState<SendQueue | null>(null);
   const templates = messageTemplates(messageLocale);
-  const { verse: shown, error, retry } = useHydratedVerse(verse, messageLocale);
+  const {
+    verse: shown,
+    error,
+    retry,
+  } = useHydratedVerse(verse, messageLocale, messageLocale === "en" ? englishTranslation : "lbla");
 
   useEffect(() => {
     if (!open) return;
     setMessageLocale(draft?.messageLocale ?? locale);
+    setEnglishTranslation(verse?.source === "King James Version (KJV)" ? "kjv" : "bsb");
     setScheduling(false);
     setNote(draft?.note ?? "");
     setActiveTemplate(draft?.kind ?? null);
@@ -342,12 +349,22 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                 {messageLanguageCopy(locale).unavailable}
               </p>
             ) : (
-              <MessageLanguageSelect
-                value={messageLocale}
-                onChange={changeMessageLocale}
-                disabled={Boolean(queue)}
-                hint={messageLanguageCopy(locale).customHint}
-              />
+              <>
+                <MessageLanguageSelect
+                  value={messageLocale}
+                  onChange={changeMessageLocale}
+                  disabled={Boolean(queue)}
+                  hint={messageLanguageCopy(locale).customHint}
+                />
+                {messageLocale === "en" && (
+                  <BibleTranslationSelect
+                    value={englishTranslation}
+                    onChange={setEnglishTranslation}
+                    locale={locale}
+                    disabled={Boolean(queue)}
+                  />
+                )}
+              </>
             )}
           </div>
         ) : null}

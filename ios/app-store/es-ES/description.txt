@@ -1,7 +1,7 @@
 The Preacher — El Predicador
 
-Lee La Biblia de las Américas (LBLA) en español, consulta referencias y explora temas bíblicos. Conserva favoritos, marcadores y tu lugar de lectura. Escribe tus propias notas en el iPhone.
+Lee La Biblia de las Américas (LBLA) en español, o Berean Standard Bible (BSB) y King James Version (KJV) en inglés, consulta referencias y explora temas bíblicos. Conserva favoritos, marcadores y tu lugar de lectura. Escribe tus propias notas en el iPhone.
 
-La lectura LBLA necesita conexión a internet y está sujeta a la disponibilidad del servicio API.Bible. Los favoritos guardan referencias, no descargas de la Biblia. Esta edición no ofrece uso del texto LBLA con IA ni lectura bíblica sin conexión.
+Al compartir, selecciona inglés y elige BSB o KJV. La lectura bíblica necesita conexión a internet y está sujeta a la disponibilidad del servicio API.Bible. Los favoritos guardan referencias, no descargas de la Biblia. Esta edición no ofrece uso del texto bíblico con IA ni lectura bíblica sin conexión.
 
 Aplicación gratuita, sin anuncios, suscripciones, patrocinios ni funciones premium. Contenido bíblico proporcionado por API.Bible con el aviso de copyright del editor junto a cada lectura.

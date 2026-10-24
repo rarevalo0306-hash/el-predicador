@@ -1,3 +1,5 @@
+import { BibleTranslationSelect } from "./bible-translation-select";
+import { type BibleTranslation } from "@/lib/bible";
 import { bibleErrorCopy } from "@/lib/bible-error-copy";
 import { designCopy } from "@/lib/design-copy";
 import { BibleCopyright } from "@/components/bible-copyright";
@@ -72,6 +74,8 @@ function savedTestament(): Testament | null {
 
 export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
   const { locale, t } = useI18n();
+  const [englishTranslation, setEnglishTranslation] = useState<"bsb" | "kjv">("bsb");
+  const translation = locale === "en" ? englishTranslation : "lbla";
   const [query, setQuery] = useState("");
   const [bookId, setBookId] = useState<string | null>(null);
   const [chapter, setChapter] = useState<number | null>(null);
@@ -153,7 +157,7 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
     setLoading(true);
     setError(null);
     setData(null);
-    void loadCachedChapter(book.id, chapter, locale)
+    void loadCachedChapter(book.id, chapter, locale, translation)
       .then((result) => {
         if (cancelled) return;
         setData(result);
@@ -168,7 +172,7 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
     return () => {
       cancelled = true;
     };
-  }, [book, chapter, locale, t, reload]);
+  }, [book, chapter, locale, translation, t, reload]);
 
   function openBook(next: BibleBook) {
     setBookId(next.id);
@@ -221,6 +225,8 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
   if (book && chapter !== null) {
     return (
       <ChapterReader
+        translation={translation}
+        onTranslation={setEnglishTranslation}
         book={book}
         chapter={chapter}
         data={data}
@@ -551,6 +557,8 @@ function BookGroup({
 }
 
 function ChapterReader({
+  translation,
+  onTranslation,
   book,
   chapter,
   data,
@@ -564,6 +572,8 @@ function ChapterReader({
   onSend,
   onAsk,
 }: {
+  translation: BibleTranslation;
+  onTranslation: (value: "bsb" | "kjv") => void;
   book: BibleBook;
   chapter: number;
   data: RecobroChapter | null;
@@ -726,7 +736,10 @@ function ChapterReader({
         <h1 className="screen-title">
           {name} {chapter}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">{recobroSource(locale)}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{recobroSource(locale, translation)}</p>
+        {locale === "en" && (
+          <BibleTranslationSelect value={translation} onChange={onTranslation} locale={locale} />
+        )}
         <BibleCopyright
           notice={data?.copyright}
           fumsToken={data?.fumsToken}

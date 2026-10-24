@@ -2,6 +2,9 @@ import { selectedVerseText } from "./verse-selection";
 import { createServerFn } from "@tanstack/react-start";
 import {
   BIBLE_BOOKS,
+  defaultBibleTranslation,
+  validateBibleTranslation,
+  type BibleTranslation,
   bookById,
   bookName,
   recobroChapterUrl,
@@ -19,6 +22,7 @@ export type RecobroVerse = {
 };
 
 export type RecobroChapter = {
+  translation?: BibleTranslation;
   bookId: string;
   bookName: string;
   chapter: number;
@@ -91,10 +95,12 @@ async function loadRecobro(
   book: BibleBook,
   chapter: number,
   locale: Locale,
+  translation = defaultBibleTranslation(locale),
 ): Promise<RecobroChapter> {
   const { loadApiBibleChapter } = await import("@/lib/api-bible.server");
-  const { payload, expiresAt } = await loadApiBibleChapter(book, chapter);
+  const { payload, expiresAt } = await loadApiBibleChapter(book, chapter, translation);
   return {
+    translation,
     bookId: book.id,
     bookName: bookName(book, locale),
     chapter,
@@ -108,26 +114,34 @@ async function loadRecobro(
 }
 
 export const fetchRecobroChapter = createServerFn({ method: "POST" })
-  .validator((data: { bookId: string; chapter: number; locale?: Locale }) => {
-    const book = bookById(data.bookId);
-    const locale: Locale = data.locale === "en" ? "en" : "es";
-    if (!book) throw new Error(t(locale, "bookNotFound"));
-    const chapter = Number(data.chapter);
-    if (!Number.isInteger(chapter) || chapter < 1 || chapter > book.chapters) {
-      throw new Error(t(locale, "chapterNotFound"));
-    }
-    return {
-      bookId: book.id,
-      chapter,
-      locale,
-    };
-  })
+  .validator(
+    (data: {
+      bookId: string;
+      chapter: number;
+      locale?: Locale;
+      translation?: BibleTranslation;
+    }) => {
+      const book = bookById(data.bookId);
+      const locale: Locale = data.locale === "en" ? "en" : "es";
+      if (!book) throw new Error(t(locale, "bookNotFound"));
+      const chapter = Number(data.chapter);
+      if (!Number.isInteger(chapter) || chapter < 1 || chapter > book.chapters) {
+        throw new Error(t(locale, "chapterNotFound"));
+      }
+      return {
+        translation: validateBibleTranslation(data.translation, locale),
+        bookId: book.id,
+        chapter,
+        locale,
+      };
+    },
+  )
   .handler(async ({ data }): Promise<RecobroChapter> => {
     const { setResponseHeader } = await import("@tanstack/react-start/server");
     setResponseHeader("Cache-Control", "no-store");
     const book = bookById(data.bookId);
     if (!book) throw new Error(t(data.locale, "bookNotFound"));
-    return loadRecobro(book, data.chapter, data.locale);
+    return loadRecobro(book, data.chapter, data.locale, data.translation);
   });
 
 export function chapterToVerses(
@@ -137,6 +151,7 @@ export function chapterToVerses(
 ): Verse[] {
   return chapter.verses.map((item) => ({
     ...toVerse(book, chapter.chapter, item, locale),
+    source: recobroSource(locale, chapter.translation),
     copyright: chapter.copyright,
     expiresAt: chapter.expiresAt,
     fumsToken: chapter.fumsToken,
@@ -151,20 +166,26 @@ export function booksForTestament(testament: "at" | "nt") {
 type ChapterHit = RecobroChapter | Promise<RecobroChapter>;
 const chapterMemory = new Map<string, ChapterHit>();
 
-function chapterKey(bookId: string, chapter: number, locale: Locale) {
-  return `${locale}:${bookId}:${chapter}`;
+function chapterKey(
+  bookId: string,
+  chapter: number,
+  locale: Locale,
+  translation = defaultBibleTranslation(locale),
+) {
+  return `${translation}:${locale}:${bookId}:${chapter}`;
 }
 
 export function loadCachedChapter(
   bookId: string,
   chapter: number,
   locale: Locale,
+  translation = defaultBibleTranslation(locale),
 ): Promise<RecobroChapter> {
-  const key = chapterKey(bookId, chapter, locale);
+  const key = chapterKey(bookId, chapter, locale, translation);
   const hit = chapterMemory.get(key);
   if (hit instanceof Promise || (hit && hit.expiresAt > Date.now())) return Promise.resolve(hit);
   chapterMemory.delete(key);
-  const pending = fetchRecobroChapter({ data: { bookId, chapter, locale } })
+  const pending = fetchRecobroChapter({ data: { bookId, chapter, locale, translation } })
     .then((result) => {
       chapterMemory.set(key, result);
       return result;
@@ -205,7 +226,7 @@ function builtFromChapter(
     ref,
     book: name,
     text,
-    source: recobroSource(locale),
+    source: recobroSource(locale, chapter.translation),
     copyright: chapter.copyright,
     expiresAt: chapter.expiresAt,
     fumsToken: chapter.fumsToken,
@@ -223,20 +244,28 @@ export function canChangeMessageLanguage(verse: Verse): boolean {
   );
 }
 
-export function peekHydratedVerse(verse: Verse, locale: Locale): Verse | null {
+export function peekHydratedVerse(
+  verse: Verse,
+  locale: Locale,
+  translation = defaultBibleTranslation(locale),
+): Verse | null {
   if (isComposedVerse(verse.id)) return null;
   const span = catalogSpan(getVerseById(verse.id) ?? verse);
   if (!span) {
     if (getVerseById(verse.id)) return null;
     return null;
   }
-  const hit = chapterMemory.get(chapterKey(span.book.id, span.chapter, locale));
+  const hit = chapterMemory.get(chapterKey(span.book.id, span.chapter, locale, translation));
   if (!hit || hit instanceof Promise || hit.expiresAt <= Date.now()) return null;
   return builtFromChapter(verse, span, hit, locale);
 }
 
-export async function hydrateVerse(verse: Verse, locale: Locale): Promise<Verse> {
-  const peeked = peekHydratedVerse(verse, locale);
+export async function hydrateVerse(
+  verse: Verse,
+  locale: Locale,
+  translation = defaultBibleTranslation(locale),
+): Promise<Verse> {
+  const peeked = peekHydratedVerse(verse, locale, translation);
   if (peeked) return peeked;
   if (verse.id === "evangelio-camino" || verse.id === "evangelio-oracion") {
     const { gospelPathVerse, gospelPrayerVerse } = await import("./evangelism");
@@ -261,7 +290,7 @@ export async function hydrateVerse(verse: Verse, locale: Locale): Promise<Verse>
       "Esta lectura guardada pertenece a una versión retirada. Busca la referencia en LBLA.",
     );
   }
-  const chapter = await loadCachedChapter(span.book.id, span.chapter, locale);
+  const chapter = await loadCachedChapter(span.book.id, span.chapter, locale, translation);
   const built = builtFromChapter(verse, span, chapter, locale);
   if (!built) throw new Error(t(locale, "chapterEmpty"));
   return built;
