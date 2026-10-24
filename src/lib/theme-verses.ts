@@ -1,4 +1,3 @@
-import { requireBibleAIPermission } from "@/lib/bible-policy";
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import type { ThemeExtra, ThemeId } from "@/lib/verses";
@@ -116,12 +115,12 @@ export const publishThemeVerses = createServerFn({ method: "POST" })
     const themeId = await isTheme(data.themeId);
     if (!themeId) throw new Error("invalid");
     const { canonicalPassageLoose, catalogVersesForTheme } = await import("@/lib/verses");
-    requireBibleAIPermission();
     const { hydrateVerse } = await import("@/lib/recobro");
     const { expandTheme } = await import("@/lib/theme-verses.server");
     const { getSql } = await import("@/lib/db");
     const sql = await getSql();
     const result = await expandTheme(sql, themeId, {
+      persistText: false,
       propose: async () => data.refs,
       canonical: (ref) => {
         const passage = canonicalPassageLoose(ref);
