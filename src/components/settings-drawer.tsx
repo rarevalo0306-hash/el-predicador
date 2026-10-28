@@ -19,6 +19,12 @@ import { hydrateVerse } from "@/lib/recobro";
 import { getDailyVerse } from "@/lib/verses";
 import { ContactForm } from "@/components/contact-form";
 import { ensurePreacherServiceWorker, showDailyNotification } from "@/lib/notify";
+import {
+  NATIVE_PUSH_EVENT,
+  nativePushAvailable,
+  setNativePush,
+  type NativePushResult,
+} from "@/lib/native-push";
 import { applyFontScale, FONT_SCALE_STEPS, shareAppLink, type FontScale } from "@/lib/reader-prefs";
 import { cn } from "@/lib/utils";
 import { setColorTheme, type ColorTheme } from "@/lib/color-theme";
@@ -66,6 +72,7 @@ export function SettingsDrawer({
     if (turningOnRef.current) return;
     if (notify) {
       setNotify(false);
+      if (nativePushAvailable()) setNativePush({ action: "disable" });
       return;
     }
     turningOnRef.current = true;
@@ -79,6 +86,30 @@ export function SettingsDrawer({
   }
 
   async function turnNotifyOn() {
+    // Inside the iPhone app the reminder is a real push, sent even when it is closed.
+    if (nativePushAvailable()) {
+      const granted = await new Promise<boolean>((resolve) => {
+        // Never leave the switch waiting if the app does not answer.
+        const timer = window.setTimeout(() => {
+          window.removeEventListener(NATIVE_PUSH_EVENT, done);
+          resolve(false);
+        }, 60_000);
+        const done = (event: Event) => {
+          window.clearTimeout(timer);
+          window.removeEventListener(NATIVE_PUSH_EVENT, done);
+          resolve(Boolean((event as CustomEvent<NativePushResult>).detail?.granted));
+        };
+        window.addEventListener(NATIVE_PUSH_EVENT, done);
+        setNativePush({ action: "enable", hour: notifyHour, locale });
+      });
+      if (!granted) {
+        toast(t("notifyDenied"));
+        return;
+      }
+      setNotify(true);
+      toast(t("notifyOn"));
+      return;
+    }
     if (typeof Notification === "undefined") {
       toast(t("notifyUnsupported"));
       return;
@@ -94,7 +125,10 @@ export function SettingsDrawer({
       const verse = locale === "en" ? await hydrateVerse(getDailyVerse(), "en") : getDailyVerse();
       await showDailyNotification({
         title: t("notifyBodyTitle"),
-        body: locale === "en" ? `${verse.ref} (BSB): ${verse.text}` : `${verse.ref} — La Biblia de las Américas (LBLA)`,
+        body:
+          locale === "en"
+            ? `${verse.ref} (BSB): ${verse.text}`
+            : `${verse.ref} — La Biblia de las Américas (LBLA)`,
         tag: `daily-${new Date().toISOString().slice(0, 10)}`,
       });
     } catch {
@@ -306,7 +340,13 @@ export function SettingsDrawer({
                 min={0}
                 max={23}
                 value={notifyHour}
-                onChange={(event) => setNotifyHour(Number(event.target.value))}
+                onChange={(event) => {
+                  setNotifyHour(Number(event.target.value));
+                  if (nativePushAvailable()) {
+                    const hour = useAppStore.getState().notifyHour;
+                    setNativePush({ action: "enable", hour, locale });
+                  }
+                }}
               />
               <p className="text-xs text-muted-foreground">{t("notifyHourHint")}</p>
             </div>

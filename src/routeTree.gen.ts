@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as DotwellKnownAppleAppSiteAssociationRouteImport } from './routes/[.]well-known/apple-app-site-association'
 import { Route as ApiAskRouteImport } from './routes/api/ask'
 import { Route as ApiAuthStatusRouteImport } from './routes/api/auth-status'
 import { Route as ApiComposeRouteImport } from './routes/api/compose'
@@ -21,10 +22,13 @@ import { Route as ApiDailyPhotoRouteImport } from './routes/api/daily-photo'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiCronDailyPhotoRouteImport } from './routes/api/cron/daily-photo'
 import { Route as ApiCronMessagesRouteImport } from './routes/api/cron/messages'
+import { Route as ApiCronPushRouteImport } from './routes/api/cron/push'
 import { Route as ApiNativeAuthCompleteRouteImport } from './routes/api/native-auth/complete'
 import { Route as ApiNativeAuthExchangeRouteImport } from './routes/api/native-auth/exchange'
 import { Route as ApiNativeAuthStartRouteImport } from './routes/api/native-auth/start'
+import { Route as ApiPushDevicesRouteImport } from './routes/api/push/devices'
 import { Route as ApiTwilioStatusRouteImport } from './routes/api/twilio/status'
+import { Route as ApiWidgetTodayRouteImport } from './routes/api/widget/today'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -51,6 +55,12 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DotwellKnownAppleAppSiteAssociationRoute =
+  DotwellKnownAppleAppSiteAssociationRouteImport.update({
+    id: '/.well-known/apple-app-site-association',
+    path: '/.well-known/apple-app-site-association',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAskRoute = ApiAskRouteImport.update({
   id: '/api/ask',
   path: '/api/ask',
@@ -86,6 +96,11 @@ const ApiCronMessagesRoute = ApiCronMessagesRouteImport.update({
   path: '/api/cron/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCronPushRoute = ApiCronPushRouteImport.update({
+  id: '/api/cron/push',
+  path: '/api/cron/push',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiNativeAuthCompleteRoute = ApiNativeAuthCompleteRouteImport.update({
   id: '/api/native-auth/complete',
   path: '/api/native-auth/complete',
@@ -101,9 +116,19 @@ const ApiNativeAuthStartRoute = ApiNativeAuthStartRouteImport.update({
   path: '/api/native-auth/start',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPushDevicesRoute = ApiPushDevicesRouteImport.update({
+  id: '/api/push/devices',
+  path: '/api/push/devices',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTwilioStatusRoute = ApiTwilioStatusRouteImport.update({
   id: '/api/twilio/status',
   path: '/api/twilio/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWidgetTodayRoute = ApiWidgetTodayRouteImport.update({
+  id: '/api/widget/today',
+  path: '/api/widget/today',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -113,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/api/ask': typeof ApiAskRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
   '/api/compose': typeof ApiComposeRoute
@@ -120,10 +146,13 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/daily-photo': typeof ApiCronDailyPhotoRoute
   '/api/cron/messages': typeof ApiCronMessagesRoute
+  '/api/cron/push': typeof ApiCronPushRoute
   '/api/native-auth/complete': typeof ApiNativeAuthCompleteRoute
   '/api/native-auth/exchange': typeof ApiNativeAuthExchangeRoute
   '/api/native-auth/start': typeof ApiNativeAuthStartRoute
+  '/api/push/devices': typeof ApiPushDevicesRoute
   '/api/twilio/status': typeof ApiTwilioStatusRoute
+  '/api/widget/today': typeof ApiWidgetTodayRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -131,6 +160,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/api/ask': typeof ApiAskRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
   '/api/compose': typeof ApiComposeRoute
@@ -138,10 +168,13 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/daily-photo': typeof ApiCronDailyPhotoRoute
   '/api/cron/messages': typeof ApiCronMessagesRoute
+  '/api/cron/push': typeof ApiCronPushRoute
   '/api/native-auth/complete': typeof ApiNativeAuthCompleteRoute
   '/api/native-auth/exchange': typeof ApiNativeAuthExchangeRoute
   '/api/native-auth/start': typeof ApiNativeAuthStartRoute
+  '/api/push/devices': typeof ApiPushDevicesRoute
   '/api/twilio/status': typeof ApiTwilioStatusRoute
+  '/api/widget/today': typeof ApiWidgetTodayRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -150,6 +183,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/api/ask': typeof ApiAskRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
   '/api/compose': typeof ApiComposeRoute
@@ -157,10 +191,13 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/daily-photo': typeof ApiCronDailyPhotoRoute
   '/api/cron/messages': typeof ApiCronMessagesRoute
+  '/api/cron/push': typeof ApiCronPushRoute
   '/api/native-auth/complete': typeof ApiNativeAuthCompleteRoute
   '/api/native-auth/exchange': typeof ApiNativeAuthExchangeRoute
   '/api/native-auth/start': typeof ApiNativeAuthStartRoute
+  '/api/push/devices': typeof ApiPushDevicesRoute
   '/api/twilio/status': typeof ApiTwilioStatusRoute
+  '/api/widget/today': typeof ApiWidgetTodayRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -170,6 +207,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/support'
     | '/terms'
+    | '/.well-known/apple-app-site-association'
     | '/api/ask'
     | '/api/auth-status'
     | '/api/compose'
@@ -177,10 +215,13 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/cron/daily-photo'
     | '/api/cron/messages'
+    | '/api/cron/push'
     | '/api/native-auth/complete'
     | '/api/native-auth/exchange'
     | '/api/native-auth/start'
+    | '/api/push/devices'
     | '/api/twilio/status'
+    | '/api/widget/today'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -188,6 +229,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/support'
     | '/terms'
+    | '/.well-known/apple-app-site-association'
     | '/api/ask'
     | '/api/auth-status'
     | '/api/compose'
@@ -195,10 +237,13 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/cron/daily-photo'
     | '/api/cron/messages'
+    | '/api/cron/push'
     | '/api/native-auth/complete'
     | '/api/native-auth/exchange'
     | '/api/native-auth/start'
+    | '/api/push/devices'
     | '/api/twilio/status'
+    | '/api/widget/today'
   id:
     | '__root__'
     | '/'
@@ -206,6 +251,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/support'
     | '/terms'
+    | '/.well-known/apple-app-site-association'
     | '/api/ask'
     | '/api/auth-status'
     | '/api/compose'
@@ -213,10 +259,13 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/cron/daily-photo'
     | '/api/cron/messages'
+    | '/api/cron/push'
     | '/api/native-auth/complete'
     | '/api/native-auth/exchange'
     | '/api/native-auth/start'
+    | '/api/push/devices'
     | '/api/twilio/status'
+    | '/api/widget/today'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -225,6 +274,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
+  DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
   ApiAskRoute: typeof ApiAskRoute
   ApiAuthStatusRoute: typeof ApiAuthStatusRoute
   ApiComposeRoute: typeof ApiComposeRoute
@@ -232,10 +282,13 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronDailyPhotoRoute: typeof ApiCronDailyPhotoRoute
   ApiCronMessagesRoute: typeof ApiCronMessagesRoute
+  ApiCronPushRoute: typeof ApiCronPushRoute
   ApiNativeAuthCompleteRoute: typeof ApiNativeAuthCompleteRoute
   ApiNativeAuthExchangeRoute: typeof ApiNativeAuthExchangeRoute
   ApiNativeAuthStartRoute: typeof ApiNativeAuthStartRoute
+  ApiPushDevicesRoute: typeof ApiPushDevicesRoute
   ApiTwilioStatusRoute: typeof ApiTwilioStatusRoute
+  ApiWidgetTodayRoute: typeof ApiWidgetTodayRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -273,6 +326,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/apple-app-site-association': {
+      id: '/.well-known/apple-app-site-association'
+      path: '/.well-known/apple-app-site-association'
+      fullPath: '/.well-known/apple-app-site-association'
+      preLoaderRoute: typeof DotwellKnownAppleAppSiteAssociationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/ask': {
@@ -324,6 +384,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCronMessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cron/push': {
+      id: '/api/cron/push'
+      path: '/api/cron/push'
+      fullPath: '/api/cron/push'
+      preLoaderRoute: typeof ApiCronPushRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/native-auth/complete': {
       id: '/api/native-auth/complete'
       path: '/api/native-auth/complete'
@@ -345,11 +412,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiNativeAuthStartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/push/devices': {
+      id: '/api/push/devices'
+      path: '/api/push/devices'
+      fullPath: '/api/push/devices'
+      preLoaderRoute: typeof ApiPushDevicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/twilio/status': {
       id: '/api/twilio/status'
       path: '/api/twilio/status'
       fullPath: '/api/twilio/status'
       preLoaderRoute: typeof ApiTwilioStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/widget/today': {
+      id: '/api/widget/today'
+      path: '/api/widget/today'
+      fullPath: '/api/widget/today'
+      preLoaderRoute: typeof ApiWidgetTodayRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -361,6 +442,8 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
+  DotwellKnownAppleAppSiteAssociationRoute:
+    DotwellKnownAppleAppSiteAssociationRoute,
   ApiAskRoute: ApiAskRoute,
   ApiAuthStatusRoute: ApiAuthStatusRoute,
   ApiComposeRoute: ApiComposeRoute,
@@ -368,10 +451,13 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronDailyPhotoRoute: ApiCronDailyPhotoRoute,
   ApiCronMessagesRoute: ApiCronMessagesRoute,
+  ApiCronPushRoute: ApiCronPushRoute,
   ApiNativeAuthCompleteRoute: ApiNativeAuthCompleteRoute,
   ApiNativeAuthExchangeRoute: ApiNativeAuthExchangeRoute,
   ApiNativeAuthStartRoute: ApiNativeAuthStartRoute,
+  ApiPushDevicesRoute: ApiPushDevicesRoute,
   ApiTwilioStatusRoute: ApiTwilioStatusRoute,
+  ApiWidgetTodayRoute: ApiWidgetTodayRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

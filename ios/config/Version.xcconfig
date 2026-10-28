@@ -1,0 +1,9 @@
+// Shared by the app and its widget: both must carry the same version.
+MARKETING_VERSION = 1.1
+CURRENT_PROJECT_VERSION = 3
+IPHONEOS_DEPLOYMENT_TARGET = 17.0
+TARGETED_DEVICE_FAMILY = 1
+SWIFT_VERSION = 5.0
+CODE_SIGN_STYLE = Automatic
+// Apple Developer team (Ricardo Arevalo). Team IDs are public, not secrets.
+DEVELOPMENT_TEAM = 7687NAN4DQ

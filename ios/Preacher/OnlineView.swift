@@ -22,6 +22,8 @@ final class WebSession: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
         controller.onError = { [weak self] message in self?.authError = message }
         nativeAuth = controller
         web.configuration.userContentController.add(controller, name: "preacherAuth")
+        web.configuration.userContentController.add(PushCoordinator.shared, name: "preacherPush")
+        PushCoordinator.shared.web = web
         web.navigationDelegate = self
         web.uiDelegate = self
         web.allowsBackForwardNavigationGestures = true
@@ -116,6 +118,7 @@ struct PreacherWebView: UIViewRepresentable {
 struct OnlineView: View {
     @ObservedObject var library: ReadingLibrary
     @StateObject private var session = WebSession()
+    @ObservedObject private var router = AppRouter.shared
     @State private var draft: ReadingDraft?
     @State private var showLibrary = false
     @State private var showInformation = false
@@ -155,6 +158,11 @@ struct OnlineView: View {
             .alert("No se pudo entrar", isPresented: Binding(get: { session.authError != nil }, set: { if !$0 { session.authError = nil } })) {
                 Button("Aceptar") { session.authError = nil }
             } message: { Text(session.authError ?? "") }
+            .onAppear { openPending() }
+            .onChange(of: router.pendingURL) { _, _ in openPending() }
+            .onChange(of: router.showLibrary) { _, show in
+                if show { showLibrary = true; router.showLibrary = false }
+            }
             .sheet(item: $draft) { ReadingEditor(library: library, draft: $0) }
             .sheet(isPresented: $showLibrary) { LibraryView(library: library) }
             .sheet(isPresented: $showInformation) { InformationView() }
@@ -166,5 +174,14 @@ struct OnlineView: View {
                 Text(session.externalURL?.host ?? session.externalURL?.scheme ?? "")
             }
         }
+    }
+
+    /// A passage from a notification, link or quick action replaces the page.
+    private func openPending() {
+        guard let url = router.pendingURL else { return }
+        router.pendingURL = nil
+        showLibrary = false
+        session.failure = nil
+        session.web.load(URLRequest(url: url))
     }
 }
