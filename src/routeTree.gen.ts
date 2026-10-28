@@ -17,7 +17,9 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ApiAskRouteImport } from './routes/api/ask'
 import { Route as ApiAuthStatusRouteImport } from './routes/api/auth-status'
 import { Route as ApiComposeRouteImport } from './routes/api/compose'
+import { Route as ApiDailyPhotoRouteImport } from './routes/api/daily-photo'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiCronDailyPhotoRouteImport } from './routes/api/cron/daily-photo'
 import { Route as ApiCronMessagesRouteImport } from './routes/api/cron/messages'
 import { Route as ApiNativeAuthCompleteRouteImport } from './routes/api/native-auth/complete'
 import { Route as ApiNativeAuthExchangeRouteImport } from './routes/api/native-auth/exchange'
@@ -64,9 +66,19 @@ const ApiComposeRoute = ApiComposeRouteImport.update({
   path: '/api/compose',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDailyPhotoRoute = ApiDailyPhotoRouteImport.update({
+  id: '/api/daily-photo',
+  path: '/api/daily-photo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronDailyPhotoRoute = ApiCronDailyPhotoRouteImport.update({
+  id: '/api/cron/daily-photo',
+  path: '/api/cron/daily-photo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCronMessagesRoute = ApiCronMessagesRouteImport.update({
@@ -104,7 +116,9 @@ export interface FileRoutesByFullPath {
   '/api/ask': typeof ApiAskRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
   '/api/compose': typeof ApiComposeRoute
+  '/api/daily-photo': typeof ApiDailyPhotoRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/daily-photo': typeof ApiCronDailyPhotoRoute
   '/api/cron/messages': typeof ApiCronMessagesRoute
   '/api/native-auth/complete': typeof ApiNativeAuthCompleteRoute
   '/api/native-auth/exchange': typeof ApiNativeAuthExchangeRoute
@@ -120,7 +134,9 @@ export interface FileRoutesByTo {
   '/api/ask': typeof ApiAskRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
   '/api/compose': typeof ApiComposeRoute
+  '/api/daily-photo': typeof ApiDailyPhotoRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/daily-photo': typeof ApiCronDailyPhotoRoute
   '/api/cron/messages': typeof ApiCronMessagesRoute
   '/api/native-auth/complete': typeof ApiNativeAuthCompleteRoute
   '/api/native-auth/exchange': typeof ApiNativeAuthExchangeRoute
@@ -137,7 +153,9 @@ export interface FileRoutesById {
   '/api/ask': typeof ApiAskRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
   '/api/compose': typeof ApiComposeRoute
+  '/api/daily-photo': typeof ApiDailyPhotoRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/daily-photo': typeof ApiCronDailyPhotoRoute
   '/api/cron/messages': typeof ApiCronMessagesRoute
   '/api/native-auth/complete': typeof ApiNativeAuthCompleteRoute
   '/api/native-auth/exchange': typeof ApiNativeAuthExchangeRoute
@@ -155,7 +173,9 @@ export interface FileRouteTypes {
     | '/api/ask'
     | '/api/auth-status'
     | '/api/compose'
+    | '/api/daily-photo'
     | '/api/auth/$'
+    | '/api/cron/daily-photo'
     | '/api/cron/messages'
     | '/api/native-auth/complete'
     | '/api/native-auth/exchange'
@@ -171,7 +191,9 @@ export interface FileRouteTypes {
     | '/api/ask'
     | '/api/auth-status'
     | '/api/compose'
+    | '/api/daily-photo'
     | '/api/auth/$'
+    | '/api/cron/daily-photo'
     | '/api/cron/messages'
     | '/api/native-auth/complete'
     | '/api/native-auth/exchange'
@@ -187,7 +209,9 @@ export interface FileRouteTypes {
     | '/api/ask'
     | '/api/auth-status'
     | '/api/compose'
+    | '/api/daily-photo'
     | '/api/auth/$'
+    | '/api/cron/daily-photo'
     | '/api/cron/messages'
     | '/api/native-auth/complete'
     | '/api/native-auth/exchange'
@@ -204,7 +228,9 @@ export interface RootRouteChildren {
   ApiAskRoute: typeof ApiAskRoute
   ApiAuthStatusRoute: typeof ApiAuthStatusRoute
   ApiComposeRoute: typeof ApiComposeRoute
+  ApiDailyPhotoRoute: typeof ApiDailyPhotoRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiCronDailyPhotoRoute: typeof ApiCronDailyPhotoRoute
   ApiCronMessagesRoute: typeof ApiCronMessagesRoute
   ApiNativeAuthCompleteRoute: typeof ApiNativeAuthCompleteRoute
   ApiNativeAuthExchangeRoute: typeof ApiNativeAuthExchangeRoute
@@ -270,11 +296,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiComposeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/daily-photo': {
+      id: '/api/daily-photo'
+      path: '/api/daily-photo'
+      fullPath: '/api/daily-photo'
+      preLoaderRoute: typeof ApiDailyPhotoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/daily-photo': {
+      id: '/api/cron/daily-photo'
+      path: '/api/cron/daily-photo'
+      fullPath: '/api/cron/daily-photo'
+      preLoaderRoute: typeof ApiCronDailyPhotoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/cron/messages': {
@@ -324,7 +364,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAskRoute: ApiAskRoute,
   ApiAuthStatusRoute: ApiAuthStatusRoute,
   ApiComposeRoute: ApiComposeRoute,
+  ApiDailyPhotoRoute: ApiDailyPhotoRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiCronDailyPhotoRoute: ApiCronDailyPhotoRoute,
   ApiCronMessagesRoute: ApiCronMessagesRoute,
   ApiNativeAuthCompleteRoute: ApiNativeAuthCompleteRoute,
   ApiNativeAuthExchangeRoute: ApiNativeAuthExchangeRoute,
