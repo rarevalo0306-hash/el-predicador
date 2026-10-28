@@ -56,3 +56,28 @@ El usuario eligió usar su Supabase de la Mac. La base independiente `preacher_s
 **Variables de Vercel.** `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID` y `APPLE_PRIVATE_KEY` (Production) se crearon el 24-oct-2026 a las 04:39 UTC (23-oct, hora del Este). Son sensibles y no se pueden leer, así que no se confirmó si apuntan a la llave `P7YAFNCVQG`. No se cambiaron en esta sesión: el archivo `.p8` no está disponible en el entorno de trabajo en la nube.
 
 **Resultado (28-oct-2026).** Desplegado en producción (commit `51cae50`, rama `codex/ios-app-store`). El titular confirmó que el inicio con Apple ya funciona en el iPhone. Los logs de producción no muestran errores de Apple desde el despliegue. Las variables `APPLE_*` no se cambiaron, así que las existentes son válidas: el fallo lo causaba solo el secreto vencido.
+
+## Versión 1.1 (3): push, enlaces universales, widget y accesos rápidos — preparada el 28 de octubre de 2026
+
+**Estado.** Código listo en el repositorio. **No compilado**: el entorno donde se escribió no tiene Xcode. Falta compilar y probar en la Mac y en el iPhone, subir a TestFlight y enviar a revisión. El servidor (registro de dispositivos, envío APNs, datos del widget y archivo de enlaces universales) ya está desplegado en producción.
+
+**Qué incluye**
+- **Push nativo.** El interruptor de recordatorio de Ajustes pide permiso en el iPhone. El servidor envía cada día, a la hora elegida y en la zona horaria del teléfono, «Tu palabra de hoy · {cita} · Toca para leerlo». La notificación abre el pasaje. Solo lleva la cita, nunca texto LBLA.
+- **Enlaces universales.** `thepreacher.app/?leer=…` abre la app en el pasaje si está instalada.
+- **Widget.** Pequeño y mediano, con la cita, el tema y la foto del día; al tocarlo abre el pasaje.
+- **Accesos rápidos del ícono.** Versículo de hoy, Biblia y Mis lecturas.
+
+**Pasos del titular antes de compilar (Apple Developer, cuenta 7687NAN4DQ)**
+1. *Certificates, Identifiers & Profiles → Identifiers → app.thepreacher.ios*: activar **Push Notifications** y **Associated Domains**. Con firma automática, Xcode también puede activarlas al compilar.
+2. *Keys → +*: crear una llave con **Apple Push Notifications service (APNs)**, descargar el `.p8` y anotar el Key ID. Se descarga una sola vez; guardarla en lugar seguro y no subirla al repositorio.
+3. En Vercel (Production): `APNS_KEY_ID` = Key ID, `APNS_TEAM_ID` = `7687NAN4DQ`, `APNS_PRIVATE_KEY` = contenido del `.p8` (marcar como Sensitive). Sin estas variables el cron no envía nada.
+
+**Pasos en la Mac**
+1. `git pull`, abrir `ios/Preacher.xcodeproj` y comprobar que el equipo está seleccionado en los objetivos **Preacher** y **PreacherWidget** (lo trae `ios/config/Version.xcconfig`).
+2. Compilar en el iPhone físico, en Debug: activar el recordatorio desde Ajustes y comprobar el permiso. Para recibir una prueba de inmediato, poner como hora la actual y esperar al cron (minuto 2 de cada hora). Debug usa el entorno *sandbox* de APNs; TestFlight y App Store usan *production*.
+3. Probar el widget (añadirlo desde la pantalla de inicio), los accesos rápidos del ícono y un enlace `?leer=` abierto desde Notas o WhatsApp.
+4. Archive Release → TestFlight → probar en el iPhone → enviar a revisión.
+
+**Notas para App Review**
+- Las notificaciones son opcionales: se activan desde Ajustes, nunca al abrir la app. No son publicidad.
+- App Privacy: el token de notificación se usa solo para enviar el recordatorio. No se asocia a cuenta ni se usa para rastreo.

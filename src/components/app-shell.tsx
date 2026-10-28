@@ -123,6 +123,13 @@ function PreacherApp({ userId, sessionReady }: { userId?: string; sessionReady: 
   // the Bible tab, then drop the mark so a reload starts on Hoy again.
   useEffect(() => {
     const url = new URL(window.location.href);
+    // The iPhone app's quick action opens the Bible tab with ?abrir=biblia.
+    if (url.searchParams.get("abrir") === "biblia") {
+      url.searchParams.delete("abrir");
+      window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+      setTab("biblia");
+      return;
+    }
     const ref = url.searchParams.get(READ_PARAM);
     if (!ref) return;
     url.searchParams.delete(READ_PARAM);

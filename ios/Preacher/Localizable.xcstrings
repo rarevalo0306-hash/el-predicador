@@ -520,6 +520,26 @@
           }
         }
       }
+    },
+    "Versículo de hoy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today's verse"
+          }
+        }
+      }
+    },
+    "Biblia": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bible"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
