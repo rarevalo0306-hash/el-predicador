@@ -38,6 +38,8 @@ import { allDueItems } from "@/lib/preach-schedule";
 import { showDailyNotification } from "@/lib/notify";
 import { cn } from "@/lib/utils";
 import type { VerseLink } from "@/lib/verse-links";
+import { parseReference } from "@/lib/bible";
+import { READ_PARAM } from "@/lib/share";
 
 type Tab = "hoy" | "biblia" | "evangelio" | "temas" | "personas" | "guardados" | "admin";
 
@@ -116,6 +118,24 @@ function PreacherApp({ userId, sessionReady }: { userId?: string; sessionReady: 
     window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
     setWelcome(true);
     setProfileOpen(true);
+  }, []);
+  // A shared message links here with ?leer=<reference>: open that passage in
+  // the Bible tab, then drop the mark so a reload starts on Hoy again.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const ref = url.searchParams.get(READ_PARAM);
+    if (!ref) return;
+    url.searchParams.delete(READ_PARAM);
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    const parsed = parseReference(ref);
+    if (!parsed) return;
+    setJump({
+      bookId: parsed.book.id,
+      chapter: parsed.chapter,
+      verse: parsed.verse,
+      at: Date.now(),
+    });
+    setTab("biblia");
   }, []);
   const sync = useCloudSync(userId, sessionReady);
   const { ready } = sync;
