@@ -34,7 +34,7 @@ import { bearer, genericOAuth } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { getCookie } from "@tanstack/react-start/server";
 import { randomBytes } from "node:crypto";
-import { appleConfigured, appleClientSecret, revokeAppleToken } from "./apple.server";
+import { appleConfigured, currentAppleClientSecret, revokeAppleToken } from "./apple.server";
 import { symmetricDecrypt } from "better-auth/crypto";
 import { Pool } from "pg";
 import { ensureDbReady, getPglite } from "../db";
@@ -272,7 +272,10 @@ export const auth = betterAuth({
       ? {
           apple: async () => ({
             clientId: env("APPLE_CLIENT_ID")!,
-            clientSecret: await appleClientSecret(),
+            // Read on each token request; a value fixed at startup expires.
+            get clientSecret() {
+              return currentAppleClientSecret();
+            },
             disableIdTokenSignIn: true,
           }),
         }

@@ -42,3 +42,17 @@ TypeScript, compilación web, pruebas locales de autenticación/eliminación y p
 ## Cambio a staging local
 
 El usuario eligió usar su Supabase de la Mac. La base independiente `preacher_staging` ya está preparada y conectada a la app local; alta, sesión y persistencia comprobadas. Se eliminó la rama cloud creada durante la interrupción. La aprobación de costo anterior queda sustituida por esta opción local. Véase [local-staging.md](local-staging.md). Vercel Preview sigue sin conexión a una base de pruebas.
+
+## Inicio con Apple: `invalid_client` en producción — 27–28 de octubre de 2026
+
+**Síntoma.** Al volver de Apple, `GET /api/auth/callback/apple` fallaba con `invalid_client` (400): Apple rechazaba el `client_secret` en el intercambio del código.
+
+**Causa encontrada en el código.** `appleClientSecret()` firma un JWT ES256 correcto (`kid` = Key ID, `iss` = Team ID, `sub` = client ID, `aud` = `https://appleid.apple.com`), pero caduca a los 5 minutos. Better Auth resuelve la configuración de proveedores **una sola vez** por instancia del servidor y reutiliza ese texto en cada intercambio. Con la instancia de Vercel ya caliente, cualquier inicio de sesión hecho más de 5 minutos después del arranque enviaba un JWT vencido, y Apple responde `invalid_client`.
+
+**Cambio.** `currentAppleClientSecret()` firma el JWT de forma síncrona (`node:crypto`), con validez de 1 hora y renovación 5 minutos antes de vencer. La configuración de Apple en `server.ts` lo expone como *getter*, así que cada intercambio de código y cada renovación de token leen un secreto vigente. El flujo web e iOS (ASWebAuthenticationSession) usa el Services ID como `client_id`; no hay inicio nativo por `id_token` (`disableIdTokenSignIn`), así que no hace falta aceptar el audience `app.thepreacher.ios`. La revocación sigue generando su propio secreto de 5 minutos en cada llamada.
+
+**Comprobación local.** Prueba nueva: JWT verificable con ES256, `exp − iat` = 3600, reutilizado dentro de la ventana y renovado antes de vencer, también con la clave guardada con `\n` escapados. Comprobado contra el proveedor Apple de Better Auth 1.6.30 que cada intercambio lee un secreto nuevo. `typecheck`, `test:ios-auth` (7 pruebas e integración) y `vite build` pasan.
+
+**Variables de Vercel.** `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID` y `APPLE_PRIVATE_KEY` (Production) se crearon el 24-oct-2026 a las 04:39 UTC (23-oct, hora del Este). Son sensibles y no se pueden leer, así que no se confirmó si apuntan a la llave `P7YAFNCVQG`. No se cambiaron en esta sesión: el archivo `.p8` no está disponible en el entorno de trabajo en la nube.
+
+**Pendiente.** Desplegar el cambio en producción. Probar desde el iPhone y desde Safari. Revisar los logs del callback. Si sigue saliendo `invalid_client` con el secreto ya vigente, cargar en Vercel las cuatro variables de la llave `P7YAFNCVQG` desde un equipo que tenga el `.p8`.

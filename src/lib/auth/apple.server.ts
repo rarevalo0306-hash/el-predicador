@@ -1,3 +1,4 @@
+import { createPrivateKey, sign } from "node:crypto";
 import { importPKCS8, SignJWT } from "jose";
 
 export function appleConfigured(env = process.env): boolean {
@@ -18,6 +19,52 @@ export async function appleClientSecret(env = process.env): Promise<string> {
     .setIssuedAt()
     .setExpirationTime("5m")
     .sign(key);
+}
+
+const SECRET_LIFETIME_SECONDS = 60 * 60;
+const SECRET_RENEW_MARGIN_SECONDS = 5 * 60;
+let cachedSecret: { key: string; value: string; expiresAt: number } | null = null;
+
+function base64url(value: Buffer | string): string {
+  return Buffer.from(value).toString("base64url");
+}
+
+/**
+ * Better Auth resolves provider options once per server instance, so a fixed
+ * string secret goes stale and Apple answers `invalid_client`. Reading this on
+ * every token request (via a getter) keeps a valid one-hour secret, renewed
+ * five minutes before it expires. Synchronous because getters cannot await.
+ */
+export function currentAppleClientSecret(env = process.env, now = Date.now()): string {
+  if (!appleConfigured(env)) throw new Error("APPLE_NOT_CONFIGURED");
+  const nowSeconds = Math.floor(now / 1000);
+  const cacheKey = [env.APPLE_CLIENT_ID, env.APPLE_TEAM_ID, env.APPLE_KEY_ID].join("|");
+  if (
+    cachedSecret &&
+    cachedSecret.key === cacheKey &&
+    cachedSecret.expiresAt - SECRET_RENEW_MARGIN_SECONDS > nowSeconds
+  ) {
+    return cachedSecret.value;
+  }
+  const expiresAt = nowSeconds + SECRET_LIFETIME_SECONDS;
+  const header = base64url(JSON.stringify({ alg: "ES256", kid: env.APPLE_KEY_ID }));
+  const payload = base64url(
+    JSON.stringify({
+      iss: env.APPLE_TEAM_ID,
+      iat: nowSeconds,
+      exp: expiresAt,
+      aud: "https://appleid.apple.com",
+      sub: env.APPLE_CLIENT_ID,
+    }),
+  );
+  const key = createPrivateKey(env.APPLE_PRIVATE_KEY!.replace(/\\n/g, "\n"));
+  const signature = sign("sha256", Buffer.from(`${header}.${payload}`), {
+    key,
+    dsaEncoding: "ieee-p1363",
+  });
+  const value = `${header}.${payload}.${base64url(signature)}`;
+  cachedSecret = { key: cacheKey, value, expiresAt };
+  return value;
 }
 
 export async function revokeAppleToken(
