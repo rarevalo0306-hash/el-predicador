@@ -22,7 +22,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "The Preacher: mensajes de la Biblia / Bible messages for WhatsApp, SMS, or share.",
+          "Un versículo de la Biblia para cada día. Léelo y compártelo por WhatsApp o SMS con quien amas.",
       },
       ...(GOOGLE_SITE_VERIFICATION
         ? [{ name: "google-site-verification", content: GOOGLE_SITE_VERIFICATION }]
