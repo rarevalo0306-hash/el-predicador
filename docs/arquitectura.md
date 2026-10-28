@@ -92,7 +92,7 @@ Las tablas sensibles tienen RLS/revocación para roles públicos. La aplicación
 | --- | --- | --- |
 | Identidad | `VITE_AUTH_ENABLED`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Cuentas y OAuth |
 | Apple | `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` | OAuth/revocación Apple servidor |
-| Foto del día | `GEMINI_API_KEY`, `DAILY_PHOTO_ENABLED=true`, opcional `DAILY_PHOTO_MODEL` (por defecto `gemini-nano-banana-2.1`) y `DAILY_PHOTO_ASPECT` (`3:4`) | Cron diario `/api/cron/daily-photo` (04:07 UTC) genera la foto de hoy y de mañana con Google y la guarda en `daily_photos`. Solo envía la escena del tema, nunca texto bíblico. Sin la clave o el interruptor, Hoy muestra la foto del tema del versículo. |
+| Foto del día | `GEMINI_API_KEY` o `GOOGLE_GENERATIVE_AI_API_KEY`, `DAILY_PHOTO_ENABLED=true`, opcional `DAILY_PHOTO_MODEL` (por defecto `gemini-nano-banana-2.1`) y `DAILY_PHOTO_ASPECT` (`3:4`) | Cron diario `/api/cron/daily-photo` (04:07 UTC) genera la foto de hoy y de mañana con Google y la guarda en `daily_photos`. Solo envía la escena del tema, nunca texto bíblico. Sin la clave o el interruptor, Hoy muestra la foto del tema del versículo. |
 | Datos | `DATABASE_URL` | Base persistente; `scripts/postgres-options.mjs` adapta pooler Supabase en Vercel |
 | Biblia | `API_BIBLE_KEY` | API.Bible servidor; nunca variable pública |
 | Roles | `CONTACTS_ADMIN_USER_IDS`, `MESSAGING_ALLOWED_USER_IDS` | Propietarios y emisores autorizados |
