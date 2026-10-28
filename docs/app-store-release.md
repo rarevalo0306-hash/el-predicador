@@ -55,4 +55,4 @@ El usuario eligió usar su Supabase de la Mac. La base independiente `preacher_s
 
 **Variables de Vercel.** `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID` y `APPLE_PRIVATE_KEY` (Production) se crearon el 24-oct-2026 a las 04:39 UTC (23-oct, hora del Este). Son sensibles y no se pueden leer, así que no se confirmó si apuntan a la llave `P7YAFNCVQG`. No se cambiaron en esta sesión: el archivo `.p8` no está disponible en el entorno de trabajo en la nube.
 
-**Pendiente.** Desplegar el cambio en producción. Probar desde el iPhone y desde Safari. Revisar los logs del callback. Si sigue saliendo `invalid_client` con el secreto ya vigente, cargar en Vercel las cuatro variables de la llave `P7YAFNCVQG` desde un equipo que tenga el `.p8`.
+**Resultado (28-oct-2026).** Desplegado en producción (commit `51cae50`, rama `codex/ios-app-store`). El titular confirmó que el inicio con Apple ya funciona en el iPhone. Los logs de producción no muestran errores de Apple desde el despliegue. Las variables `APPLE_*` no se cambiaron, así que las existentes son válidas: el fallo lo causaba solo el secreto vencido.
