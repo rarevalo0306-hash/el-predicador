@@ -34,6 +34,8 @@ import { bearer, genericOAuth } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { getCookie } from "@tanstack/react-start/server";
 import { randomBytes } from "node:crypto";
+import { appleConfigured, currentAppleClientSecret, revokeAppleToken } from "./apple.server";
+import { symmetricDecrypt } from "better-auth/crypto";
 import { Pool } from "pg";
 import { ensureDbReady, getPglite } from "../db";
 import { normalizeDatabaseUrl } from "../database-url";
@@ -83,9 +85,7 @@ const grokIssuer = env("GROK_AUTH_ISSUER") ?? GROK_ISSUER_DEFAULT;
 const grokClientId = env("GROK_AUTH_CLIENT_ID") ?? PREVIEW_CLIENT_ID;
 const grokClientSecret = env("GROK_AUTH_CLIENT_SECRET") ?? PREVIEW_CLIENT_SECRET;
 /** True when we have a real per-app broker client (not the preview-only fallback). */
-const hasDeployedGrokClient = Boolean(
-  env("GROK_AUTH_CLIENT_ID") && env("GROK_AUTH_CLIENT_SECRET"),
-);
+const hasDeployedGrokClient = Boolean(env("GROK_AUTH_CLIENT_ID") && env("GROK_AUTH_CLIENT_SECRET"));
 
 /** Native Google OAuth (standalone Vercel deploys that are not Grok-broker injected). */
 function cleanGoogleCredential(value: string | undefined): string | undefined {
@@ -112,7 +112,6 @@ if (typeof console !== "undefined") {
     }`,
   );
 }
-
 
 function normalizePublicOrigin(raw: string | undefined): string | undefined {
   if (!raw) return undefined;
@@ -148,7 +147,7 @@ const explicitBaseURL =
   normalizePublicOrigin(env("VERCEL_URL"));
 
 /** True when federated Grok-broker sign-in is active and safe to use. */
-export const authConfigured =
+const brokerConfigured =
   !authDisabled &&
   Boolean(grokClientId && grokClientSecret) &&
   // Never point a production host at the preview-only broker client — its
@@ -219,7 +218,11 @@ export const SESSION_TOKEN_COOKIE = "__Host-grok-auth.session_token";
 
 // Built separately so the `betterAuth({...})` call stays easy to edit without
 // breaking brackets (models often trip on the conditional plugin spread).
-const grokOAuthPlugin = authConfigured
+export const authConfigured =
+  !authDisabled &&
+  (emailAndPasswordEnabled || nativeGoogleEnabled || appleConfigured() || brokerConfigured);
+
+const grokOAuthPlugin = brokerConfigured
   ? genericOAuth({
       config: GROK_PROVIDERS.map(({ providerId, idp }) => ({
         providerId,
@@ -251,21 +254,54 @@ export const auth = betterAuth({
   // CSRF / origin check for credentialed auth POSTs (email sign-up/sign-in, …).
   // See `trustedOrigins` construction above — must cover live preview hosts AND
   // local loopback variants, or clients get "Invalid origin".
-  trustedOrigins,
+  trustedOrigins: [...trustedOrigins, "https://appleid.apple.com"],
 
   // Native Google for standalone deploys (GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET).
   // The Grok broker path (genericOAuth) stays for preview / injected GROK_AUTH_*.
-  ...(nativeGoogleEnabled
-    ? {
-        socialProviders: {
+  socialProviders: {
+    ...(nativeGoogleEnabled
+      ? {
           google: {
             clientId: googleClientId as string,
             clientSecret: googleClientSecret as string,
             prompt: "select_account" as const,
           },
-        },
-      }
-    : {}),
+        }
+      : {}),
+    ...(appleConfigured()
+      ? {
+          apple: async () => ({
+            clientId: env("APPLE_CLIENT_ID")!,
+            // Read on each token request; a value fixed at startup expires.
+            get clientSecret() {
+              return currentAppleClientSecret();
+            },
+            disableIdTokenSignIn: true,
+          }),
+        }
+      : {}),
+  },
+  user: {
+    deleteUser: {
+      enabled: true,
+      beforeDelete: async (user) => {
+        const { getSql } = await import("../db");
+        const sql = await getSql();
+        const rows = await sql.query<{ refreshToken: string | null; accessToken: string | null }>(
+          'select "refreshToken", "accessToken" from account where "userId" = $1 and "providerId" = $2',
+          [user.id, "apple"],
+        );
+        const context = await auth.$context;
+        for (const row of rows) {
+          const stored = row.refreshToken || row.accessToken;
+          if (!stored) throw new Error("APPLE_REVOCATION_TOKEN_MISSING");
+          await revokeAppleToken(
+            await symmetricDecrypt({ key: context.secretConfig, data: stored }),
+          );
+        }
+      },
+    },
+  },
 
   // Encrypt broker-issued OAuth tokens at rest, and treat the broker's upstreams
   // as trusted first-party identities. The broker owns identity and X emails are
@@ -280,6 +316,7 @@ export const auth = betterAuth({
       trustedProviders: [
         ...GROK_PROVIDERS.map((p) => p.providerId),
         ...(nativeGoogleEnabled ? (["google"] as const) : []),
+        ...(appleConfigured() ? (["apple"] as const) : []),
         GATE_PROVIDER_ID,
       ],
       // X's synthetic email is never "verified", so don't gate linking on the
@@ -292,7 +329,7 @@ export const auth = betterAuth({
   // (incl. the client's `/get-session`) skip the DB — this shrinks the "loading"
   // window and reduces auth flicker. See the `auth` skill for the full
   // flicker-prevention guidance (gate on `isPending`; SSR the session).
-  session: { cookieCache: { enabled: true, maxAge: 300 } },
+  session: { freshAge: 300, cookieCache: { enabled: true, maxAge: 300 } },
 
   // Local email/password — toggled only via `./email-password` (not a plugin).
   ...(emailAndPasswordEnabled ? { emailAndPassword: { enabled: true } } : {}),
@@ -308,6 +345,10 @@ export const auth = betterAuth({
     useSecureCookies: false,
     defaultCookieAttributes: { secure: true, sameSite: "lax", path: "/" },
     cookies: {
+      // Apple posts its OAuth callback cross-site. Only the short-lived state
+      // cookies use SameSite=None; session cookies remain Lax and HttpOnly.
+      state: { attributes: { sameSite: "none" as const, secure: true, httpOnly: true } },
+      oauth_state: { attributes: { sameSite: "none" as const, secure: true, httpOnly: true } },
       session_token: { name: SESSION_TOKEN_COOKIE },
       session_data: { name: "__Host-grok-auth.session_data" },
       account_data: { name: "__Host-grok-auth.account_data" },

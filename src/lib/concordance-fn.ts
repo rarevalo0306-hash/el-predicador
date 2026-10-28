@@ -16,13 +16,27 @@ export const searchConcordance = createServerFn({ method: "POST" })
     if (data.words.replace(/\s/g, "").length < 3) {
       return { status: "ok", words: data.words, hits: [], total: 0 };
     }
-    const { searchLsmWords } = await import("@/lib/lsm-api");
-    const payload = await searchLsmWords(data.words, data.locale).catch(() => null);
-    if (!payload) return { status: "unavailable", words: data.words };
+    const { searchApiBible } = await import("./api-bible.server");
+    const { defaultBibleTranslation, bookById } = await import("./bible");
+    const { payload, expiresAt, copyright } = await searchApiBible(
+      data.words,
+      defaultBibleTranslation(data.locale),
+    );
+    const hits = (payload.verses as { id: string; text: string }[]).flatMap((item) => {
+      const [id, chapter, verse] = item.id.split(".");
+      const book = bookById(id.toLowerCase());
+      return book && Number(chapter) > 0 && Number(verse) > 0 && typeof item.text === "string"
+        ? [{ bookId: book.id, chapter: Number(chapter), verse: Number(verse), text: item.text }]
+        : [];
+    });
     return {
       status: "ok",
       words: data.words,
-      ...readHits(payload),
-      copyright: payload.copyright?.trim() || undefined,
+      hits,
+      total: Number(payload.total) || hits.length,
+      copyright,
+      expiresAt,
+      fumsId: payload.fumsId as string | undefined,
+      fumsToken: payload.fumsToken as string | undefined,
     };
   });

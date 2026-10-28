@@ -60,7 +60,6 @@ export const prepareVerseNotes = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<PrepareResult> => {
     await requireAdmin(context.userId);
     const { getSql } = await import("@/lib/db");
-    const { hydrateVerse } = await import("@/lib/recobro");
     const { generateVerseNotes } = await import("./ai/deepseek.server.ts");
     const sql = await getSql();
     const verses = await catalogVerses();
@@ -76,34 +75,7 @@ export const prepareVerseNotes = createServerFn({ method: "POST" })
     const pending = verses.filter((v) => !done.has(v.id) && !skip.has(v.id));
     const batch = pending.slice(0, data.batch);
     const errors: string[] = [];
-    const ready: { id: string; ref: string; text: string }[] = [];
-    // Texts stored on an earlier pass are reused, so writing the lines again
-    // never waits on the Bible service.
-    const stored = new Map(
-      (
-        await sql<{ verse_id: string; ref: string; text: string }>`
-          select verse_id, ref, text from verse_texts
-          where locale = ${data.locale} and verse_id = any(${batch.map((v) => v.id)})`
-      ).map((row) => [row.verse_id, row]),
-    );
-    for (const verse of batch) {
-      const kept = stored.get(verse.id);
-      if (kept?.text.trim()) {
-        ready.push({ id: verse.id, ref: kept.ref, text: kept.text });
-        continue;
-      }
-      try {
-        const full = await hydrateVerse(verse, data.locale);
-        if (!full.text.trim()) throw new Error("empty");
-        await sql`insert into verse_texts (verse_id, locale, ref, text, source, updated_at)
-          values (${verse.id}, ${data.locale}, ${full.ref}, ${full.text}, ${full.source ?? null}, now())
-          on conflict (verse_id, locale) do update set ref = excluded.ref, text = excluded.text,
-            source = excluded.source, updated_at = now()`;
-        ready.push({ id: verse.id, ref: full.ref, text: full.text });
-      } catch {
-        errors.push(`${verse.ref}: texto no disponible`);
-      }
-    }
+    const ready = batch.map((verse) => ({ id: verse.id, ref: verse.ref, text: "" }));
     const sample: PrepareResult["sample"] = [];
     if (ready.length) {
       const notes = await generateVerseNotes(ready, data.locale);

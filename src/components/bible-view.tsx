@@ -1,7 +1,13 @@
+import { BibleTranslationSelect } from "./bible-translation-select";
+import { type BibleTranslation } from "@/lib/bible";
+import { bibleErrorCopy } from "@/lib/bible-error-copy";
+import { designCopy } from "@/lib/design-copy";
+import { BibleCopyright } from "@/components/bible-copyright";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Bookmark,
+  BookOpen,
   ChevronLeft,
   ChevronRight,
   Copy,
@@ -35,13 +41,11 @@ import {
 import { chapterToVerses, loadCachedChapter, type RecobroChapter } from "@/lib/recobro";
 import { isSamePlace, useAppStore, type ReadingPlace } from "@/lib/store";
 import type { Verse } from "@/lib/verses";
-import { NviCompare } from "@/components/nvi-compare";
 import { ConcordanceView } from "@/components/concordance-view";
 import { cleanWords } from "@/lib/concordance";
 import { combineVerses, formatVerseRange } from "@/lib/reader-prefs";
 import { copyText, formatVerseMessage } from "@/lib/share";
 import { TextSkeleton } from "@/components/text-skeleton";
-import { friendlyError } from "@/lib/friendly-error";
 import { onTabListKeyDown } from "@/lib/tab-keys";
 
 /** A place to open as soon as the Bible shows, e.g. a verse tapped in a chat. */
@@ -70,6 +74,8 @@ function savedTestament(): Testament | null {
 
 export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
   const { locale, t } = useI18n();
+  const [englishTranslation, setEnglishTranslation] = useState<"bsb" | "kjv">("bsb");
+  const translation = locale === "en" ? englishTranslation : "lbla";
   const [query, setQuery] = useState("");
   const [bookId, setBookId] = useState<string | null>(null);
   const [chapter, setChapter] = useState<number | null>(null);
@@ -85,6 +91,21 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
   const [concordance, setConcordance] = useState<string | null>(null);
   const [fromConcordance, setFromConcordance] = useState(false);
 
+  useEffect(() => {
+    if (!data) return;
+    const expire = () => {
+      if (data.expiresAt <= Date.now()) {
+        setData(null);
+        setReload((n) => n + 1);
+      }
+    };
+    const timer = window.setInterval(expire, 60_000);
+    window.addEventListener("focus", expire);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", expire);
+    };
+  }, [data]);
   const book = bookId ? bookById(bookId) : undefined;
   const parsed = useMemo(() => parseReference(query), [query]);
   const visibleBooks = useMemo(() => filterBooks(query), [query]);
@@ -136,28 +157,22 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
     setLoading(true);
     setError(null);
     setData(null);
-    void loadCachedChapter(book.id, chapter, locale)
+    void loadCachedChapter(book.id, chapter, locale, translation)
       .then((result) => {
         if (cancelled) return;
         setData(result);
         setLoading(false);
-        // The chapters on either side are fetched now, so "next" and
-        // "previous" open at once. A failure here is only a missed head start.
-        for (const near of [chapter + 1, chapter - 1]) {
-          if (near >= 1 && near <= book.chapters) {
-            void loadCachedChapter(book.id, near, locale).catch(() => undefined);
-          }
-        }
+        // Fetch only the chapter explicitly opened by the reader.
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setError(friendlyError(err, t("chapterOpenFail")));
+        setError(bibleErrorCopy(err, locale));
         setLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [book, chapter, locale, t, reload]);
+  }, [book, chapter, locale, translation, t, reload]);
 
   function openBook(next: BibleBook) {
     setBookId(next.id);
@@ -197,10 +212,12 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
           {t("bibleTitle")}
         </button>
         <header>
-          <h1 className="font-serif text-3xl tracking-tight">{t("nviTitle")}</h1>
+          <h1 className="screen-title">{t("nviTitle")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("nviSub")}</p>
         </header>
-        <NviCompare onSend={onSend} />
+        <p className="p-4 text-sm text-muted-foreground">
+          {designCopy(locale).unavailableComparison}
+        </p>
       </div>
     );
   }
@@ -208,6 +225,8 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
   if (book && chapter !== null) {
     return (
       <ChapterReader
+        translation={translation}
+        onTranslation={setEnglishTranslation}
         book={book}
         chapter={chapter}
         data={data}
@@ -266,12 +285,9 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
           <p className="text-xs font-medium tracking-[0.18em] text-primary uppercase">
             {book.testament === "at" ? t("oldTestament") : t("newTestament")}
           </p>
-          <h1 className="mt-2 font-serif text-3xl tracking-tight">
-            {bookName(book, locale)}
-          </h1>
+          <h1 className="mt-2 screen-title">{bookName(book, locale)}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {book.chapters}{" "}
-            {book.chapters === 1 ? t("chapterOne") : t("chapters")} ·{" "}
+            {book.chapters} {book.chapters === 1 ? t("chapterOne") : t("chapters")} ·{" "}
             {recobroSource(locale)}
           </p>
         </header>
@@ -288,9 +304,7 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
                   readingPlace?.bookId === book.id &&
                     readingPlace.chapter === n &&
                     "bg-primary text-primary-foreground",
-                  bookmarks.some(
-                    (place) => place.bookId === book.id && place.chapter === n,
-                  ) &&
+                  bookmarks.some((place) => place.bookId === book.id && place.chapter === n) &&
                     !(readingPlace?.bookId === book.id && readingPlace.chapter === n) &&
                     "ring-1 ring-primary/40",
                 )}
@@ -316,10 +330,8 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
   return (
     <div className="flex flex-col gap-5">
       <header>
-        <h1 className="font-serif text-3xl tracking-tight">{t("bibleTitle")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t("bibleSub")}
-        </p>
+        <h1 className="screen-title">{designCopy(locale).bibleTitle}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{designCopy(locale).bibleSub}</p>
       </header>
       <form
         className="flex gap-2"
@@ -352,32 +364,7 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
           {t("concordanceSearchFor", { q: cleanWords(query) })}
         </button>
       ) : null}
-      <button
-        type="button"
-        onClick={() => setCompare(true)}
-        className="flex w-full items-center gap-3 rounded-xl bg-card px-4 py-4 text-left shadow-paper @max-[16rem]:flex-col @max-[16rem]:items-start transition-transform duration-150 ease-out active:scale-[0.98]"
-      >
-        <Languages className="size-5 shrink-0 text-primary" />
-        <span className="min-w-0">
-          <span className="block font-medium">{t("nviTitle")}</span>
-          <span className="mt-0.5 block text-sm text-muted-foreground">
-            {t("nviCardLine")}
-          </span>
-        </span>
-      </button>
-      <button
-        type="button"
-        onClick={() => setConcordance("")}
-        className="flex w-full items-center gap-3 rounded-xl bg-card px-4 py-4 text-left shadow-paper @max-[16rem]:flex-col @max-[16rem]:items-start transition-transform duration-150 ease-out active:scale-[0.98]"
-      >
-        <Search className="size-5 shrink-0 text-primary" />
-        <span className="min-w-0">
-          <span className="block font-medium">{t("concordance")}</span>
-          <span className="mt-0.5 block text-sm text-muted-foreground">
-            {t("concordanceLine")}
-          </span>
-        </span>
-      </button>
+
       {readingPlace ? (
         <PlaceCard
           place={readingPlace}
@@ -386,9 +373,8 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
           onOpen={() => resumePlace(readingPlace)}
         />
       ) : null}
-      {bookmarks.filter(
-        (place) => !readingPlace || !isSamePlace(place, readingPlace),
-      ).length > 0 ? (
+      {bookmarks.filter((place) => !readingPlace || !isSamePlace(place, readingPlace)).length >
+      0 ? (
         <section className="flex flex-col gap-2">
           <h2 className="text-xs font-medium tracking-[0.16em] text-primary uppercase">
             {t("bookmarks")}
@@ -397,13 +383,13 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
             {bookmarks
               .filter((place) => !readingPlace || !isSamePlace(place, readingPlace))
               .map((place) => (
-              <PlaceCard
-                key={`${place.bookId}-${place.chapter}-${place.verse ?? 0}`}
-                place={place}
-                label={t("bookmark")}
-                onOpen={() => resumePlace(place)}
-              />
-            ))}
+                <PlaceCard
+                  key={`${place.bookId}-${place.chapter}-${place.verse ?? 0}`}
+                  place={place}
+                  label={t("bookmark")}
+                  onOpen={() => resumePlace(place)}
+                />
+              ))}
           </div>
         </section>
       ) : null}
@@ -426,7 +412,7 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
             role="tablist"
             aria-label={t("bibleTitle")}
             onKeyDown={onTabListKeyDown}
-            className="grid grid-cols-1 @min-[16rem]:grid-cols-2 gap-1 rounded-xl bg-secondary p-1"
+            className="testament-tabs grid grid-cols-1 @min-[16rem]:grid-cols-2"
           >
             {(["at", "nt"] as const).map((id) => {
               const active = testament === id;
@@ -439,13 +425,13 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
                   tabIndex={active ? 0 : -1}
                   onClick={() => pickTestament(id)}
                   className={cn(
-                    "flex min-h-12 flex-col items-center justify-center rounded-lg px-2 py-1.5 text-center transition-colors duration-150",
+                    "flex min-h-14 flex-col items-center justify-center gap-1 px-2 py-2 text-center transition-colors duration-150",
                     active
-                      ? "bg-card text-foreground shadow-paper"
+                      ? "border-b-2 border-primary text-primary"
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  <span className="font-serif text-base leading-tight">
+                  <span className="text-sm font-semibold leading-tight">
                     {id === "at" ? t("oldTestament") : t("newTestament")}
                   </span>
                   <span className="text-[0.7rem] tracking-wide">
@@ -466,7 +452,7 @@ export function BibleView({ onSend, jump, onJumpDone, onAsk }: BibleViewProps) {
           rel="noreferrer"
           className="underline decoration-primary/40 underline-offset-2"
         >
-          {locale === "en" ? "text.recoveryversion.bible" : "texto.versionrecobro.org"}
+          {"API.Bible"}
         </a>
         .
       </p>
@@ -492,50 +478,43 @@ function PlaceCard({
     <button
       type="button"
       onClick={onOpen}
-      className="flex w-full items-center gap-3 rounded-xl bg-card px-4 py-4 text-left shadow-paper @max-[16rem]:flex-col @max-[16rem]:items-start transition-transform duration-150 ease-out active:scale-[0.98]"
+      className="reading-resume flex w-full items-center gap-4 rounded-xl px-5 py-5 text-left @max-[16rem]:flex-col @max-[16rem]:items-start"
     >
-      <Bookmark className="size-5 shrink-0 fill-primary text-primary" />
+      <Bookmark className="size-5 shrink-0 text-current" />
       <span className="min-w-0">
-        <span className="block text-xs font-medium tracking-[0.14em] text-primary uppercase">
+        <span className="block text-xs font-medium tracking-[0.14em] text-current uppercase">
           {label}
         </span>
-        <span className="mt-1 block font-serif text-xl tracking-tight">
+        <span className="mt-1 block text-xl font-bold tracking-tight">
           {formatPlace(book, place.chapter, place.verse, locale)}
         </span>
-        {line ? (
-          <span className="mt-0.5 block text-sm text-muted-foreground">{line}</span>
-        ) : null}
+        {line ? <span className="mt-0.5 block text-sm text-current">{line}</span> : null}
       </span>
     </button>
   );
 }
 
 /** One testament's books, two to a row so the whole list fits at a glance. */
-function BookGrid({
-  books,
-  onOpen,
-}: {
-  books: BibleBook[];
-  onOpen: (book: BibleBook) => void;
-}) {
-  const { locale } = useI18n();
+function BookGrid({ books, onOpen }: { books: BibleBook[]; onOpen: (book: BibleBook) => void }) {
+  const { locale, t } = useI18n();
   const readingPlace = useAppStore((s) => s.readingPlace);
   return (
-    <div role="tabpanel" className="grid grid-cols-1 @min-[16rem]:grid-cols-2 gap-2">
+    <div role="tabpanel" className="collection-list">
       {books.map((item) => (
         <button
           key={item.id}
           type="button"
           onClick={() => onOpen(item)}
-          className={cn(
-            "flex min-h-12 items-center justify-between gap-2 rounded-lg bg-card px-3 py-2 text-left text-sm shadow-paper transition-transform duration-150 ease-out active:scale-[0.97]",
-            readingPlace?.bookId === item.id && "ring-1 ring-primary/40",
-          )}
+          className={cn("book-row", readingPlace?.bookId === item.id && "bg-secondary")}
         >
-          <span className="min-w-0 font-medium leading-snug">{bookName(item, locale)}</span>
-          <span className="shrink-0 text-[0.65rem] tracking-[0.12em] text-muted-foreground uppercase">
-            {bookAbbr(item, locale)}
+          <BookOpen className="size-6 shrink-0 text-primary" aria-hidden />
+          <span className="min-w-0 flex-1">
+            <strong className="block text-lg leading-snug">{bookName(item, locale)}</strong>
+            <span className="text-sm text-muted-foreground">
+              {item.chapters} {item.chapters === 1 ? t("chapterOne") : t("chapters")}
+            </span>
           </span>
+          <ChevronRight className="size-5 shrink-0 text-primary" aria-hidden />
         </button>
       ))}
     </div>
@@ -554,9 +533,7 @@ function BookGroup({
   const { locale } = useI18n();
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="text-xs font-medium tracking-[0.16em] text-primary uppercase">
-        {title}
-      </h2>
+      <h2 className="text-xs font-medium tracking-[0.16em] text-primary uppercase">{title}</h2>
       <div className="overflow-hidden rounded-xl bg-card shadow-paper">
         {books.map((item, index) => (
           <button
@@ -580,6 +557,8 @@ function BookGroup({
 }
 
 function ChapterReader({
+  translation,
+  onTranslation,
   book,
   chapter,
   data,
@@ -593,6 +572,8 @@ function ChapterReader({
   onSend,
   onAsk,
 }: {
+  translation: BibleTranslation;
+  onTranslation: (value: "bsb" | "kjv") => void;
   book: BibleBook;
   chapter: number;
   data: RecobroChapter | null;
@@ -614,9 +595,7 @@ function ChapterReader({
   const highlights = useAppStore((s) => s.highlights);
   const toggleHighlight = useAppStore((s) => s.toggleHighlight);
   const displayName = useAppStore((s) => s.displayName);
-  const [picked, setPicked] = useState<number[]>(() =>
-    selected !== null ? [selected] : [],
-  );
+  const [picked, setPicked] = useState<number[]>(() => (selected !== null ? [selected] : []));
 
   useEffect(() => {
     setPicked(selected !== null ? [selected] : []);
@@ -628,18 +607,11 @@ function ChapterReader({
   }, [selected]);
 
   const verses = data && book ? chapterToVerses(book, data, locale) : [];
-  const pickedSorted = useMemo(
-    () => [...picked].sort((a, b) => a - b),
-    [picked],
-  );
+  const pickedSorted = useMemo(() => [...picked].sort((a, b) => a - b), [picked]);
   const pickedVerses = useMemo(
     () =>
       pickedSorted
-        .map((n) =>
-          verses.find(
-            (item) => item.id === recobroVerseId(book.id, chapter, n, locale),
-          ),
-        )
+        .map((n) => verses.find((item) => item.id === recobroVerseId(book.id, chapter, n, locale)))
         .filter((item): item is Verse => Boolean(item)),
     [pickedSorted, verses, book.id, chapter, locale],
   );
@@ -658,8 +630,7 @@ function ChapterReader({
   };
   const marked = bookmarks.some((place) => isSamePlace(place, currentPlace));
   const chapterMarked = bookmarks.some(
-    (place) =>
-      place.bookId === book.id && place.chapter === chapter && !place.verse,
+    (place) => place.bookId === book.id && place.chapter === chapter && !place.verse,
   );
   const markedVerses = new Set(
     bookmarks
@@ -670,8 +641,7 @@ function ChapterReader({
   const name = bookName(book, locale);
   const abbr = bookAbbr(book, locale);
   const allHighlighted =
-    pickedVerses.length > 0 &&
-    pickedVerses.every((v) => highlights.includes(v.id));
+    pickedVerses.length > 0 && pickedVerses.every((v) => highlights.includes(v.id));
 
   useEffect(() => {
     if (lastPicked === null) return;
@@ -681,9 +651,7 @@ function ChapterReader({
 
   function togglePick(n: number) {
     setPicked((prev) => {
-      const next = prev.includes(n)
-        ? prev.filter((item) => item !== n)
-        : [...prev, n];
+      const next = prev.includes(n) ? prev.filter((item) => item !== n) : [...prev, n];
       onSelected(next.length ? next[next.length - 1]! : null);
       return next;
     });
@@ -765,12 +733,18 @@ function ChapterReader({
         </div>
       </div>
       <header>
-        <h1 className="font-serif text-3xl tracking-tight">
+        <h1 className="screen-title">
           {name} {chapter}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {recobroSource(locale)}
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">{recobroSource(locale, translation)}</p>
+        {locale === "en" && (
+          <BibleTranslationSelect value={translation} onChange={onTranslation} locale={locale} />
+        )}
+        <BibleCopyright
+          notice={data?.copyright}
+          fumsToken={data?.fumsToken}
+          fumsId={data?.fumsId}
+        />
       </header>
       {loading ? (
         <div className="rounded-xl bg-card px-4 py-5 shadow-paper">
@@ -779,7 +753,7 @@ function ChapterReader({
       ) : null}
       {error ? (
         <div className="flex flex-col items-center gap-3 rounded-xl bg-card px-6 py-10 text-center shadow-paper">
-          <p className="font-serif text-xl">{t("couldNotRead")}</p>
+          <p className="font-semibold text-xl">{t("couldNotRead")}</p>
           <p className="max-w-xs text-sm text-muted-foreground">{error}</p>
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button type="button" onClick={onRetry}>
@@ -820,10 +794,7 @@ function ChapterReader({
                     ) : null}
                   </span>
                   <span
-                    className={cn(
-                      "reader-verse-text text-foreground",
-                      lit && "verse-highlight",
-                    )}
+                    className={cn("reader-verse-text text-foreground", lit && "verse-highlight")}
                   >
                     {verse.text}
                   </span>
@@ -857,7 +828,9 @@ function ChapterReader({
           <div className="flex gap-2">
             <Button className="min-w-0 flex-1" onClick={() => onSend(combined)}>
               <Send />
-              <span className="truncate">{t("sendN", { ref: `${abbr} ${chapter}:${rangeLabel}` })}</span>
+              <span className="truncate">
+                {t("sendN", { ref: `${abbr} ${chapter}:${rangeLabel}` })}
+              </span>
             </Button>
             {onAsk ? (
               <Button
@@ -896,7 +869,9 @@ function ChapterReader({
               onClick={handleHighlight}
             >
               <Highlighter
-                className={cn(allHighlighted && "fill-amber-400 text-amber-700 dark:text-amber-300")}
+                className={cn(
+                  allHighlighted && "fill-amber-400 text-amber-700 dark:text-amber-300",
+                )}
               />
             </Button>
             <Button
@@ -929,8 +904,7 @@ function ChapterReader({
             >
               <Heart
                 className={cn(
-                  pickedVerses.some((v) => favorites.includes(v.id)) &&
-                    "fill-primary text-primary",
+                  pickedVerses.some((v) => favorites.includes(v.id)) && "fill-primary text-primary",
                 )}
               />
             </Button>
@@ -939,8 +913,8 @@ function ChapterReader({
       ) : (
         <p className="text-center text-xs text-muted-foreground">{t("tapVerse")}</p>
       )}
-      <p className="pb-2 text-center text-[0.7rem] leading-relaxed text-muted-foreground">
-        {data?.copyright ?? recobroCopyright(locale)}.{" "}
+      <div className="pb-2 text-center text-[0.7rem] leading-relaxed text-muted-foreground">
+        {data?.copyright}{" "}
         <a
           href={officialUrl}
           target="_blank"
@@ -949,7 +923,7 @@ function ChapterReader({
         >
           {t("source")}
         </a>
-      </p>
+      </div>
     </div>
   );
 }

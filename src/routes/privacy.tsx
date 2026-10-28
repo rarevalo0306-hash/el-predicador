@@ -19,7 +19,7 @@ const en: LegalText = {
   lang: "en",
   label: "English",
   title: "Privacy Policy",
-  effective: `Effective ${SITE.effective}`,
+  effective: `Effective ${SITE.privacyEffective}`,
   intro: (
     <p>
       {SITE.name} ({SITE.altName}) is a personal app for sending Bible verses, short words of
@@ -76,8 +76,9 @@ const en: LegalText = {
       body: (
         <p>
           You can use the app without signing in. Then everything you save stays on your own device,
-          in your browser's storage, and nothing is sent to us. Language, font size and reading
-          preferences are always kept on the device.
+          in your browser's storage, and account data is not sent to us. Reading requests and
+          anonymous licensing reports go to API.Bible. Language, font size and reading preferences
+          are always kept on the device.
         </p>
       ),
     },
@@ -96,8 +97,9 @@ const en: LegalText = {
       heading: "What we do not do",
       body: (
         <p>
-          We show no advertising, run no analytics or tracking, build no profiles, and never use the
-          numbers you add for anything other than the messages you yourself send or schedule.
+          We show no advertising and do not sell data. API.Bible receives anonymous reading-use
+          reports for publisher licensing. We never use the numbers you add for anything other than
+          the messages you yourself send or schedule.
         </p>
       ),
     },
@@ -113,6 +115,21 @@ const en: LegalText = {
             </li>
             <li>
               <strong>Supabase</strong> hosts the database where account data is stored.
+            </li>
+            <li>
+              <strong>API.Bible</strong> supplies LBLA, BSB and KJV. It receives Bible references requested by
+              the backend and licensing usage reports from the web reader, including anonymous
+              device/session identifiers and network information. We do not send it your account ID,
+              email or contacts. With your consent, AI questions, conversation history, Bible references and personal drafting details are sent to DeepSeek. Bible text is not automatically attached.
+            </li>
+            <li>
+              <strong>Google and Apple</strong> authenticate you if you choose their login. They
+              provide an account identifier and available profile details; we do not receive your
+              Google or Apple password.
+            </li>
+            <li>
+              <strong>FormSubmit</strong> forwards new contact registrations to the configured
+              support inbox.
             </li>
             <li>
               <strong>Vercel</strong> hosts the app itself.
@@ -154,8 +171,24 @@ const en: LegalText = {
       body: (
         <p>
           As long as your account exists. You can delete any person or schedule inside the app;
-          deleting a schedule also deletes its delivery receipts. To delete your whole account,
-          write to <Contact /> from the account's e-mail address and we will remove it.
+          deleting a schedule also deletes its delivery receipts. To delete your account, open
+          Profile → Delete my account. This removes your cloud state, associated people, schedules,
+          delivery receipts and linked registrations, ends your sessions and revokes Apple access
+          when used. Messages already delivered cannot be recalled. For older contact registrations
+          not linked to an account, or copies previously forwarded to the support inbox, write to
+          <Contact /> from your account email so we can verify and process removal.
+        </p>
+      ),
+    },
+    {
+      heading: "Readings on your iPhone",
+      body: (
+        <p>
+          The native iPhone library stores the texts you choose on the device, independently of your
+          web account. It is not sent to our server. You can delete each reading in My readings;
+          uninstalling the app removes this local library. iPhone system backups may retain a copy
+          according to your Apple settings. Sharing a reading sends it to the destination you
+          choose.
         </p>
       ),
     },
@@ -192,7 +225,7 @@ const es: LegalText = {
   lang: "es",
   label: "Español",
   title: "Política de privacidad",
-  effective: `Vigente desde el ${SITE.effective}`,
+  effective: `Vigente desde el ${SITE.privacyEffective}`,
   intro: (
     <p>
       {SITE.name} ({SITE.altName}) es una app personal para enviar versículos de la Biblia, palabras
@@ -249,8 +282,10 @@ const es: LegalText = {
       body: (
         <p>
           Puedes usar la app sin iniciar sesión. En ese caso todo lo que guardas se queda en tu
-          propio dispositivo, en el almacenamiento del navegador, y no se nos envía nada. El idioma,
-          el tamaño de letra y las preferencias de lectura siempre se quedan en el dispositivo.
+          propio dispositivo, en el almacenamiento del navegador, y no se nos envían datos de
+          cuenta. API.Bible recibe solicitudes de lectura e informes anónimos de uso para su
+          licencia. El idioma, el tamaño de letra y las preferencias de lectura siempre se quedan en
+          el dispositivo.
         </p>
       ),
     },
@@ -272,9 +307,9 @@ const es: LegalText = {
       heading: "Lo que no hacemos",
       body: (
         <p>
-          No mostramos publicidad, no usamos analítica ni rastreo, no armamos perfiles y nunca
-          usamos los números que agregas para otra cosa que los mensajes que tú mismo envías o
-          programas.
+          No mostramos publicidad ni vendemos datos. API.Bible recibe informes anónimos de uso de
+          las lecturas para su licencia editorial. Nunca usamos los números que agregas para otra
+          cosa que los mensajes que tú mismo envías o programas.
         </p>
       ),
     },
@@ -291,6 +326,21 @@ const es: LegalText = {
             <li>
               <strong>Supabase</strong> aloja la base de datos donde se guardan los datos de la
               cuenta.
+            </li>
+            <li>
+              <strong>API.Bible</strong> proporciona LBLA, BSB y KJV. Recibe las referencias consultadas por el
+              servidor y los informes de uso del lector web para la licencia, con identificadores
+              anónimos de dispositivo/sesión e información de red. No le enviamos tu identificador
+              de cuenta, correo ni contactos. Con tu consentimiento, enviamos a DeepSeek preguntas, historial, referencias bíblicas y detalles para redactar. No adjuntamos automáticamente texto bíblico.
+            </li>
+            <li>
+              <strong>Google y Apple</strong> te autentican si eliges ese acceso. Proporcionan un
+              identificador y los datos de perfil disponibles; no recibimos tu contraseña de Google
+              o Apple.
+            </li>
+            <li>
+              <strong>FormSubmit</strong> reenvía los nuevos registros de contacto al correo de
+              soporte configurado.
             </li>
             <li>
               <strong>Vercel</strong> aloja la app.
@@ -335,7 +385,24 @@ const es: LegalText = {
         <p>
           Mientras exista tu cuenta. Puedes eliminar cualquier persona o programación dentro de la
           app; al eliminar una programación se eliminan también sus comprobantes de envío. Para
-          eliminar toda tu cuenta, escribe a <Contact /> desde el correo de la cuenta y la borramos.
+          eliminar tu cuenta, abre Perfil → Eliminar mi cuenta. Se eliminan el estado en la nube,
+          personas, programaciones, comprobantes y registros vinculados; se cierran las sesiones y
+          se revoca el acceso de Apple cuando se haya usado. No se pueden retirar mensajes ya
+          entregados. Para registros antiguos sin vínculo con la cuenta o copias enviadas al correo
+          de soporte, escribe a <Contact /> desde el correo de la cuenta para verificar y tramitar
+          su retirada.
+        </p>
+      ),
+    },
+    {
+      heading: "Lecturas en tu iPhone",
+      body: (
+        <p>
+          La biblioteca nativa guarda en el dispositivo los textos que eliges, de forma
+          independiente de tu cuenta web. No se envía a nuestro servidor. Puedes eliminar cada
+          lectura en Mis lecturas; al desinstalar se elimina esta biblioteca local. Las copias de
+          seguridad del iPhone pueden conservar una copia según tus ajustes de Apple. Compartir una
+          lectura la envía al destino que tú elijas.
         </p>
       ),
     },

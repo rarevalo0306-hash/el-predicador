@@ -9,4 +9,5 @@ export const SITE = {
   contactEmail: "rarevalo0306@gmail.com",
   /** Date the current wording took effect. */
   effective: "2026-09-19",
+  privacyEffective: "2026-10-23",
 } as const;

@@ -1,0 +1,526 @@
+{
+  "sourceLanguage": "es",
+  "strings": {
+    "Aceptar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        }
+      }
+    },
+    "Cancelar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "Cerrar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        }
+      }
+    },
+    "Guardar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        }
+      }
+    },
+    "Reintentar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        }
+      }
+    },
+    "Atrás": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        }
+      }
+    },
+    "Recargar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reload"
+          }
+        }
+      }
+    },
+    "Información": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Information"
+          }
+        }
+      }
+    },
+    "Más opciones": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More options"
+          }
+        }
+      }
+    },
+    "Nueva nota": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New note"
+          }
+        }
+      }
+    },
+    "Mis lecturas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My readings"
+          }
+        }
+      }
+    },
+    "No se pudo entrar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not sign in"
+          }
+        }
+      }
+    },
+    "Abrir enlace": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open link"
+          }
+        }
+      }
+    },
+    "¿Abrir fuera de The Preacher?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open outside The Preacher?"
+          }
+        }
+      }
+    },
+    "Cargando Predicador": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading The Preacher"
+          }
+        }
+      }
+    },
+    "No se pudo abrir Predicador": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not open The Preacher"
+          }
+        }
+      }
+    },
+    "No se pudieron cargar tus lecturas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not load your readings"
+          }
+        }
+      }
+    },
+    "Tu lectura, siempre contigo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your notes, always with you"
+          }
+        }
+      }
+    },
+    "Añadir lectura": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add reading"
+          }
+        }
+      }
+    },
+    "Buscar en tus lecturas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search your readings"
+          }
+        }
+      }
+    },
+    "Título o referencia": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Title or reference"
+          }
+        }
+      }
+    },
+    "Por ejemplo: Juan 3:16": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For example: John 3:16"
+          }
+        }
+      }
+    },
+    "Lectura": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading"
+          }
+        }
+      }
+    },
+    "Texto de la lectura": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading text"
+          }
+        }
+      }
+    },
+    "Guardar lectura": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save reading"
+          }
+        }
+      }
+    },
+    "No se pudo guardar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not save"
+          }
+        }
+      }
+    },
+    "Ver fuente": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View source"
+          }
+        }
+      }
+    },
+    "Compartir lectura": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share reading"
+          }
+        }
+      }
+    },
+    "Eliminar lectura": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete reading"
+          }
+        }
+      }
+    },
+    "¿Eliminar esta lectura del iPhone?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this reading from this iPhone?"
+          }
+        }
+      }
+    },
+    "Notas personales": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal notes"
+          }
+        }
+      }
+    },
+    "Ayuda y privacidad": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Help and privacy"
+          }
+        }
+      }
+    },
+    "Política de privacidad": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy policy"
+          }
+        }
+      }
+    },
+    "Términos de uso": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terms of use"
+          }
+        }
+      }
+    },
+    "Ayuda y soporte": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Help and support"
+          }
+        }
+      }
+    },
+    "Contactar por correo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contact by email"
+          }
+        }
+      }
+    },
+    "El Predicador": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Preacher"
+          }
+        }
+      }
+    },
+    "The Preacher": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Preacher"
+          }
+        }
+      }
+    },
+    "Versión %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@"
+          }
+        }
+      }
+    },
+    "Escribe tus propias notas y reflexiones. Se guardan en este iPhone; la lectura de LBLA requiere conexión.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write your own notes and reflections. They are saved on this iPhone; reading LBLA requires an internet connection."
+          }
+        }
+      }
+    },
+    "Se guarda solo en este iPhone, independientemente de la cuenta. Cerrar sesión o eliminar la cuenta web no borra estas notas. Puedes eliminarlas desde Mis lecturas. Al desinstalar la app se eliminan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved only on this iPhone, independently of your account. Signing out or deleting your web account does not delete these notes. You can delete them in My readings. Uninstalling the app removes them."
+          }
+        }
+      }
+    },
+    "Lee LBLA en línea y guarda referencias. Mis lecturas permite escribir tus propias notas. No incluye descargas de LBLA ni uso de su texto con IA.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read LBLA online in Spanish and save references. My readings lets you write your own notes. LBLA downloads and AI use of its text are not included."
+          }
+        }
+      }
+    },
+    "Usa Nueva nota para escribir tus reflexiones. Los favoritos bíblicos conservan referencias y requieren conexión para consultar LBLA. No copies el texto licenciado a las notas para usarlo sin conexión.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use New note to write your reflections. Bible favorites store references and require a connection to read LBLA. Do not copy licensed Scripture into notes for offline use."
+          }
+        }
+      }
+    },
+    "Estas lecturas son independientes de los guardados de tu cuenta web. Compártelas para conservar una copia antes de desinstalar la app.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These notes are independent of your web account favorites. Share them to keep a copy before uninstalling the app."
+          }
+        }
+      }
+    },
+    "No pudimos abrir tus lecturas. El archivo original se conserva.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We could not open your readings. The original file has been preserved."
+          }
+        }
+      }
+    },
+    "Escribe un título (hasta 200 caracteres) y una lectura (hasta 50.000).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a title (up to 200 characters) and a reading (up to 50,000 characters)."
+          }
+        }
+      }
+    },
+    "No pudimos guardar el cambio. Tus lecturas anteriores se conservan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We could not save this change. Your previous readings have been preserved."
+          }
+        }
+      }
+    },
+    "No se pudo completar el acceso. Vuelve a intentarlo. Puedes seguir leyendo sin iniciar sesión.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign-in could not be completed. Try again. You can keep reading without signing in."
+          }
+        }
+      }
+    },
+    "No pudimos conectar con The Preacher. Comprueba tu conexión y vuelve a intentarlo. Tus notas personales siguen disponibles en Mis lecturas.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We could not connect to The Preacher. Check your connection and try again. Your personal notes are still available in My readings."
+          }
+        }
+      }
+    },
+    "The Preacher no está disponible en este momento. Vuelve a intentarlo en unos minutos.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Preacher is unavailable right now. Try again in a few minutes."
+          }
+        }
+      }
+    },
+    "La lectura se interrumpió. Pulsa Reintentar para volver a abrirla.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading was interrupted. Tap Try again to reopen it."
+          }
+        }
+      }
+    },
+    "Abrir enlace fuera de The Preacher": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open link outside The Preacher"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

@@ -3,6 +3,18 @@ import type { Locale } from "@/lib/i18n";
 import { t } from "@/lib/i18n";
 import type { Verse } from "@/lib/verses";
 
+/** Query parameter that opens the Bible reader at a passage. */
+export const READ_PARAM = "leer";
+
+/**
+ * Link that opens the app's reader at the passage, so whoever gets a licensed
+ * reference without its text can read it there. Kept readable in the message.
+ */
+export function passageUrl(ref: string) {
+  const value = encodeURIComponent(ref.trim()).replace(/%20/g, "+").replace(/%3A/gi, ":");
+  return `https://www.thepreacher.app/?${READ_PARAM}=${value}`;
+}
+
 export function formatVerseMessage(
   verse: Verse,
   note?: string,
@@ -10,6 +22,19 @@ export function formatVerseMessage(
   locale: Locale = "es",
 ) {
   const lines: string[] = [];
+  const englishPublicText = verse.source === "Berean Standard Bible (BSB)";
+  if (verse.copyright && !englishPublicText) {
+    return [
+      verse.ref,
+      verse.source,
+      passageUrl(verse.ref),
+      note?.trim(),
+      fromName?.trim() ? t(locale, "signOff", { name: fromName.trim() }) : "",
+      "API.Bible — https://api.bible",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
   if (
     verse.id === "evangelio-camino" ||
     verse.id.startsWith("caso-") ||
@@ -18,11 +43,12 @@ export function formatVerseMessage(
   ) {
     lines.push(verse.text);
   } else {
-    lines.push(`«${verse.text}»`, `— ${verse.ref}`);
+    lines.push(verse.text, "", verse.ref);
     if (verse.source) {
       lines.push(verse.source);
     }
   }
+  if (verse.copyright && !englishPublicText) lines.push(verse.copyright, "API.Bible");
   // The verse comes whole and first; the personal line follows it.
   const trimmedNote = note?.trim();
   if (trimmedNote) {

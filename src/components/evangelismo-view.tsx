@@ -1,3 +1,4 @@
+import { requestAIConsent } from "@/lib/ai-consent";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, BookOpen, ChevronRight, Send, Square } from "lucide-react";
 import { toast } from "sonner";
@@ -25,7 +26,6 @@ import {
   type DoctrineSide,
   type DoctrineTopic,
 } from "@/lib/doctrine";
-import { NwtCompare } from "@/components/nwt-compare";
 import { Textarea } from "@/components/ui/textarea";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { AskError, composeStream } from "@/lib/ask-client";
@@ -63,7 +63,7 @@ export function EvangelismoView({ onSend, onReadVerse }: EvangelismoViewProps) {
           {t("preachFor")}
         </p>
         {/* The title names the part on screen, so Doctrina never reads "Evangelismo". */}
-        <h1 className="mt-2 font-serif text-3xl tracking-tight">
+        <h1 className="mt-2 screen-title">
           {pane === "doctrina" ? t("doctrine") : pane === "casos" ? t("cases") : t("theWay")}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("evangelismSub")}</p>
@@ -170,13 +170,13 @@ function TopicRow({
     <button
       type="button"
       onClick={onClick}
-      className="group flex w-full items-center gap-3 rounded-xl bg-card px-4 py-4 text-left shadow-paper transition-colors duration-150 hover:bg-secondary/80 active:bg-secondary"
+      className="group flex w-full items-center gap-3 rounded-xl bg-card px-4 py-4 text-left transition-colors duration-150 hover:bg-secondary/80 active:bg-secondary"
     >
       <span className="w-7 shrink-0 font-serif text-lg leading-none text-primary/85 tabular-nums">
         {String(index + 1).padStart(2, "0")}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block font-serif text-xl leading-snug tracking-tight">{title}</span>
+        <span className="block font-semibold text-xl leading-snug tracking-tight">{title}</span>
         <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">{summary}</span>
       </span>
       <ChevronRight className="size-5 shrink-0 text-muted-foreground transition-transform duration-150 group-hover:translate-x-0.5" />
@@ -272,9 +272,9 @@ function DoctrineDetail({
         {t("doctrine")}
       </button>
       <header>
-        <h2 className="font-serif text-3xl tracking-tight">{copy.title}</h2>
+        <h2 className="screen-title">{copy.title}</h2>
         <p className="mt-2 text-sm text-muted-foreground">{copy.who}</p>
-        <p className="mt-3 font-serif text-xl leading-snug">{copy.issue}</p>
+        <p className="mt-3 font-semibold text-xl leading-snug">{copy.issue}</p>
       </header>
       {mine ? <SideCard side={mine} featured letter={copy.letter} t={t} /> : null}
       {others.length > 0 ? (
@@ -292,7 +292,7 @@ function DoctrineDetail({
         {sending ? t("wait") : t("sendThisMessage")}
       </Button>
       <section className="flex flex-col gap-3">
-        <h3 className="font-serif text-2xl tracking-tight">{t("versesLabel")}</h3>
+        <h3 className="text-2xl font-bold tracking-tight">{t("versesLabel")}</h3>
         {verses.map((verse) => (
           <VerseCard key={verse.id} verse={verse} onSend={onSend} />
         ))}
@@ -315,7 +315,7 @@ function LetterBody({ text }: { text: string }) {
                 key={index}
                 className={
                   index === 0
-                    ? "font-serif text-xl tracking-tight"
+                    ? "font-semibold text-xl tracking-tight"
                     : "mt-3 font-serif text-lg leading-snug"
                 }
               >
@@ -359,13 +359,13 @@ function SideCard({
   t: (key: "myTeaching" | "whyThis" | "hasBasis" | "noBasis") => string;
 }) {
   return (
-    <article className="rounded-xl bg-card px-4 py-4 shadow-paper">
+    <article className="rounded-xl bg-card px-4 py-4">
       {featured ? (
         <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
           {t("myTeaching")}
         </p>
       ) : null}
-      <h3 className="mt-1 font-serif text-2xl tracking-tight">{side.name}</h3>
+      <h3 className="mt-1 text-2xl font-bold tracking-tight">{side.name}</h3>
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{side.line}</p>
       {side.why ? (
         <p className="mt-3 text-sm leading-relaxed">
@@ -462,14 +462,14 @@ function CaseDetail({
         {t("cases")}
       </button>
       <header>
-        <h2 className="font-serif text-3xl tracking-tight">{copy.title}</h2>
+        <h2 className="screen-title">{copy.title}</h2>
         <p className="mt-2 text-sm text-muted-foreground">{copy.who}</p>
       </header>
-      <div className="rounded-xl bg-card px-4 py-4 shadow-paper">
+      <div className="rounded-xl bg-card px-4 py-4">
         <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
           {t("howToPreach")}
         </p>
-        <p className="mt-2 font-serif text-xl leading-snug">{copy.issue}</p>
+        <p className="mt-2 font-semibold text-xl leading-snug">{copy.issue}</p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{copy.approach}</p>
         <ul className="mt-4 flex flex-col gap-2">
           {copy.points.map((point) => (
@@ -480,7 +480,7 @@ function CaseDetail({
         </ul>
       </div>
       {written ? (
-        <section className="rounded-xl bg-card px-4 py-4 shadow-paper">
+        <section className="rounded-xl bg-card px-4 py-4">
           <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
             {t("caseMessage")}
           </p>
@@ -527,9 +527,13 @@ function CaseDetail({
         }
       />
       <CaseComposer entry={copy} onSend={onSend} onReadVerse={onReadVerse} />
-      {entry.id === "testigos" ? <NwtCompare onSend={onSend} /> : null}
+      {entry.id === "testigos" ? (
+        <p className="p-4 text-sm text-muted-foreground">
+          Comparación retirada. Consulta las referencias en La Biblia de las Américas (LBLA).
+        </p>
+      ) : null}
       <section className="flex flex-col gap-3">
-        <h3 className="font-serif text-2xl tracking-tight">{t("versesLabel")}</h3>
+        <h3 className="text-2xl font-bold tracking-tight">{t("versesLabel")}</h3>
         {verses.map((verse) => (
           <VerseCard key={verse.id} verse={verse} onSend={onSend} />
         ))}
@@ -574,6 +578,7 @@ function CaseComposer({
 
   async function write() {
     if (writing.current) return;
+    if (!requestAIConsent(locale, "compose")) return;
     const controller = new AbortController();
     writing.current = controller;
     writingSince.current = Date.now();
@@ -584,7 +589,7 @@ function CaseComposer({
     let text = "";
     try {
       const { remaining: left } = await composeStream(
-        { caseId: entry.id, details, locale },
+        { caseId: entry.id, details, locale, aiConsent: true },
         (piece) => {
           text += piece;
           setDraft(text);
@@ -628,11 +633,11 @@ function CaseComposer({
   }
 
   return (
-    <section className="rounded-xl bg-card px-4 py-4 shadow-paper">
+    <section className="rounded-xl bg-card px-4 py-4">
       <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
         {t("caseAiKicker")}
       </p>
-      <h3 className="mt-1 font-serif text-2xl tracking-tight">{t("caseAiTitle")}</h3>
+      <h3 className="mt-1 text-2xl font-bold tracking-tight">{t("caseAiTitle")}</h3>
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t("caseAiHint")}</p>
       {!isPending && !user ? (
         <p className="mt-3 rounded-lg border border-border bg-secondary p-3 text-sm">
@@ -781,7 +786,7 @@ function CaminoPane({ onSend }: { onSend: (verse: Verse) => void }) {
       </div>
       <section className="flex flex-col gap-4">
         <header>
-          <h2 className="font-serif text-2xl tracking-tight">{t("theWay")}</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{t("theWay")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{t("theWaySub")}</p>
         </header>
         <ol className="flex flex-col gap-4">
@@ -801,7 +806,7 @@ function CaminoPane({ onSend }: { onSend: (verse: Verse) => void }) {
       </section>
       <section className="flex flex-col gap-4">
         <header>
-          <h2 className="font-serif text-2xl tracking-tight">{t("forYouPreacher")}</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{t("forYouPreacher")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{t("forYouSub")}</p>
         </header>
         <div className="flex flex-col gap-3">

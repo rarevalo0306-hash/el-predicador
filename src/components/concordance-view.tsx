@@ -1,3 +1,4 @@
+import { BibleCopyright } from "./bible-copyright";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ExternalLink, Search, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -82,7 +83,7 @@ export function ConcordanceView({
     }
     const key = `${locale}:${words.toLowerCase()}`;
     const known = answers.get(key);
-    if (known) {
+    if (known?.status === "ok" && known.expiresAt && known.expiresAt > Date.now()) {
       setResult(known);
       return;
     }
@@ -286,9 +287,7 @@ export function ConcordanceView({
                 );
               })}
             </ol>
-            <p className="text-center text-[0.7rem] leading-relaxed text-muted-foreground">
-              {result.copyright ?? recobroCopyright(locale)}
-            </p>
+            <BibleCopyright notice={result.copyright} fumsId={result.fumsId} fumsToken={result.fumsToken} />
           </section>
         )
       ) : null}

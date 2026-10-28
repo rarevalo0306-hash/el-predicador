@@ -21,10 +21,7 @@ const GOSPEL_STEP_META: { n: number; verseId: string }[] = [
   { n: 8, verseId: "2co-5-17" },
 ];
 
-const GOSPEL_COPY: Record<
-  Locale,
-  { title: string; line: string }[]
-> = {
+const GOSPEL_COPY: Record<Locale, { title: string; line: string }[]> = {
   es: [
     { title: "Dios te ama", line: "El evangelio empieza en el corazón de Dios." },
     { title: "Todos pecamos", line: "Nadie llega a Dios por su propia cuenta." },
@@ -61,9 +58,7 @@ export function gospelStepsWithVerses(locale: Locale) {
   return gospelSteps(locale)
     .map((step) => {
       const verse = getVerseById(step.verseId);
-      return verse
-        ? { ...step, verse: localizeVerse(verse, locale) }
-        : null;
+      return verse ? { ...step, verse: localizeVerse(verse, locale) } : null;
     })
     .filter((step): step is GospelStep & { verse: Verse } => Boolean(step));
 }
@@ -81,14 +76,14 @@ export async function composeGospelText(locale: Locale) {
   const catalog = steps
     .map((step) => getVerseById(step.verseId))
     .filter((verse): verse is Verse => Boolean(verse));
-  const hydrated = await hydrateVerses(catalog, locale);
+  const hydrated = catalog;
   const byId = new Map(hydrated.map((verse) => [verse.id, verse]));
   const lines = [intro, ""];
   for (const step of steps) {
     const verse = byId.get(step.verseId);
     if (!verse) continue;
     lines.push(`${step.n}. ${step.title}`);
-    lines.push(`«${verse.text}»`);
+
     lines.push(`— ${verse.ref}`);
     lines.push("");
   }
@@ -103,23 +98,20 @@ export async function gospelPathVerse(locale: Locale): Promise<Verse> {
     book: t(locale, "kindEvangelio"),
     text: await composeGospelText(locale),
     themes: ["evangelio"],
-    source: recobroSource(locale),
+    source: locale === "en" ? "Reference guide" : "Guía de referencias",
   };
 }
 
 export function gospelPrayerVerse(locale: Locale): Verse {
   return {
     id: "evangelio-oracion",
-    ref:
-      locale === "en"
-        ? "A prayer to receive Christ"
-        : "Oración para recibir a Cristo",
+    ref: locale === "en" ? "A prayer to receive Christ" : "Oración para recibir a Cristo",
     book: t(locale, "kindEvangelio"),
     text:
       locale === "en"
         ? "Lord Jesus, I confess that I am a sinner. I believe You died for me and rose again. I receive You now as my Savior and my life. Come into me. Thank You for forgiving me. Amen."
         : "Señor Jesús, reconozco que soy pecador. Creo que moriste por mí y resucitaste. Te recibo ahora como mi Salvador y mi vida. Entra en mí. Gracias por perdonarme. Amén.",
     themes: ["evangelio"],
-    source: recobroSource(locale),
+    source: locale === "en" ? "Reference guide" : "Guía de referencias",
   };
 }

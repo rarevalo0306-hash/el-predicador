@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 export function PreacherMark({ className }: { className?: string }) {
   return (
     <img
-      src="/icon-192.png"
+      src="/images/logo-navy.png"
       alt=""
       width={192}
       height={192}
@@ -30,12 +30,12 @@ export function Logo({ className, fit = false }: { className?: string; fit?: boo
   return (
     <div className={cn("flex min-w-0 items-center gap-2 sm:gap-3", fit && "flex-1", className)}>
       <PreacherMark className="size-10 shrink-0 sm:size-12" />
-      <div className={cn("hidden min-w-0 sm:block", fit && "@container flex-1")}>
-        <div className={fit ? "hidden @min-[6.5rem]:block" : undefined}>
-          <p className="font-serif text-xl leading-none tracking-tight whitespace-nowrap">
+      <div className={cn("min-w-0", fit && "@container flex-1")}>
+        <div className={undefined}>
+          <p className="font-sans font-bold text-lg leading-none tracking-tight whitespace-nowrap">
             The Preacher
           </p>
-          <p className="mt-1 text-[0.65rem] font-medium tracking-[0.18em] text-muted-foreground uppercase">
+          <p className="hidden mt-1 text-[0.65rem] font-medium tracking-[0.18em] text-muted-foreground uppercase">
             {t(locale, "tagline")}
           </p>
         </div>

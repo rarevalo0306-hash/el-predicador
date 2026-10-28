@@ -73,10 +73,7 @@ function setBearerToken(token: string | null): void {
  * popup there and a normal redirect everywhere else.
  */
 function inLivePreview(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    window.location.hostname.endsWith(".grok-sandbox.com")
-  );
+  return typeof window !== "undefined" && window.location.hostname.endsWith(".grok-sandbox.com");
 }
 
 /** Message the popup posts back to the opener once sign-in completes. */
@@ -100,6 +97,23 @@ export async function signIn(
   providerId: string,
   opts: { callbackURL?: string; errorCallbackURL?: string; newUserCallbackURL?: string } = {},
 ): Promise<void> {
+  // WKWebView exposes this handler only to the app's first-party main frame.
+  const bridge =
+    typeof window !== "undefined"
+      ? (
+          window as Window & {
+            webkit?: {
+              messageHandlers?: {
+                preacherAuth?: { postMessage: (body: { provider: string }) => void };
+              };
+            };
+          }
+        ).webkit?.messageHandlers?.preacherAuth
+      : undefined;
+  if (bridge && ["grok-google", "google", "apple"].includes(providerId)) {
+    bridge.postMessage({ provider: providerId === "apple" ? "apple" : "google" });
+    return;
+  }
   const callbackURL = opts.callbackURL ?? "/";
   const errorCallbackURL = opts.errorCallbackURL ?? "/";
 
@@ -136,7 +150,11 @@ export async function signIn(
     if (typeof window !== "undefined") {
       const dest = new URL(callbackURL, window.location.origin);
       const here = window.location;
-      if (dest.origin !== here.origin || dest.pathname !== here.pathname || dest.search !== here.search) {
+      if (
+        dest.origin !== here.origin ||
+        dest.pathname !== here.pathname ||
+        dest.search !== here.search
+      ) {
         window.location.href = callbackURL;
       }
     }
@@ -146,7 +164,7 @@ export async function signIn(
   // Deployed / local: call native Google social directly. Avoid the Better Auth
   // client helper here — on 404 it can fail without a usable `{ error }` shape,
   // which made the Google button look dead on production.
-  if (providerId === "grok-google" || providerId === "google") {
+  if (providerId === "grok-google" || providerId === "google" || providerId === "apple") {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
@@ -157,7 +175,7 @@ export async function signIn(
       headers,
       credentials: "include",
       body: JSON.stringify({
-        provider: "google",
+        provider: providerId === "apple" ? "apple" : "google",
         callbackURL,
         errorCallbackURL,
         // Where a brand-new account lands instead, when the caller wants to know.
@@ -171,7 +189,7 @@ export async function signIn(
     };
     if (!res.ok) {
       if (res.status === 404 || body.code === "PROVIDER_NOT_FOUND") {
-        throw new Error("GOOGLE_NOT_CONFIGURED");
+        throw new Error(providerId === "apple" ? "APPLE_NOT_CONFIGURED" : "GOOGLE_NOT_CONFIGURED");
       }
       throw new Error(body.message || "Sign-in failed");
     }
@@ -179,7 +197,7 @@ export async function signIn(
       window.location.href = body.url;
       return;
     }
-    throw new Error("GOOGLE_NOT_CONFIGURED");
+    throw new Error(providerId === "apple" ? "APPLE_NOT_CONFIGURED" : "GOOGLE_NOT_CONFIGURED");
   }
 
   const { data, error } = await authClient.signIn.oauth2({
@@ -272,4 +290,15 @@ export async function signOut(redirectTo = "/"): Promise<void> {
       window.location.href = redirectTo;
     },
   });
+}
+
+/** After a confirmed server-side deletion, discard only this app's local identity. */
+export function forgetDeletedSession(): void {
+  setBearerToken(null);
+  try {
+    for (const key of ["preacher-guest-state", "preacher-ask", "preacher-contacted"])
+      window.localStorage.removeItem(key);
+  } catch {
+    /* private mode */
+  }
 }

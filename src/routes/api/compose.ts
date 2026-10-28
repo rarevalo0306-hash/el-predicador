@@ -13,12 +13,13 @@ export const Route = createFileRoute("/api/compose")({
         const { callerId, fail, textStream } = await import("@/lib/ai/stream-route.server");
         const userId = await callerId(request);
         if (userId instanceof Response) return userId;
-        let data: { caseId?: unknown; details?: unknown; locale?: unknown };
+        let data: { caseId?: unknown; details?: unknown; locale?: unknown; aiConsent?: unknown };
         try {
           data = (await request.json()) as typeof data;
         } catch {
           return fail(400, "invalid");
         }
+        if (data.aiConsent !== true) return fail(400, "ai_consent_required");
         const { PREACH_CASES, caseVerses, localizedCase } = await import("@/lib/preach-cases");
         const entry = PREACH_CASES.find((c) => c.id === data.caseId);
         if (!entry) return fail(400, "invalid");
@@ -28,8 +29,7 @@ export const Route = createFileRoute("/api/compose")({
           .trim()
           .slice(0, DETAILS_MAX);
 
-        const { consumeAskQuota, failureCode, releaseAskQuota } =
-          await import("@/lib/ai/ask");
+        const { consumeAskQuota, failureCode, releaseAskQuota } = await import("@/lib/ai/ask");
         const { deepseekConfigured } = await import("@/lib/ai/deepseek.server");
         if (!deepseekConfigured()) return fail(503, "ask_unavailable");
         const { getSql } = await import("@/lib/db");
@@ -40,11 +40,9 @@ export const Route = createFileRoute("/api/compose")({
         if (!quota.allowed) return fail(429, "ask_quota");
 
         try {
-          const { hydrateVerses } = await import("@/lib/recobro");
           const localized = localizedCase(entry, locale);
-          const verses = (await hydrateVerses(caseVerses(entry, locale), locale))
-            .filter((v) => v.text.trim())
-            .map((v) => ({ ref: v.ref, text: v.text }));
+          // Only references are passed; never attach licensed Scripture text.
+          const verses = caseVerses(entry, locale).map((v) => ({ ref: v.ref, text: "" }));
           const words = await streamComposed({
             caseTitle: localized.title,
             issue: localized.issue,

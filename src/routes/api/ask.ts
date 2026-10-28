@@ -14,12 +14,13 @@ export const Route = createFileRoute("/api/ask")({
         const { callerId, fail, textStream } = await import("@/lib/ai/stream-route.server");
         const userId = await callerId(request);
         if (userId instanceof Response) return userId;
-        let data: { question?: unknown; history?: unknown; locale?: unknown };
+        let data: { question?: unknown; history?: unknown; locale?: unknown; aiConsent?: unknown };
         try {
           data = (await request.json()) as typeof data;
         } catch {
           return fail(400, "invalid");
         }
+        if (data.aiConsent !== true) return fail(400, "ai_consent_required");
         const question = String(data.question ?? "").trim();
         if (!question || question.length > 500) return fail(400, "invalid");
         const history = Array.isArray(data.history) ? data.history.slice(-12) : [];

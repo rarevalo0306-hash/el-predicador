@@ -41,20 +41,7 @@ export const getDailyReflection = createServerFn({ method: "POST" })
     return reflectionFor(sql, data.day, data.locale, verse.id, {
       configured: deepseekConfigured(),
       write: (input) => writeReflection({ ...input, theme }),
-      // The verse's own words: the stored copy, else the Recovery Version,
-      // kept for next time like the verse lines do.
-      verseText: async () => {
-        const [stored] = await sql<{ ref: string; text: string }>`
-          select ref, text from verse_texts where verse_id = ${verse.id} and locale = ${data.locale}`;
-        if (stored?.text.trim()) return stored;
-        const { hydrateVerse } = await import("@/lib/recobro");
-        const full = await hydrateVerse(verse, data.locale);
-        if (full.text.trim()) {
-          await sql`insert into verse_texts (verse_id, locale, ref, text, source, updated_at)
-            values (${verse.id}, ${data.locale}, ${full.ref}, ${full.text}, ${full.source ?? null}, now())
-            on conflict (verse_id, locale) do nothing`;
-        }
-        return { ref: full.ref, text: full.text };
-      },
+      // Only the reference goes to AI; no licensed or legacy stored Scripture.
+      verseText: async () => ({ ref: verse.ref, text: "" }),
     });
   });

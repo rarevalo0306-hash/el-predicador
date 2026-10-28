@@ -296,7 +296,10 @@ test("a theme send uses a freshly written line, and a prepared one when writing 
     await runScheduledMessages(sql, at, send, ready, verses, writers[i]);
   }
   assert.equal(sent.length, 2);
-  assert.match(sent[0], /^«Texto W»\n— Ref W\nRV\n\nHoy esta palabra es para ti; descansa en el Señor\.\n\nCon cariño, Ricardo$/);
+  assert.match(
+    sent[0],
+    /^«Texto W»\n— Ref W\nRV\n\nHoy esta palabra es para ti; descansa en el Señor\.\n\nCon cariño, Ricardo$/,
+  );
   assert.equal(asked[0].text, "Texto W");
   assert.equal(asked[0].ref, "Ref W");
   assert.match(sent[1], /\n\nNota W\n\nCon cariño, Ricardo$/);
@@ -349,4 +352,24 @@ test("private scheduling tables have row level security enabled", async () => {
   }>`select relrowsecurity from pg_class where relname in ('message_schedules','message_deliveries')`;
   assert.equal(rows.length, 2);
   assert.ok(rows.every((r) => r.relrowsecurity));
+});
+
+test("a schedule removed while preparing delivery is never sent", async () => {
+  const id = await due();
+  let removal: Promise<unknown> | undefined;
+  let sent = false;
+  await runScheduledMessages(
+    sql,
+    now,
+    async () => {
+      sent = true;
+      return { status: "accepted" };
+    },
+    () => {
+      removal = sql.query("delete from message_schedules where id=$1", [id]);
+      return { whatsapp: true, sms: true };
+    },
+  );
+  await removal;
+  assert.equal(sent, false);
 });

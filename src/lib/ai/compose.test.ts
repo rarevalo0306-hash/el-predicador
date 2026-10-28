@@ -33,26 +33,25 @@ test("the case and the person are laid out in full", () => {
   assert.match(composeBrief({ ...input, details: "" }), /\(sin detalles\)/);
 });
 
-test("a composed message streams, with the details trimmed to their limit", async () => {
-  let body: Record<string, unknown> = {};
-  const gen = await streamComposed(
-    { ...input, details: "x".repeat(1000) },
-    config,
-    async (_url, init) => {
-      body = JSON.parse(String(init!.body));
-      const text = [
-        "data: ",
-        JSON.stringify({ choices: [{ delta: { content: "Hola" } }] }),
-        "\n\ndata: [DONE]\n\n",
-      ].join("");
-      return new Response(text, { headers: { "Content-Type": "text/event-stream" } });
-    },
-  );
-  let out = "";
-  for await (const piece of gen) out += piece;
-  assert.equal(out, "Hola");
-  assert.equal(body.stream, true);
-  const user = (body.messages as { content: string }[])[1].content;
-  assert.ok(user.length < 1000, "details were cut");
-  await assert.rejects(streamComposed(input, {}), /deepseek_not_configured/);
+test("LBLA edition blocks composing before sending passages to AI", async () => {
+  let calls = 0;
+  const request = (async () => {
+    calls++;
+    throw new Error("must not fetch");
+  }) as typeof fetch;
+  await assert.rejects(streamComposed(input, config, request), /licencia de LBLA/);
+  assert.equal(calls, 0);
+});
+
+
+test("reference-only composition streams without fetching Bible text", async () => {
+  const request = (async (_url: unknown, init: RequestInit) => {
+    const body = JSON.parse(String(init.body));
+    assert.ok(!JSON.stringify(body).includes(input.verses[0].text));
+    return new Response('data: {"choices":[{"delta":{"content":"A personal message"}}]}\n\ndata: [DONE]\n\n');
+  }) as typeof fetch;
+  const stream = await streamComposed({ ...input, verses: [{ ref: "1 Timoteo 2:5", text: "" }] }, config, request);
+  let output = "";
+  for await (const chunk of stream) output += chunk;
+  assert.equal(output, "A personal message");
 });

@@ -45,8 +45,5 @@ test("searched words are marked regardless of accents and case", () => {
 });
 
 test("LSM's own search page carries the words and language", () => {
-  assert.equal(
-    lsmSearchPage("Señor Espíritu", "es"),
-    "https://text.recoveryversion.bible/list/?String=Se%C3%B1or+Esp%C3%ADritu&Lang=spa",
-  );
+  assert.equal(lsmSearchPage("Señor Espíritu", "es"), "https://api.bible");
 });

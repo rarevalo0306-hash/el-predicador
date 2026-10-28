@@ -145,15 +145,16 @@ export async function generateVerseNotes(
       },
       body: JSON.stringify({
         model: config.DEEPSEEK_MODEL || "deepseek-flash",
+        thinking: { type: "disabled" },
         temperature: 1.1,
         max_tokens: 400 * verses.length + 200,
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: systemPrompt(locale, perVerse) },
+          { role: "system", content: systemPrompt(locale, perVerse) + "\nOnly references are supplied. Write original encouragement without quoting Scripture or claiming a particular translation." },
           {
             role: "user",
             content: JSON.stringify(
-              verses.map((v) => ({ id: v.id, ref: v.ref, text: v.text.slice(0, 600) })),
+              verses.map((v) => ({ id: v.id, ref: v.ref })),
             ),
           },
         ],

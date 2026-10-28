@@ -1,3 +1,4 @@
+import { designCopy } from "@/lib/design-copy";
 import { useMemo, useState } from "react";
 import { Heart, Send, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -61,14 +62,12 @@ export function SavedView({ onSend, onExplore }: SavedViewProps) {
 
   const empty =
     (filter === "versos" ? visibleVerses.length === 0 : false) ||
-    (filter !== "versos" &&
-      visibleMessages.length === 0 &&
-      visibleVerses.length === 0);
+    (filter !== "versos" && visibleMessages.length === 0 && visibleVerses.length === 0);
 
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="font-serif text-3xl tracking-tight">{t("savedTitle")}</h1>
+        <h1 className="screen-title">{designCopy(locale).savedTitle}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("savedSub")}</p>
       </header>
 
@@ -97,9 +96,9 @@ export function SavedView({ onSend, onExplore }: SavedViewProps) {
       </div>
 
       {empty ? (
-        <div className="flex flex-col items-center gap-3 rounded-xl bg-card px-6 py-10 text-center shadow-paper">
+        <div className="flex flex-col items-center gap-3 rounded-xl bg-card px-6 py-10 text-center">
           <Heart className="size-6 text-primary" />
-          <p className="font-serif text-xl">{t("emptySaved")}</p>
+          <p className="font-semibold text-xl">{t("emptySaved")}</p>
           <p className="max-w-xs text-sm text-muted-foreground">{t("emptySavedLine")}</p>
           <Button type="button" onClick={onExplore}>
             {t("seeThemes")}
@@ -109,7 +108,7 @@ export function SavedView({ onSend, onExplore }: SavedViewProps) {
 
       {filter !== "versos" && visibleMessages.length > 0 ? (
         <section className="flex flex-col gap-3">
-          <h2 className="font-serif text-2xl tracking-tight">{t("messages")}</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{t("messages")}</h2>
           {visibleMessages.map(({ item, verse }) => (
             <SavedMessageCard
               key={item.id}
@@ -124,10 +123,8 @@ export function SavedView({ onSend, onExplore }: SavedViewProps) {
 
       {visibleVerses.length > 0 ? (
         <section className="flex flex-col gap-3">
-          <h2 className="font-serif text-2xl tracking-tight">
-            {filter === "versos" || filter === "todos"
-              ? t("favoriteVerses")
-              : t("versesLabel")}
+          <h2 className="text-2xl font-bold tracking-tight">
+            {filter === "versos" || filter === "todos" ? t("favoriteVerses") : t("versesLabel")}
           </h2>
           {visibleVerses.map((verse) => (
             <div key={verse.id} className="flex flex-col gap-2">
@@ -156,9 +153,14 @@ function SavedMessageCard({
   onRemove: (id: string) => void;
 }) {
   const { locale, t } = useI18n();
-  const { verse: shown, loading, error, retry } = useHydratedVerse(verse, item.messageLocale ?? locale);
+  const {
+    verse: shown,
+    loading,
+    error,
+    retry,
+  } = useHydratedVerse(verse, item.messageLocale ?? locale);
   return (
-    <article className="rounded-lg bg-card px-4 py-4 shadow-paper">
+    <article className="rounded-lg bg-card px-4 py-4">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-medium tracking-[0.12em] text-primary uppercase">
           {kindLabel(item.kind, locale)}
@@ -172,9 +174,7 @@ function SavedMessageCard({
           <Trash2 className="size-4" />
         </button>
       </div>
-      {item.note ? (
-        <p className="text-sm leading-relaxed text-foreground">{item.note}</p>
-      ) : null}
+      {item.note ? <p className="text-sm leading-relaxed text-foreground">{item.note}</p> : null}
       {error ? (
         <div className="mt-3 flex items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">{t("couldNotRead")}</p>
@@ -186,9 +186,7 @@ function SavedMessageCard({
         <TextSkeleton label={t("loadingVerse")} lines={2} className="mt-3" lineClassName="h-5" />
       ) : (
         <>
-          <p className="mt-3 font-serif text-lg leading-snug text-foreground">
-            {shown.text}
-          </p>
+          <p className="mt-3 font-serif text-lg leading-snug text-foreground">{shown.text}</p>
           <p className="mt-2 text-xs font-medium tracking-[0.12em] text-primary uppercase">
             {shown.ref}
           </p>
@@ -198,7 +196,8 @@ function SavedMessageCard({
         className="mt-4 w-full"
         disabled={!shown}
         onClick={() =>
-          shown && onSend(shown, { note: item.note, kind: item.kind, messageLocale: item.messageLocale })
+          shown &&
+          onSend(shown, { note: item.note, kind: item.kind, messageLocale: item.messageLocale })
         }
       >
         <Send />

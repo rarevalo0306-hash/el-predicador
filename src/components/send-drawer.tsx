@@ -1,3 +1,5 @@
+import { BibleTranslationSelect } from "./bible-translation-select";
+import { BibleCopyright } from "@/components/bible-copyright";
 import { MessageLanguageSelect } from "@/components/message-language-select";
 import { messageLanguageCopy } from "@/lib/message-language";
 import type { Locale } from "@/lib/i18n";
@@ -74,6 +76,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
   const rememberVerse = useAppStore((s) => s.rememberVerse);
   const saveMessage = useAppStore((s) => s.saveMessage);
   const [messageLocale, setMessageLocale] = useState<Locale>(draft?.messageLocale ?? locale);
+  const [englishTranslation, setEnglishTranslation] = useState<"bsb" | "kjv">("bsb");
   const [scheduling, setScheduling] = useState(false);
   const [note, setNote] = useState("");
   const [phone, setPhone] = useState("");
@@ -82,11 +85,16 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
   const [queue, setQueue] = useState<SendQueue | null>(null);
   const templates = messageTemplates(messageLocale);
-  const { verse: shown, error, retry } = useHydratedVerse(verse, messageLocale);
+  const {
+    verse: shown,
+    error,
+    retry,
+  } = useHydratedVerse(verse, messageLocale, messageLocale === "en" ? englishTranslation : "lbla");
 
   useEffect(() => {
     if (!open) return;
     setMessageLocale(draft?.messageLocale ?? locale);
+    setEnglishTranslation(verse?.source === "King James Version (KJV)" ? "kjv" : "bsb");
     setScheduling(false);
     setNote(draft?.note ?? "");
     setActiveTemplate(draft?.kind ?? null);
@@ -341,12 +349,22 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                 {messageLanguageCopy(locale).unavailable}
               </p>
             ) : (
-              <MessageLanguageSelect
-                value={messageLocale}
-                onChange={changeMessageLocale}
-                disabled={Boolean(queue)}
-                hint={messageLanguageCopy(locale).customHint}
-              />
+              <>
+                <MessageLanguageSelect
+                  value={messageLocale}
+                  onChange={changeMessageLocale}
+                  disabled={Boolean(queue)}
+                  hint={messageLanguageCopy(locale).customHint}
+                />
+                {messageLocale === "en" && (
+                  <BibleTranslationSelect
+                    value={englishTranslation}
+                    onChange={setEnglishTranslation}
+                    locale={locale}
+                    disabled={Boolean(queue)}
+                  />
+                )}
+              </>
             )}
           </div>
         ) : null}
@@ -370,7 +388,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
           </div>
         ) : error ? (
           <div className="flex flex-col gap-3 px-5 pb-6">
-            <p className="text-sm text-muted-foreground">{t("couldNotRead")}</p>
+            <p className="text-sm text-muted-foreground">{error || t("couldNotRead")}</p>
             <Button type="button" variant="outline" onClick={retry}>
               {t("retry")}
             </Button>
@@ -385,10 +403,22 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                 >
                   {shown.text}
                 </p>
+                <BibleCopyright
+                  notice={shown.copyright}
+                  fumsToken={shown.fumsToken}
+                  fumsId={shown.fumsId}
+                />
                 <p className="mt-2 text-xs font-medium tracking-[0.12em] text-primary uppercase">
                   {shown.ref}
                 </p>
               </div>
+              {shown.copyright && shown.source !== "Berean Standard Bible (BSB)" ? (
+                <p className="text-xs text-muted-foreground">
+                  {locale === "es"
+                    ? "Esta versión se comparte por referencia y enlace. Para enviar el texto en inglés, selecciona BSB."
+                    : "This version is shared as a reference and link. Select BSB to send the English verse text."}
+                </p>
+              ) : null}
               <div className="grid gap-2 rounded-lg border border-border bg-card px-3 py-3">
                 <div className="flex items-center gap-2">
                   <Users className="size-4 text-primary" />
@@ -474,7 +504,44 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                 ))}
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="note">{t("personalNote")}</Label>
+                <Label htmlFor="note">
+                  {locale === "es" ? "Saludo o nota personal" : "Personal greeting or note"}
+                </Label>
+                <div
+                  className="flex flex-wrap gap-2"
+                  aria-label={locale === "es" ? "Saludos sugeridos" : "Suggested greetings"}
+                >
+                  {(messageLocale === "es"
+                    ? [
+                        "Con cariño, Dios te bendiga.",
+                        "Pensando en ti. Que tengas un día lleno de paz.",
+                        "Te comparto esta palabra con mucho cariño.",
+                      ]
+                    : [
+                        "With love. God bless you.",
+                        "Thinking of you. May your day be filled with peace.",
+                        "Sharing this word with you with love.",
+                      ]
+                  ).map((greeting) => (
+                    <button
+                      key={greeting}
+                      type="button"
+                      className="rounded-xl border border-border bg-card px-3 py-2 text-left text-sm hover:bg-secondary"
+                      onClick={() => {
+                        setNote((current) =>
+                          current.includes(greeting)
+                            ? current
+                            : current.trim()
+                              ? `${current.trim()}\n\n${greeting}`
+                              : greeting,
+                        );
+                        setActiveTemplate(null);
+                      }}
+                    >
+                      {greeting}
+                    </button>
+                  ))}
+                </div>
                 <Textarea
                   id="note"
                   value={note}
@@ -487,6 +554,12 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                 />
               </div>
 
+              <div className="rounded-xl border border-border bg-secondary/40 p-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {locale === "es" ? "Así se enviará" : "Message preview"}
+                </p>
+                <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{message}</p>
+              </div>
               <Button type="button" className="w-full" onClick={() => setScheduling(true)}>
                 {scheduleCopy(locale).scheduleThis}
               </Button>
@@ -559,7 +632,10 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                   label={t("saveImage")}
                   hint={t("saveImageHint")}
                   onClick={() => void withCard("save", handleSaveImage)}
-                  disabled={making !== null}
+                  disabled={
+                    making !== null ||
+                    (Boolean(shown?.copyright) && shown?.source !== "Berean Standard Bible (BSB)")
+                  }
                   busy={making === "save"}
                 />
                 <ChannelButton
@@ -567,7 +643,10 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                   label={t("printAction")}
                   hint={t("printHint")}
                   onClick={() => void withCard("print", handlePrint)}
-                  disabled={making !== null}
+                  disabled={
+                    making !== null ||
+                    (Boolean(shown?.copyright) && shown?.source !== "Berean Standard Bible (BSB)")
+                  }
                   busy={making === "print"}
                 />
                 <ChannelButton
@@ -576,7 +655,10 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                   hint={t("otherApps")}
                   className="col-span-2"
                   onClick={() => void withCard("share", handleShare)}
-                  disabled={making !== null}
+                  disabled={
+                    making !== null ||
+                    (Boolean(shown?.copyright) && shown?.source !== "Berean Standard Bible (BSB)")
+                  }
                   busy={making === "share"}
                 />
               </div>

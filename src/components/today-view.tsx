@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { enUS, es } from "date-fns/locale";
-import { RefreshCw } from "lucide-react";
+import { Bookmark, ChevronRight, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VerseCard } from "@/components/verse-card";
 import { ContactForm } from "@/components/contact-form";
@@ -15,14 +15,19 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { TextSkeleton } from "@/components/text-skeleton";
 import { createRemembered } from "@/lib/remembered";
 import {
+  catalogSpan,
   DAILY_THEMES,
+  getDailyPick,
   getDailyVerse,
   todayKey,
   versesForTheme,
   type ThemeId,
   type Verse,
 } from "@/lib/verses";
+import { bookById, BOOK_EN } from "@/lib/bible";
+import type { VerseLink } from "@/lib/verse-links";
 import { cn } from "@/lib/utils";
+import { themePhotoUrl } from "@/lib/theme-photos";
 
 // A day without its word yet is asked for again after a few minutes.
 const reflections = createRemembered<DailyReflection | null>({
@@ -51,11 +56,14 @@ const MORE_MOODS: ThemeId[] = [
 type TodayViewProps = {
   mood: ThemeId | null;
   onMoodChange: (mood: ThemeId | null) => void;
+  onRead: (link: VerseLink) => void;
+  onExplore: (theme?: ThemeId) => void;
   onSend: (verse: Verse, draft?: SendDraft) => void;
 };
 
-export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
+export function TodayView({ mood, onMoodChange, onSend, onRead, onExplore }: TodayViewProps) {
   const { locale, t } = useI18n();
+  const readingPlace = useAppStore((s) => s.readingPlace);
   const dailyOffset = useAppStore((s) => s.dailyOffset);
   // Re-read the themes when the verses DeepSeek added arrive.
   useAppStore((s) => s.themeExtrasVersion);
@@ -136,11 +144,15 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
   }, []);
 
   const daily = getDailyVerse(dailyOffset);
+  // Today's own picture for the day's verse; a mood or another verse shows its theme's photo.
+  const photo = mood
+    ? themePhotoUrl(mood)
+    : dailyOffset
+      ? themePhotoUrl(getDailyPick(dailyOffset).theme)
+      : `/api/daily-photo?day=${todayKey()}`;
   const moodVerses = mood ? versesForTheme(mood) : [];
   const verse =
-    mood && moodVerses.length > 0
-      ? moodVerses[dailyOffset % moodVerses.length]!
-      : daily;
+    mood && moodVerses.length > 0 ? moodVerses[dailyOffset % moodVerses.length]! : daily;
 
   useEffect(() => {
     prefetchVerses(mood ? versesForTheme(mood) : [getDailyVerse(dailyOffset)], locale);
@@ -169,35 +181,45 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
     bendicion: t("themeBendicion"),
   };
 
+  const span = catalogSpan(verse);
+  const readingBook = readingPlace ? bookById(readingPlace.bookId) : null;
+
   return (
-    <div className="flex flex-col gap-6">
-      <header className="rise-in">
-        {name ? (
-          <div className="mb-5">
-            <p className="font-serif text-2xl tracking-tight text-foreground">
-              {t("greetHello", { name })}
-            </p>
-            {blessing ? (
-              <p className="mt-1 font-serif text-base leading-relaxed text-muted-foreground italic">
-                {blessing.text}
-              </p>
-            ) : (
-              <TextSkeleton label={t("wait")} lines={1} className="mt-2" lineClassName="h-5" />
-            )}
-          </div>
-        ) : null}
-        <p className="text-xs font-medium tracking-[0.18em] text-primary uppercase">
+    <div className="today-screen flex flex-col gap-7">
+      <header>
+        <p className="text-xs font-medium tracking-[0.12em] text-muted-foreground uppercase">
           {dateLabel}
         </p>
-        <h1 className="mt-2 font-serif text-3xl tracking-tight text-foreground">
-          {mood ? t("wordForYou") : t("todayVerse")}
+        <h1 className="mt-2 text-[clamp(1.8rem,7.5vw,2.4rem)] font-bold leading-[1.08] tracking-[-0.035em]">
+          {locale === "en" ? "Your word for today" : "Tu palabra de hoy"}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("sendHow")}</p>
       </header>
-      <div className="rise-in rise-in-2">
+      <section
+        className="daily-post"
+        aria-label={locale === "en" ? "Daily reading" : "Lectura del día"}
+      >
+        <img
+          className="daily-post-photo"
+          src={photo}
+          alt={locale === "en" ? "Landscape for today's reading" : "Paisaje para la lectura de hoy"}
+          fetchPriority="high"
+          width="1086"
+          height="1448"
+        />
         <VerseCard
           verse={verse}
-          variant="hero"
+          variant="post"
+          onReadChapter={
+            span
+              ? () =>
+                  onRead({
+                    bookId: span.book.id,
+                    chapter: span.chapter,
+                    from: span.from,
+                    to: span.to,
+                  })
+              : undefined
+          }
           onSend={(shown) =>
             onSend(
               shown,
@@ -205,13 +227,86 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
             )
           }
         />
-      </div>
+      </section>
+      {readingPlace && readingBook ? (
+        <section>
+          <h2 className="section-title">
+            {locale === "en" ? "Pick up where you left off" : "Sigue donde lo dejaste"}
+          </h2>
+          <button
+            type="button"
+            className="continue-reading"
+            onClick={() =>
+              onRead({
+                bookId: readingPlace.bookId,
+                chapter: readingPlace.chapter,
+                from: readingPlace.verse ?? 1,
+                to: readingPlace.verse ?? 1,
+              })
+            }
+          >
+            <Bookmark aria-hidden className="size-6 shrink-0" />
+            <span className="flex-1 text-left">
+              <strong className="block text-lg">
+                {locale === "en"
+                  ? (BOOK_EN[readingBook.id]?.name ?? readingBook.name)
+                  : readingBook.name}{" "}
+                {readingPlace.chapter}
+              </strong>
+              <span className="text-sm text-muted-foreground">
+                {locale === "en" ? "Continue reading" : "Continuar lectura"}
+              </span>
+            </span>
+            <span className="rounded-full bg-primary p-2 text-primary-foreground">
+              <ChevronRight aria-hidden className="size-5" />
+            </span>
+          </button>
+        </section>
+      ) : null}
+      <section>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="section-title mb-0">
+            {locale === "en" ? "Find a word" : "Encuentra una palabra"}
+          </h2>
+          <button
+            type="button"
+            className="inline-flex min-h-11 items-center text-sm font-medium text-primary"
+            onClick={() => onExplore()}
+          >
+            {locale === "en" ? "All themes" : "Ver temas"}
+            <ChevronRight aria-hidden className="size-4" />
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {(
+            [
+              ["paz", "peace"],
+              ["fortaleza", "strength"],
+            ] as const
+          ).map(([id, photo]) => (
+            <button key={id} type="button" className="theme-photo" onClick={() => onExplore(id)}>
+              <img src={`/images/${photo}.jpg`} alt="" loading="lazy" width="1536" height="1024" />
+              <span>{id === "fortaleza" && locale === "es" ? "Fortaleza" : moodLabel[id]}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+      {name ? (
+        <section>
+          <p className="font-semibold">{t("greetHello", { name })}</p>
+          {blessing ? (
+            <p className="mt-1 text-sm text-muted-foreground">{blessing.text}</p>
+          ) : (
+            <TextSkeleton label={t("wait")} lines={1} />
+          )}
+        </section>
+      ) : null}
       {reflection && verse.id === reflection.verseId ? (
         <section className="rise-in rise-in-2 rounded-xl border border-border bg-card px-4 py-4 shadow-paper">
           <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
             {t("dailyWord")}
           </p>
-          <p className="mt-2 font-serif text-lg leading-relaxed">{reflection.text}</p>
+          <p className="mt-2 text-lg leading-relaxed">{reflection.text}</p>
         </section>
       ) : reflecting && !mood && verse.id === daily.id ? (
         <div className="h-24 animate-pulse rounded-xl bg-card" aria-hidden />
@@ -221,7 +316,7 @@ export function TodayView({ mood, onMoodChange, onSend }: TodayViewProps) {
           <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
             {t("contactTitle")}
           </p>
-          <h2 className="mt-2 font-serif text-2xl tracking-tight">{t("contactCardTitle")}</h2>
+          <h2 className="mt-2 text-2xl tracking-tight">{t("contactCardTitle")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{t("contactCardLine")}</p>
           {showContact ? (
             <div className="mt-4">

@@ -1,3 +1,4 @@
+import { BibleCopyright } from "@/components/bible-copyright";
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,20 @@ export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
   const [failed, setFailed] = useState(false);
   // Bumped by "Reintentar" to read the passage again.
   const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    const expire = () => {
+      if (verses?.some((v) => v.expiresAt && v.expiresAt <= Date.now())) {
+        setVerses(null);
+        setAttempt((n) => n + 1);
+      }
+    };
+    const timer = window.setInterval(expire, 60_000);
+    window.addEventListener("focus", expire);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", expire);
+    };
+  }, [verses]);
   const book = link ? bookById(link.bookId) : undefined;
   const panelRef = useRef<HTMLElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -97,7 +112,7 @@ export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
       >
         <div className="flex shrink-0 items-start justify-between gap-3 px-4 pt-4 pb-2">
           <div className="min-w-0">
-            <h2 className="font-serif text-2xl tracking-tight">{place}</h2>
+            <h2 className="text-2xl font-bold tracking-tight">{place}</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">{recobroSource(locale)}</p>
           </div>
           <button
@@ -114,23 +129,40 @@ export function VerseSheet({ link, onClose, onSend, onRead }: VerseSheetProps) {
           {failed ? (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
               <p className="text-sm text-muted-foreground">{t("chapterOpenFail")}</p>
-              <Button type="button" variant="outline" size="sm" onClick={() => setAttempt((n) => n + 1)}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setAttempt((n) => n + 1)}
+              >
                 {t("retry")}
               </Button>
             </div>
           ) : !verses ? (
-            <TextSkeleton label={t("openingChapter")} lines={3} className="py-2" lineClassName="h-5" />
+            <TextSkeleton
+              label={t("openingChapter")}
+              lines={3}
+              className="py-2"
+              lineClassName="h-5"
+            />
           ) : (
             <div className="flex flex-col gap-2">
               {verses.map((verse) => (
-                <p key={verse.id} className="reader-verse-text flex gap-2">
+                <div key={verse.id} className="reader-verse-text flex gap-2">
                   {verses.length > 1 ? (
                     <span className="mt-1 w-5 shrink-0 text-xs font-medium text-primary">
                       {verse.id.split("-").at(-1)}
                     </span>
                   ) : null}
-                  <span>{verse.text}</span>
-                </p>
+                  <div>
+                    {verse.text}
+                    <BibleCopyright
+                      notice={verse.copyright}
+                      fumsToken={verse.fumsToken}
+                      fumsId={verse.fumsId}
+                    />
+                  </div>
+                </div>
               ))}
             </div>
           )}

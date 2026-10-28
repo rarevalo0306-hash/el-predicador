@@ -1,10 +1,11 @@
+import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
 import {
   BookOpen,
   Ellipsis,
-  Layers,
+  Compass,
+  House,
   MessageCircleQuestion,
-  Sun,
   UserRound,
   Users,
 } from "lucide-react";
@@ -37,6 +38,8 @@ import { allDueItems } from "@/lib/preach-schedule";
 import { showDailyNotification } from "@/lib/notify";
 import { cn } from "@/lib/utils";
 import type { VerseLink } from "@/lib/verse-links";
+import { parseReference } from "@/lib/bible";
+import { READ_PARAM } from "@/lib/share";
 
 type Tab = "hoy" | "biblia" | "evangelio" | "temas" | "personas" | "guardados" | "admin";
 
@@ -45,10 +48,10 @@ type Tab = "hoy" | "biblia" | "evangelio" | "temas" | "personas" | "guardados" |
  * Admin (for the team only; the server decides who that is, useIsAdmin)
  * and Ajustes.
  */
-const BAR_TABS: { id: Exclude<Tab, "evangelio" | "guardados" | "admin">; icon: typeof Sun }[] = [
-  { id: "hoy", icon: Sun },
+const BAR_TABS: { id: Exclude<Tab, "evangelio" | "guardados" | "admin">; icon: typeof House }[] = [
+  { id: "hoy", icon: House },
   { id: "biblia", icon: BookOpen },
-  { id: "temas", icon: Layers },
+  { id: "temas", icon: Compass },
   { id: "personas", icon: Users },
 ];
 
@@ -57,7 +60,6 @@ const BAR_TABS: { id: Exclude<Tab, "evangelio" | "guardados" | "admin">; icon: t
 const BAR_LABEL = "max-w-full truncate text-[min(0.75rem,24cqw)]";
 const BAR_BUTTON =
   "@container flex h-16 min-w-0 flex-col items-center justify-center gap-1 px-0.5 text-xs font-medium transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset";
-
 
 export function AppShell() {
   const { user, isPending } = useCurrentUserState();
@@ -72,16 +74,21 @@ export function AppShell() {
     }
   }, [setLocale]);
 
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("preacher-account-deleted") !== "1") return;
+      sessionStorage.removeItem("preacher-account-deleted");
+      toast.success(
+        detectLocale() === "es" ? "Tu cuenta se ha eliminado." : "Your account has been deleted.",
+      );
+    } catch {
+      /* private mode */
+    }
+  }, []);
   return <PreacherApp userId={user?.id} sessionReady={!isPending} />;
 }
 
-function PreacherApp({
-  userId,
-  sessionReady,
-}: {
-  userId?: string;
-  sessionReady: boolean;
-}) {
+function PreacherApp({ userId, sessionReady }: { userId?: string; sessionReady: boolean }) {
   const { user, isPending } = useCurrentUserState();
   const { locale, t } = useI18n();
   const [tab, setTab] = useState<Tab>("hoy");
@@ -111,6 +118,24 @@ function PreacherApp({
     window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
     setWelcome(true);
     setProfileOpen(true);
+  }, []);
+  // A shared message links here with ?leer=<reference>: open that passage in
+  // the Bible tab, then drop the mark so a reload starts on Hoy again.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const ref = url.searchParams.get(READ_PARAM);
+    if (!ref) return;
+    url.searchParams.delete(READ_PARAM);
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    const parsed = parseReference(ref);
+    if (!parsed) return;
+    setJump({
+      bookId: parsed.book.id,
+      chapter: parsed.chapter,
+      verse: parsed.verse,
+      at: Date.now(),
+    });
+    setTab("biblia");
   }, []);
   const sync = useCloudSync(userId, sessionReady);
   const { ready } = sync;
@@ -173,12 +198,15 @@ function PreacherApp({
       const key = `pv-notified-${todayKey()}`;
       try {
         if (localStorage.getItem(key)) return;
-        const verse = await hydrateVerse(getDailyVerse(), locale);
+        const verse = locale === "en" ? await hydrateVerse(getDailyVerse(), "en") : getDailyVerse();
         if (cancelled) return;
         const { showDailyNotification } = await import("@/lib/notify");
         await showDailyNotification({
           title: t("notifyBodyTitle"),
-          body: `${verse.ref}: ${verse.text.slice(0, 140)}`,
+          body:
+            locale === "en"
+              ? `${verse.ref} (BSB): ${verse.text}`
+              : `${verse.ref} — La Biblia de las Américas (LBLA)`,
           tag: key,
         });
         localStorage.setItem(key, "1");
@@ -196,9 +224,12 @@ function PreacherApp({
       if (now.getHours() >= notifyHour) {
         void fireDaily();
       }
-      timer = window.setTimeout(() => {
-        void fireDaily();
-      }, Math.min(delay, 24 * 60 * 60 * 1000));
+      timer = window.setTimeout(
+        () => {
+          void fireDaily();
+        },
+        Math.min(delay, 24 * 60 * 60 * 1000),
+      );
     });
 
     return () => {
@@ -241,24 +272,16 @@ function PreacherApp({
         <Logo fit className="min-w-10 sm:min-w-12" />
         <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1">
           <LanguageSwitch compact />
-          {/* Pregunta and the profile stay side by side when the bar wraps. */}
+          <button
+            type="button"
+            onClick={() => setAskOpen(true)}
+            aria-label={t("askButton")}
+            className="inline-flex h-11 min-w-11 items-center justify-center rounded-full bg-primary px-3 text-primary-foreground"
+          >
+            <MessageCircleQuestion className="size-5" />
+          </button>
+          {/* Profile */}
           <div className="flex flex-wrap items-center justify-end gap-1">
-            {/* In the bar, not floating over the page, so it never covers a button. */}
-            <button
-              type="button"
-              onClick={() => setAskOpen(true)}
-              aria-label={t("askButton")}
-              title={t("askButton")}
-              className="inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full bg-primary px-2.5 text-sm font-medium text-primary-foreground transition-transform duration-150 active:scale-95"
-            >
-              <MessageCircleQuestion className="size-5 shrink-0" aria-hidden />
-              {/* Named only where the bar has room: signed in, on a phone,
-                  with text at its usual size. Wider screens show the app's
-                  name there instead. */}
-              <span className={user ? "hidden pr-1 max-sm:@min-[20.5rem]:inline" : "hidden"}>
-                {t("askButton")}
-              </span>
-            </button>
             {isPending ? (
               <span className="inline-flex h-11 w-16 animate-pulse rounded-full bg-secondary" />
             ) : user ? (
@@ -306,7 +329,7 @@ function PreacherApp({
       </header>
       {/* A container, so the screens' two-column grids can drop to one column
           when the text is large (their rules are in rem). */}
-      <main className="@container flex-1 px-5 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+      <main className="@container flex-1 px-5 pt-2 pb-[calc(6.5rem+env(safe-area-inset-bottom))]">
         {sync.loadFailed ? (
           <SyncNotice text={t("syncLoadFailed")} retry={t("retry")} onRetry={sync.retryLoad} />
         ) : sync.saveFailed ? (
@@ -318,7 +341,16 @@ function PreacherApp({
           </div>
         ) : null}
         {ready && tab === "hoy" ? (
-          <TodayView mood={mood} onMoodChange={setMood} onSend={openSend} />
+          <TodayView
+            mood={mood}
+            onMoodChange={setMood}
+            onSend={openSend}
+            onRead={readVerse}
+            onExplore={(theme) => {
+              setThemeId(theme ?? null);
+              openTab("temas");
+            }}
+          />
         ) : null}
         {ready && tab === "biblia" ? (
           <BibleView
@@ -343,9 +375,7 @@ function PreacherApp({
             onSend={openSend}
           />
         ) : null}
-        {ready && tab === "personas" ? (
-          <PeoplePreachView onSend={openSend} />
-        ) : null}
+        {ready && tab === "personas" ? <PeoplePreachView onSend={openSend} /> : null}
         {ready && tab === "guardados" ? (
           <SavedView
             onSend={openSend}
@@ -358,7 +388,7 @@ function PreacherApp({
         {ready && tab === "admin" && admin ? <AdminView /> : null}
       </main>
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background pb-[env(safe-area-inset-bottom)]"
+        className="app-tab-bar fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background pb-[env(safe-area-inset-bottom)]"
         aria-label={t("sections")}
       >
         <div className="mx-auto grid max-w-lg grid-cols-5">
@@ -369,7 +399,7 @@ function PreacherApp({
               hoy: t("tabHoy"),
               biblia: t("tabBiblia"),
               temas: t("tabTemas"),
-              personas: t("tabPersonas"),
+              personas: locale === "en" ? "People" : "Gente",
             } as const;
             return (
               <button
@@ -379,7 +409,7 @@ function PreacherApp({
                 className={cn(BAR_BUTTON, active ? "text-primary" : "text-muted-foreground")}
                 aria-current={active ? "page" : undefined}
               >
-                <Icon className="size-5" aria-hidden />
+                <Icon className="size-6" aria-hidden />
                 <span className={BAR_LABEL}>{labels[item.id]}</span>
               </button>
             );
@@ -469,7 +499,15 @@ function PreacherApp({
 }
 
 /** Says plainly when saved things could not be read or saved, with a way to try again. */
-function SyncNotice({ text, retry, onRetry }: { text: string; retry: string; onRetry: () => void }) {
+function SyncNotice({
+  text,
+  retry,
+  onRetry,
+}: {
+  text: string;
+  retry: string;
+  onRetry: () => void;
+}) {
   return (
     <div
       role="alert"

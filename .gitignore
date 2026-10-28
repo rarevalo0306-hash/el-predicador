@@ -8,3 +8,14 @@ attachments
 *.log
 .DS_Store
 dist
+
+# Local Apple signing and build output
+ios/build/
+ios/DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcarchive
+*.ipa
+*.xcresult
+
+ios/DerivedData-device/

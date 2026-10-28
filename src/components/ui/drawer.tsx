@@ -16,21 +16,15 @@ function Drawer({
   );
 }
 
-function DrawerTrigger({
-  ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Trigger>) {
+function DrawerTrigger({ ...props }: React.ComponentProps<typeof DrawerPrimitive.Trigger>) {
   return <DrawerPrimitive.Trigger data-slot="drawer-trigger" {...props} />;
 }
 
-function DrawerPortal({
-  ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Portal>) {
+function DrawerPortal({ ...props }: React.ComponentProps<typeof DrawerPrimitive.Portal>) {
   return <DrawerPrimitive.Portal data-slot="drawer-portal" {...props} />;
 }
 
-function DrawerClose({
-  ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Close>) {
+function DrawerClose({ ...props }: React.ComponentProps<typeof DrawerPrimitive.Close>) {
   return <DrawerPrimitive.Close data-slot="drawer-close" {...props} />;
 }
 
@@ -68,7 +62,7 @@ function DrawerContent({
       <DrawerPrimitive.Content
         data-slot="drawer-content"
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 mx-auto mt-24 flex h-auto max-h-[92dvh] w-full max-w-lg flex-col rounded-t-xl bg-card text-card-foreground outline-none",
+          "fixed inset-x-0 bottom-0 z-50 mx-auto mt-24 flex h-auto max-h-[92dvh] w-full max-w-lg flex-col rounded-t-[1.75rem] bg-background text-card-foreground outline-none",
           className,
         )}
         onOpenAutoFocus={(event) => {
@@ -129,14 +123,11 @@ function DrawerFooter({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function DrawerTitle({
-  className,
-  ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Title>) {
+function DrawerTitle({ className, ...props }: React.ComponentProps<typeof DrawerPrimitive.Title>) {
   return (
     <DrawerPrimitive.Title
       data-slot="drawer-title"
-      className={cn("font-serif text-xl font-medium tracking-tight", className)}
+      className={cn("text-2xl font-bold tracking-tight", className)}
       {...props}
     />
   );

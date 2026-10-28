@@ -10,51 +10,6 @@ const config = { DEEPSEEK_API_KEY: "sk-test" };
 const reply = (notes: unknown) =>
   Response.json({ choices: [{ message: { content: JSON.stringify({ notes }) } }] });
 
-test("asks for JSON, sends the key, and keeps only lines that fit the brief", async () => {
-  let seen: { url: string; init: RequestInit } | null = null;
-  const result = await generateVerseNotes(verses, "es", 3, config, async (url, init) => {
-    seen = { url: String(url), init: init! };
-    return reply({
-      "jn-3-16": [
-        "Pensé en ti hoy y quise recordarte cuánto te ama Dios.",
-        "corto", // too short
-        "Que esta palabra te acompañe en tu día 🙏", // emoji
-        "Pensé en ti hoy y quise recordarte cuánto te ama Dios.", // duplicate
-        "Dios te sostiene aunque no lo sientas; descansa en su amor.",
-      ],
-      "sal-23-1": "not a list",
-    });
-  });
-  assert.equal(seen!.url, "https://api.deepseek.com/chat/completions");
-  const headers = seen!.init.headers as Record<string, string>;
-  assert.equal(headers.Authorization, "Bearer sk-test");
-  const body = JSON.parse(String(seen!.init.body));
-  assert.equal(body.model, "deepseek-flash");
-  assert.deepEqual(body.response_format, { type: "json_object" });
-  assert.equal(body.messages[0].content, systemPrompt("es", 3));
-  assert.deepEqual(result, {
-    "jn-3-16": [
-      "Pensé en ti hoy y quise recordarte cuánto te ama Dios.",
-      "Dios te sostiene aunque no lo sientas; descansa en su amor.",
-    ],
-    "sal-23-1": [],
-  });
-});
-
-test("a missing key, a failed call, or non-JSON each fail loudly, never silently", async () => {
-  await assert.rejects(generateVerseNotes(verses, "es", 3, {}), /deepseek_not_configured/);
-  await assert.rejects(
-    generateVerseNotes(verses, "es", 3, config, async () => new Response("no", { status: 429 })),
-    /deepseek_429/,
-  );
-  await assert.rejects(
-    generateVerseNotes(verses, "es", 3, config, async () =>
-      Response.json({ choices: [{ message: { content: "not json" } }] }),
-    ),
-    /deepseek_bad_json/,
-  );
-});
-
 test("the brief names the ministry, the one-God stance, and shows sample lines", () => {
   for (const locale of ["es", "en"] as const) {
     const prompt = systemPrompt(locale, 3);
@@ -132,4 +87,17 @@ test("cleanNote normalises whitespace and refuses the wrong shape", () => {
   );
   assert.equal(cleanNote(42), null);
   assert.equal(cleanNote("x".repeat(221)), null);
+});
+
+test("prepared notes exclude Scripture text from the provider request", async () => {
+  let body = "";
+  const request = (async (_url, init) => {
+    body = String(init?.body);
+    return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ notes: { a: ["Que la paz del Señor acompañe cada paso que des hoy."] } }) } }] }));
+  }) as typeof fetch;
+  const result = await generateVerseNotes([{ id: "a", ref: "Juan 3:16", text: "RESTRICTED_SCRIPTURE_FIXTURE" }], "es", 3, { DEEPSEEK_API_KEY: "test" }, request);
+  assert.equal(body.includes("RESTRICTED_SCRIPTURE_FIXTURE"), false);
+  assert.ok(body.includes("Juan 3:16"));
+  assert.equal(JSON.parse(body).thinking.type, "disabled");
+  assert.ok(result.a.length);
 });

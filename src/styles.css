@@ -6,26 +6,26 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-background: #f4ead6;
-  --color-foreground: #221711;
-  --color-card: #faf3e4;
-  --color-card-foreground: #221711;
-  --color-popover: #faf3e4;
-  --color-popover-foreground: #221711;
-  --color-primary: #6b2c38;
-  --color-primary-foreground: #f7efdc;
-  --color-secondary: #ead9bc;
-  --color-secondary-foreground: #221711;
-  --color-muted: #ead9bc;
-  --color-muted-foreground: #6e5b45;
-  --color-accent: #ead9bc;
-  --color-accent-foreground: #221711;
+  --color-background: #faf9f5;
+  --color-foreground: #131d2c;
+  --color-card: #ffffff;
+  --color-card-foreground: #131d2c;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #131d2c;
+  --color-primary: #172d4d;
+  --color-primary-foreground: #faf9f5;
+  --color-secondary: #e9edf3;
+  --color-secondary-foreground: #131d2c;
+  --color-muted: #e9edf3;
+  --color-muted-foreground: #606b7b;
+  --color-accent: #e9edf3;
+  --color-accent-foreground: #131d2c;
   --color-destructive: #8a2f2a;
-  --color-destructive-foreground: #faf3e4;
-  --color-border: #d4c19a;
-  --color-input: #d4c19a;
-  --color-ring: #a67c2d;
-  --color-paper: #efe2c8;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #dce1e9;
+  --color-input: #dce1e9;
+  --color-ring: #536f94;
+  --color-paper: #f0f1f4;
 
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
@@ -36,8 +36,7 @@
   --font-serif: "Newsreader", "Iowan Old Style", Palatino, Georgia, serif;
   --reader-size: 1.2rem;
 
-  --shadow-paper: 0 1px 0 rgb(34 23 17 / 0.06),
-    0 22px 44px -20px rgb(34 23 17 / 0.18);
+  --shadow-paper: 0 1px 0 rgb(34 23 17 / 0.06), 0 22px 44px -20px rgb(34 23 17 / 0.18);
 
   --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -50,29 +49,28 @@
 /* Noche: the night palette. Same token names as the day theme above, so
    components need no changes; values from the design system's dark theme. */
 html.dark {
-  --color-background: #17120e;
-  --color-foreground: #ecdfc8;
-  --color-card: #2a221c;
-  --color-card-foreground: #ecdfc8;
-  --color-popover: #2a221c;
-  --color-popover-foreground: #ecdfc8;
-  --color-primary: #cf8794;
-  --color-primary-foreground: #2b1117;
-  --color-secondary: #3b2f25;
-  --color-secondary-foreground: #ecdfc8;
-  --color-muted: #3b2f25;
-  --color-muted-foreground: #ad9c84;
-  --color-accent: #3b2f25;
-  --color-accent-foreground: #ecdfc8;
+  --color-background: #0c1524;
+  --color-foreground: #f3f4f7;
+  --color-card: #152237;
+  --color-card-foreground: #f3f4f7;
+  --color-popover: #152237;
+  --color-popover-foreground: #f3f4f7;
+  --color-primary: #d9be82;
+  --color-primary-foreground: #172d4d;
+  --color-secondary: #22334c;
+  --color-secondary-foreground: #f3f4f7;
+  --color-muted: #22334c;
+  --color-muted-foreground: #bac6d8;
+  --color-accent: #22334c;
+  --color-accent-foreground: #f3f4f7;
   --color-destructive: #f4b088;
   --color-destructive-foreground: #2a0e0b;
-  --color-border: #4a3b2e;
-  --color-input: #85705a;
-  --color-ring: #d4ac5e;
-  --color-paper: #110d0a;
+  --color-border: #35465e;
+  --color-input: #73849c;
+  --color-ring: #d9be82;
+  --color-paper: #080f1c;
 
-  --shadow-paper: 0 1px 0 rgb(0 0 0 / 0.35),
-    0 22px 44px -20px rgb(0 0 0 / 0.6);
+  --shadow-paper: 0 1px 0 rgb(0 0 0 / 0.35), 0 22px 44px -20px rgb(0 0 0 / 0.6);
 
   color-scheme: dark;
 }
@@ -92,17 +90,6 @@ html.dark {
   body {
     min-height: 100dvh;
     background-color: var(--color-background);
-    background-image:
-      radial-gradient(
-        ellipse 90% 46% at 50% -8%,
-        color-mix(in oklab, var(--color-primary) 9%, transparent),
-        transparent 62%
-      ),
-      radial-gradient(
-        ellipse 50% 28% at 100% 0%,
-        color-mix(in oklab, var(--color-ring) 8%, transparent),
-        transparent 70%
-      );
     color: var(--color-foreground);
     font-family: var(--font-sans);
   }
@@ -183,3 +170,272 @@ html.dark {
     animation: none;
   }
 }
+
+/* Approved iPhone reading direction. Images are decorative; all content is live. */
+::selection {
+  background: #d9be82;
+  color: #172d4d;
+}
+:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 4px;
+}
+.daily-landscape {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  min-height: 390px;
+  aspect-ratio: 0.93;
+  background: #172d4d;
+  color: white;
+  display: flex;
+  align-items: end;
+}
+.daily-landscape > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.daily-landscape-content {
+  position: relative;
+  width: 100%;
+  padding: 80px 18px 18px;
+  background: linear-gradient(transparent, rgba(12, 29, 51, 0.9) 55%, #172d4d);
+}
+.reading-cta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: #d9be82;
+  color: #172d4d;
+  font-weight: 700;
+}
+.reading-cta:hover {
+  background: #e8d4a7;
+}
+.reading-cta:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.section-title {
+  margin-bottom: 12px;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.continue-reading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+}
+.continue-reading:hover {
+  background: var(--color-secondary);
+}
+.theme-photo {
+  position: relative;
+  overflow: hidden;
+  min-height: 124px;
+  border-radius: 14px;
+  text-align: left;
+  background: #172d4d;
+  color: white;
+}
+.theme-photo img {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+.theme-photo span {
+  position: relative;
+  display: flex;
+  align-items: end;
+  min-height: 124px;
+  padding: 14px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: linear-gradient(transparent, rgba(9, 24, 44, 0.8));
+}
+.theme-photo:hover img {
+  filter: brightness(1.12);
+}
+.app-tab-bar button[aria-current="page"] {
+  position: relative;
+}
+.app-tab-bar button[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #d9be82;
+}
+
+/* Shared library, collections and account surfaces. */
+.screen-title {
+  font-family: var(--font-sans);
+  font-size: clamp(1.85rem, 7.5vw, 2.4rem);
+  font-weight: 750;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+.collection-list {
+  border-top: 1px solid var(--color-border);
+}
+.collection-link {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 56px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  text-align: left;
+  font-weight: 600;
+}
+.collection-list .collection-link {
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+}
+.collection-link:hover,
+.book-row:hover {
+  background: var(--color-secondary);
+}
+.book-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 78px;
+  padding: 16px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+.testament-tabs {
+  border-bottom: 1px solid var(--color-border);
+}
+.reading-resume {
+  background: #172d4d;
+  color: #faf9f5;
+}
+.reading-resume > svg {
+  color: #d9be82;
+}
+.reading-resume:hover {
+  background: #233f66;
+}
+.theme-feature {
+  position: relative;
+  display: flex;
+  align-items: end;
+  min-height: 230px;
+  overflow: hidden;
+  border-radius: 16px;
+  text-align: left;
+  background: #172d4d;
+  color: white;
+}
+.theme-feature > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.theme-feature-copy {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  padding: 75px 14px 16px;
+  background: linear-gradient(transparent, rgba(9, 27, 49, 0.94));
+}
+.theme-feature-copy strong {
+  font-size: clamp(1.15rem, 4.5vw, 1.55rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+.theme-feature-copy > span {
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+.theme-feature-copy small {
+  font-size: 0.7rem;
+  margin-top: 3px;
+}
+.theme-feature:hover > img {
+  filter: brightness(1.1);
+}
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 36px 20px;
+  text-align: center;
+  border-radius: 16px;
+  background: var(--color-secondary);
+}
+[data-slot="drawer-content"] input,
+[data-slot="drawer-content"] textarea {
+  font-size: max(1rem, 16px);
+}
+
+/* Glass chrome with opaque fallback. Reading surfaces remain solid. */
+.app-tab-bar {
+  inset-inline: 12px;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  max-width: 488px;
+  margin-inline: auto;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 28px;
+  background: var(--color-background);
+  box-shadow: 0 8px 28px rgb(12 29 51 / 0.15);
+}
+.app-tab-bar button { border-radius: 22px; }
+.app-tab-bar button[aria-current="page"] { background: var(--color-secondary); }
+@supports ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
+  .app-tab-bar, .continue-reading {
+    background: rgb(250 249 245 / 0.84);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
+    border-color: rgb(255 255 255 / 0.7);
+  }
+  .dark .app-tab-bar, .dark .continue-reading {
+    background: rgb(21 34 55 / 0.9);
+    border-color: rgb(186 198 216 / 0.24);
+  }
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .app-tab-bar, .continue-reading, .dark .app-tab-bar, .dark .continue-reading {
+    background: var(--color-background);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-color: var(--color-border);
+  }
+}
+
+/* Daily Scripture remains readable as a complete post, including large text. */
+.daily-post { overflow: hidden; border-radius: 1.5rem; background: var(--card); }
+.daily-post-photo { display: block; width: 100%; height: clamp(11rem, 48vw, 17rem); object-fit: cover; object-position: center 45%; }
+.daily-post-content { padding: 1.25rem; }
+@media (min-width: 640px) { .daily-post-content { padding: 1.75rem; } }

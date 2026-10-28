@@ -1,5 +1,6 @@
-import { useEffect } from "react";
-import { ArrowLeft, Search, Send } from "lucide-react";
+import { designCopy } from "@/lib/design-copy";
+import { useEffect, useState } from "react";
+import { ArrowLeft, ChevronRight, Search, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VerseCard } from "@/components/verse-card";
@@ -7,13 +8,8 @@ import { useI18n } from "@/components/language-switch";
 import { prefetchVerses } from "@/lib/recobro";
 import { answerTopic } from "@/lib/topic-reply";
 import { useAppStore, type SendDraft } from "@/lib/store";
-import {
-  THEMES,
-  localizedTheme,
-  versesForTheme,
-  type ThemeId,
-  type Verse,
-} from "@/lib/verses";
+import { THEME_PHOTOS } from "@/lib/theme-photos";
+import { THEMES, localizedTheme, versesForTheme, type ThemeId, type Verse } from "@/lib/verses";
 
 type ThemesViewProps = {
   query: string;
@@ -31,6 +27,10 @@ export function ThemesView({
   onSend,
 }: ThemesViewProps) {
   const { locale, t } = useI18n();
+  const copy = designCopy(locale);
+  const [showAll, setShowAll] = useState(false);
+  const featured = ["paz", "fortaleza", "esperanza", "familia"] as const;
+  const photos = THEME_PHOTOS;
   // Re-read the themes when the verses DeepSeek added arrive.
   const extrasVersion = useAppStore((s) => s.themeExtrasVersion);
   const reply = query.trim() ? answerTopic(query, locale) : null;
@@ -63,7 +63,7 @@ export function ThemesView({
           {t("themesTitle")}
         </button>
         <header>
-          <h1 className="font-serif text-3xl tracking-tight">{theme.name}</h1>
+          <h1 className="screen-title">{theme.name}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{theme.line}</p>
         </header>
         <div className="flex flex-col gap-3">
@@ -78,8 +78,8 @@ export function ThemesView({
   return (
     <div className="flex flex-col gap-5">
       <header>
-        <h1 className="font-serif text-3xl tracking-tight">{t("themesTitle")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("themesSub")}</p>
+        <h1 className="screen-title">{copy.themesTitle}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{copy.themesSub}</p>
       </header>
       <div className="relative">
         <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -99,7 +99,7 @@ export function ThemesView({
               <p className="text-xs font-medium tracking-[0.16em] text-primary uppercase">
                 {t("topicReplyTitle")}
               </p>
-              <h2 className="mt-2 font-serif text-2xl tracking-tight">{reply.title}</h2>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight">{reply.title}</h2>
               <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">
                 {reply.body}
               </p>
@@ -129,29 +129,76 @@ export function ThemesView({
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 @min-[16rem]:grid-cols-2 gap-3">
-          {THEMES.map((theme) => {
-            const copy = localizedTheme(theme.id, locale);
-            const count = versesForTheme(theme.id).length;
-            return (
-              <button
-                key={theme.id}
-                type="button"
-                onClick={() => onThemeChange(theme.id)}
-                className="rounded-lg bg-card px-4 py-5 text-left shadow-paper transition-transform duration-150 ease-out active:scale-[0.96]"
-              >
-                <p className="font-serif text-xl tracking-tight text-foreground">
-                  {copy.name}
-                </p>
-                <p className="mt-1 text-xs leading-snug text-muted-foreground">
-                  {copy.line}
-                </p>
-                <p className="mt-3 text-xs font-medium tracking-[0.12em] text-primary uppercase">
-                  {t("verseCount", { n: count })}
-                </p>
-              </button>
-            );
-          })}
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 @min-[16rem]:grid-cols-2 gap-3">
+            {featured
+              .map((id) => THEMES.find((theme) => theme.id === id)!)
+              .map((theme) => {
+                const copy = localizedTheme(theme.id, locale);
+                const count = versesForTheme(theme.id).length;
+                return (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    onClick={() => onThemeChange(theme.id)}
+                    className="theme-feature"
+                  >
+                    <img
+                      src={`/images/${photos[theme.id]}.jpg`}
+                      alt=""
+                      loading="lazy"
+                      width="1086"
+                      height="1448"
+                    />
+                    <span className="theme-feature-copy">
+                      <strong>{copy.name}</strong>
+                      <span>{copy.line}</span>
+                      <small>{t("verseCount", { n: count })}</small>
+                    </span>
+                  </button>
+                );
+              })}
+          </div>
+          <button
+            type="button"
+            className="collection-link"
+            aria-expanded={showAll}
+            onClick={() => setShowAll((value) => !value)}
+          >
+            {showAll ? copy.fewerThemes : copy.moreThemes}
+            <ChevronRight aria-hidden className="size-5" />
+          </button>
+          {showAll ? (
+            <section
+              aria-label={copy.allThemes}
+              className="grid grid-cols-1 @min-[16rem]:grid-cols-2 gap-3"
+            >
+              {THEMES.filter((theme) => !featured.some((id) => id === theme.id)).map((theme) => {
+                const item = localizedTheme(theme.id, locale);
+                return (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    className="theme-feature"
+                    onClick={() => onThemeChange(theme.id)}
+                  >
+                    <img
+                      src={`/images/${photos[theme.id]}.jpg`}
+                      alt=""
+                      loading="lazy"
+                      width="1086"
+                      height="1448"
+                    />
+                    <span className="theme-feature-copy">
+                      <strong>{item.name}</strong>
+                      <span>{item.line}</span>
+                      <small>{t("verseCount", { n: versesForTheme(theme.id).length })}</small>
+                    </span>
+                  </button>
+                );
+              })}
+            </section>
+          ) : null}
         </div>
       )}
     </div>

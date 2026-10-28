@@ -85,6 +85,37 @@ export async function resolveThemeMessage(
   verses: VerseSource = catalogVerseSource,
   fresh: { write?: NoteWriter | null; themeName?: string } = {},
 ): Promise<{ message: string; verseId: string } | { error: "theme_empty" | "verse_unavailable" }> {
+  if (verses === catalogVerseSource) {
+    const list = await catalogVerseSource(schedule.theme_id);
+    if (!list.length) return { error: "theme_empty" };
+    const [{ count }] = await sql<{
+      count: number;
+    }>`select count(*)::int as count from message_deliveries where schedule_id=${schedule.id}`;
+    const verse = pickRotating(list, Math.max(0, count - 1))!;
+    const { hydrateVerse } = await import("../recobro");
+    const { formatVerseMessage } = await import("../share");
+    const full = await hydrateVerse(
+      { ...verse, source: verse.source ?? undefined, book: "", themes: [] },
+      schedule.message_locale,
+    );
+    const notes = (await sql<{ text: string }>`
+      select text from verse_notes where verse_id = ${verse.id} and locale = ${schedule.message_locale}
+      order by position`).map((row) => row.text);
+    const turn = Math.max(0, count - 1);
+    const generated = fresh.write ? await fresh.write({
+      ref: full.ref, text: "", locale: schedule.message_locale,
+      theme: fresh.themeName ?? schedule.theme_id,
+      name: schedule.recipient_name ?? null,
+    }).catch(() => null) : null;
+    const note = generated ?? pickRotating(
+      notes.length ? notes : fallbackNotes(schedule.message_locale),
+      Math.floor(turn / list.length) + turn,
+    );
+    return {
+      verseId: verse.id,
+      message: formatVerseMessage(full, note ?? undefined, schedule.sender_name ?? undefined, schedule.message_locale),
+    };
+  }
   const list = await verses(schedule.theme_id);
   if (!list.length) return { error: "theme_empty" };
   const [{ count }] = await sql<{ count: number }>`

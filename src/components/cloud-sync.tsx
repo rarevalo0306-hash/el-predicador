@@ -1,3 +1,4 @@
+import { referenceMemory } from "@/lib/bible-policy";
 import { useEffect, useRef, useState } from "react";
 import { isEmptyCloud } from "@/lib/cloud-state";
 import { EMPTY_CLOUD, useAppStore, type CloudPayload } from "@/lib/store";
@@ -10,7 +11,10 @@ function readGuest(): CloudPayload | null {
   try {
     const raw = localStorage.getItem(GUEST_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as CloudPayload;
+    const payload = JSON.parse(raw) as CloudPayload;
+    payload.verseMemory = referenceMemory(payload.verseMemory);
+    localStorage.setItem(GUEST_KEY, JSON.stringify(payload));
+    return payload;
   } catch {
     return null;
   }

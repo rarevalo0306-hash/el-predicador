@@ -120,6 +120,7 @@ export const publishThemeVerses = createServerFn({ method: "POST" })
     const { getSql } = await import("@/lib/db");
     const sql = await getSql();
     const result = await expandTheme(sql, themeId, {
+      persistText: false,
       propose: async () => data.refs,
       canonical: (ref) => {
         const passage = canonicalPassageLoose(ref);

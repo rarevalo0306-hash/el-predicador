@@ -6,6 +6,10 @@
     {
       "path": "/api/cron/messages",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/daily-photo",
+      "schedule": "7 4 * * *"
     }
   ]
 }

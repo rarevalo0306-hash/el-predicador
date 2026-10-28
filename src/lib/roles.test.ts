@@ -43,3 +43,11 @@ test("managers may send automatically, within the monthly cap", async () => {
   assert.equal(cappedSender("owner", config), false);
   assert.equal(cappedSender("helper", config), true);
 });
+
+ test("additional senders preserve existing permissions without receiving staff access", async () => {
+  const settings = { ...config, MESSAGING_ADDITIONAL_USER_IDS: " extra,owner, ,extra " };
+  const allowed = await messagingConfig(sql, settings);
+  assert.equal(allowed.MESSAGING_ALLOWED_USER_IDS, "owner,extra,helper");
+  assert.deepEqual(await accessFor(sql, "extra", settings), { owner: false, manager: false });
+  assert.equal(cappedSender("extra", settings), true);
+});

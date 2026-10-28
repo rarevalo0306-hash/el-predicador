@@ -1,3 +1,4 @@
+import { requestAIConsent } from "@/lib/ai-consent";
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Send, Square, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -147,8 +148,8 @@ export function AskDrawer({
   const lastLength = turns[turns.length - 1]?.content.length ?? 0;
   useEffect(() => {
     const list = listRef.current;
-    if (open && list) list.scrollTop = list.scrollHeight;
-  }, [open, turns.length, lastLength, busy, area?.height]);
+    if (open && list) list.scrollTop = userId === "" ? 0 : list.scrollHeight;
+  }, [open, turns.length, lastLength, busy, area?.height, userId]);
 
   useEffect(() => {
     if (passage) setAttached(passage);
@@ -159,11 +160,12 @@ export function AskDrawer({
   async function send(typed = question) {
     const raw = typed.trim();
     if (!raw || busy || asking.current) return;
+    if (!requestAIConsent(locale, "ask")) return;
     const controller = new AbortController();
     asking.current = controller;
     askedAt.current = Date.now();
     const about = attached;
-    const text = about ? passageQuestion(about.ref, about.text, raw) : raw;
+    const text = about ? `${about.ref}\n\n${raw}` : raw;
     setAttached(null);
     const history = turns;
     const asked = [...turns, { role: "user" as const, content: text }];
@@ -175,7 +177,7 @@ export function AskDrawer({
     let answer = "";
     try {
       const { remaining: left } = await askStream(
-        { question: text, history, locale },
+        { question: text, history, locale, aiConsent: true },
         (piece) => {
           // The answer grows on screen as it is written.
           answer += piece;

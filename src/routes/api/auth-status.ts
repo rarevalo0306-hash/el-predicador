@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { appleConfigured } from "@/lib/auth/apple.server";
 import { normalizeDatabaseUrl } from "@/lib/database-url";
 
 /**
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/api/auth-status")({
         );
         return Response.json({
           ok: true,
+          apple: appleConfigured(),
           google: googleId && googleSecret,
           googleClientId: googleId,
           googleClientSecret: googleSecret,

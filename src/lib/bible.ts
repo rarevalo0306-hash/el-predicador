@@ -13,38 +13,112 @@ export type BibleBook = {
   aliases: string[];
 };
 
-export const RECOBRO_ORIGIN = "https://texto.versionrecobro.org";
-export const RECOVERY_ORIGIN = "https://text.recoveryversion.bible";
-export const SOURCE_RECOBRO = "Versión Recobro";
-export const SOURCE_RECOBRO_EN = "Recovery Version";
-export const RECOBRO_COPYRIGHT =
-  "Santa Biblia Versión Recobro © Living Stream Ministry";
-export const RECOBRO_COPYRIGHT_EN =
-  "Holy Bible Recovery Version © Living Stream Ministry";
+// Compatibility names retained for existing reference IDs; live text comes from the selected authorized translation.
+export const LBLA_BIBLE_ID = "e3f420b9665abaeb-01";
+export const RECOBRO_ORIGIN = "https://api.bible";
+export const RECOVERY_ORIGIN = RECOBRO_ORIGIN;
+export const SOURCE_RECOBRO = "La Biblia de las Américas (LBLA)";
+export const SOURCE_RECOBRO_EN = "Berean Standard Bible (BSB)";
+export const BIBLE_TRANSLATIONS = {
+  lbla: { id: LBLA_BIBLE_ID, name: SOURCE_RECOBRO, locale: "es" },
+  bsb: { id: "bba9f40183526463-01", name: SOURCE_RECOBRO_EN, locale: "en" },
+  kjv: { id: "de4e12af7f28f599-02", name: "King James Version (KJV)", locale: "en" },
+} as const;
+export type BibleTranslation = keyof typeof BIBLE_TRANSLATIONS;
+export function defaultBibleTranslation(locale: Locale): BibleTranslation {
+  return locale === "en" ? "bsb" : "lbla";
+}
+export function validateBibleTranslation(value: unknown, locale: Locale): BibleTranslation {
+  if (value === undefined) return defaultBibleTranslation(locale);
+  if (value !== "lbla" && value !== "bsb" && value !== "kjv")
+    throw new Error("Invalid Bible translation");
+  if (BIBLE_TRANSLATIONS[value].locale !== locale) throw new Error("Bible language mismatch");
+  return value;
+}
+// Never invent publisher copyright: it must come from the API response.
+export const RECOBRO_COPYRIGHT = "";
+export const RECOBRO_COPYRIGHT_EN = "";
 
 export const BIBLE_BOOKS: BibleBook[] = [
   book("gen", "Génesis", "Gn", "at", 50, "01", "Genesis", ["genesis", "gn", "gen"]),
   book("exo", "Éxodo", "Éx", "at", 40, "02", "Exodus", ["exodo", "ex", "exo", "exodus"]),
   book("lev", "Levítico", "Lv", "at", 27, "03", "Leviticus", ["levitico", "lv", "lev"]),
   book("num", "Números", "Nm", "at", 36, "04", "Numbers", ["numeros", "nm", "num", "nu"]),
-  book("deu", "Deuteronomio", "Dt", "at", 34, "05", "Deuteronomy", ["deuteronomio", "dt", "deu", "deut"]),
+  book("deu", "Deuteronomio", "Dt", "at", 34, "05", "Deuteronomy", [
+    "deuteronomio",
+    "dt",
+    "deu",
+    "deut",
+  ]),
   book("jos", "Josué", "Jos", "at", 24, "06", "Joshua", ["josue", "jos", "joshua"]),
   book("jdg", "Jueces", "Jue", "at", 21, "07", "Judges", ["jueces", "jue", "jdg", "judg"]),
   book("rut", "Rut", "Rt", "at", 4, "08", "Ruth", ["rut", "rt", "ruth"]),
-  book("1sa", "1 Samuel", "1 S", "at", 31, "09", "1Samuel", ["1 samuel", "1samuel", "1s", "1sa", "1 sam"]),
-  book("2sa", "2 Samuel", "2 S", "at", 24, "10", "2Samuel", ["2 samuel", "2samuel", "2s", "2sa", "2 sam"]),
-  book("1ki", "1 Reyes", "1 R", "at", 22, "11", "1Kings", ["1 reyes", "1reyes", "1r", "1ki", "1 re"]),
-  book("2ki", "2 Reyes", "2 R", "at", 25, "12", "2Kings", ["2 reyes", "2reyes", "2r", "2ki", "2 re"]),
-  book("1ch", "1 Crónicas", "1 Cr", "at", 29, "13", "1Chronicles", ["1 cronicas", "1cronicas", "1cr", "1ch"]),
-  book("2ch", "2 Crónicas", "2 Cr", "at", 36, "14", "2Chronicles", ["2 cronicas", "2cronicas", "2cr", "2ch"]),
+  book("1sa", "1 Samuel", "1 S", "at", 31, "09", "1Samuel", [
+    "1 samuel",
+    "1samuel",
+    "1s",
+    "1sa",
+    "1 sam",
+  ]),
+  book("2sa", "2 Samuel", "2 S", "at", 24, "10", "2Samuel", [
+    "2 samuel",
+    "2samuel",
+    "2s",
+    "2sa",
+    "2 sam",
+  ]),
+  book("1ki", "1 Reyes", "1 R", "at", 22, "11", "1Kings", [
+    "1 reyes",
+    "1reyes",
+    "1r",
+    "1ki",
+    "1 re",
+  ]),
+  book("2ki", "2 Reyes", "2 R", "at", 25, "12", "2Kings", [
+    "2 reyes",
+    "2reyes",
+    "2r",
+    "2ki",
+    "2 re",
+  ]),
+  book("1ch", "1 Crónicas", "1 Cr", "at", 29, "13", "1Chronicles", [
+    "1 cronicas",
+    "1cronicas",
+    "1cr",
+    "1ch",
+  ]),
+  book("2ch", "2 Crónicas", "2 Cr", "at", 36, "14", "2Chronicles", [
+    "2 cronicas",
+    "2cronicas",
+    "2cr",
+    "2ch",
+  ]),
   book("ezr", "Esdras", "Esd", "at", 10, "15", "Ezra", ["esdras", "esd", "ezr", "ezra"]),
   book("neh", "Nehemías", "Neh", "at", 13, "16", "Nehemiah", ["nehemias", "neh"]),
   book("est", "Ester", "Est", "at", 10, "17", "Esther", ["ester", "est", "esther"]),
   book("job", "Job", "Job", "at", 42, "18", "Job", ["job"]),
-  book("psa", "Salmos", "Sal", "at", 150, "19", "Psalms", ["salmos", "salmo", "sal", "ps", "psalm", "psalms"]),
+  book("psa", "Salmos", "Sal", "at", 150, "19", "Psalms", [
+    "salmos",
+    "salmo",
+    "sal",
+    "ps",
+    "psalm",
+    "psalms",
+  ]),
   book("pro", "Proverbios", "Pr", "at", 31, "20", "Proverbs", ["proverbios", "pr", "prov", "pro"]),
-  book("ecc", "Eclesiastés", "Ec", "at", 12, "21", "Ecclesiastes", ["eclesiastes", "ec", "ecl", "ecc"]),
-  book("sng", "Cantares", "Cnt", "at", 8, "22", "SongofSongs", ["cantares", "cnt", "cant", "sng", "cantico"]),
+  book("ecc", "Eclesiastés", "Ec", "at", 12, "21", "Ecclesiastes", [
+    "eclesiastes",
+    "ec",
+    "ecl",
+    "ecc",
+  ]),
+  book("sng", "Cantares", "Cnt", "at", 8, "22", "SongofSongs", [
+    "cantares",
+    "cnt",
+    "cant",
+    "sng",
+    "cantico",
+  ]),
   book("isa", "Isaías", "Is", "at", 66, "23", "Isaiah", ["isaias", "is", "isa"]),
   book("jer", "Jeremías", "Jer", "at", 52, "24", "Jeremiah", ["jeremias", "jer"]),
   book("lam", "Lamentaciones", "Lm", "at", 5, "25", "Lamentations", ["lamentaciones", "lm", "lam"]),
@@ -68,27 +142,96 @@ export const BIBLE_BOOKS: BibleBook[] = [
   book("jhn", "Juan", "Jn", "nt", 21, "43", "John", ["juan", "jn", "jhn", "john"]),
   book("act", "Hechos", "Hch", "nt", 28, "44", "Acts", ["hechos", "hch", "act", "acts"]),
   book("rom", "Romanos", "Ro", "nt", 16, "45", "Romans", ["romanos", "ro", "rm", "rom"]),
-  book("1co", "1 Corintios", "1 Co", "nt", 16, "46", "1Corinthians", ["1 corintios", "1corintios", "1co", "1 cor"]),
-  book("2co", "2 Corintios", "2 Co", "nt", 13, "47", "2Corinthians", ["2 corintios", "2corintios", "2co", "2 cor"]),
+  book("1co", "1 Corintios", "1 Co", "nt", 16, "46", "1Corinthians", [
+    "1 corintios",
+    "1corintios",
+    "1co",
+    "1 cor",
+  ]),
+  book("2co", "2 Corintios", "2 Co", "nt", 13, "47", "2Corinthians", [
+    "2 corintios",
+    "2corintios",
+    "2co",
+    "2 cor",
+  ]),
   book("gal", "Gálatas", "Gá", "nt", 6, "48", "Galatians", ["galatas", "ga", "gal"]),
   book("eph", "Efesios", "Ef", "nt", 6, "49", "Ephesians", ["efesios", "ef", "eph"]),
-  book("php", "Filipenses", "Fil", "nt", 4, "50", "Philippians", ["filipenses", "fil", "php", "flp"]),
+  book("php", "Filipenses", "Fil", "nt", 4, "50", "Philippians", [
+    "filipenses",
+    "fil",
+    "php",
+    "flp",
+  ]),
   book("col", "Colosenses", "Col", "nt", 4, "51", "Colossians", ["colosenses", "col"]),
-  book("1th", "1 Tesalonicenses", "1 Ts", "nt", 5, "52", "1Thessalonians", ["1 tesalonicenses", "1tesalonicenses", "1ts", "1th", "1 tes"]),
-  book("2th", "2 Tesalonicenses", "2 Ts", "nt", 3, "53", "2Thessalonians", ["2 tesalonicenses", "2tesalonicenses", "2ts", "2th", "2 tes"]),
-  book("1ti", "1 Timoteo", "1 Ti", "nt", 6, "54", "1Timothy", ["1 timoteo", "1timoteo", "1ti", "1 tim"]),
-  book("2ti", "2 Timoteo", "2 Ti", "nt", 4, "55", "2Timothy", ["2 timoteo", "2timoteo", "2ti", "2 tim"]),
+  book("1th", "1 Tesalonicenses", "1 Ts", "nt", 5, "52", "1Thessalonians", [
+    "1 tesalonicenses",
+    "1tesalonicenses",
+    "1ts",
+    "1th",
+    "1 tes",
+  ]),
+  book("2th", "2 Tesalonicenses", "2 Ts", "nt", 3, "53", "2Thessalonians", [
+    "2 tesalonicenses",
+    "2tesalonicenses",
+    "2ts",
+    "2th",
+    "2 tes",
+  ]),
+  book("1ti", "1 Timoteo", "1 Ti", "nt", 6, "54", "1Timothy", [
+    "1 timoteo",
+    "1timoteo",
+    "1ti",
+    "1 tim",
+  ]),
+  book("2ti", "2 Timoteo", "2 Ti", "nt", 4, "55", "2Timothy", [
+    "2 timoteo",
+    "2timoteo",
+    "2ti",
+    "2 tim",
+  ]),
   book("tit", "Tito", "Tit", "nt", 3, "56", "Titus", ["tito", "tit", "titus"]),
-  book("phm", "Filemón", "Flm", "nt", 1, "57", "Philemon", ["filemon", "flm", "flmón", "phm", "filem"]),
+  book("phm", "Filemón", "Flm", "nt", 1, "57", "Philemon", [
+    "filemon",
+    "flm",
+    "flmón",
+    "phm",
+    "filem",
+  ]),
   book("heb", "Hebreos", "He", "nt", 13, "58", "Hebrews", ["hebreos", "he", "heb"]),
-  book("jas", "Jacobo", "Jac", "nt", 5, "59", "James", ["jacobo", "jac", "santiago", "stg", "stgo", "james", "ja"]),
-  book("1pe", "1 Pedro", "1 P", "nt", 5, "60", "1Peter", ["1 pedro", "1pedro", "1p", "1pe", "1 pet"]),
-  book("2pe", "2 Pedro", "2 P", "nt", 3, "61", "2Peter", ["2 pedro", "2pedro", "2p", "2pe", "2 pet"]),
+  book("jas", "Jacobo", "Jac", "nt", 5, "59", "James", [
+    "jacobo",
+    "jac",
+    "santiago",
+    "stg",
+    "stgo",
+    "james",
+    "ja",
+  ]),
+  book("1pe", "1 Pedro", "1 P", "nt", 5, "60", "1Peter", [
+    "1 pedro",
+    "1pedro",
+    "1p",
+    "1pe",
+    "1 pet",
+  ]),
+  book("2pe", "2 Pedro", "2 P", "nt", 3, "61", "2Peter", [
+    "2 pedro",
+    "2pedro",
+    "2p",
+    "2pe",
+    "2 pet",
+  ]),
   book("1jn", "1 Juan", "1 Jn", "nt", 5, "62", "1John", ["1 juan", "1juan", "1jn", "1 jn"]),
   book("2jn", "2 Juan", "2 Jn", "nt", 1, "63", "2John", ["2 juan", "2juan", "2jn", "2 jn"]),
   book("3jn", "3 Juan", "3 Jn", "nt", 1, "64", "3John", ["3 juan", "3juan", "3jn", "3 jn"]),
   book("jud", "Judas", "Jud", "nt", 1, "65", "Jude", ["judas", "jud", "jude"]),
-  book("rev", "Apocalipsis", "Ap", "nt", 22, "66", "Revelation", ["apocalipsis", "ap", "apo", "rev", "revelacion"]),
+  book("rev", "Apocalipsis", "Ap", "nt", 22, "66", "Revelation", [
+    "apocalipsis",
+    "ap",
+    "apo",
+    "rev",
+    "revelacion",
+  ]),
 ];
 
 function book(
@@ -104,10 +247,7 @@ function book(
   return { id, name, abbr, testament, chapters, num, file, aliases };
 }
 
-export const BOOK_EN: Record<
-  string,
-  { name: string; abbr: string; query: string }
-> = {
+export const BOOK_EN: Record<string, { name: string; abbr: string; query: string }> = {
   gen: { name: "Genesis", abbr: "Gen", query: "Genesis" },
   exo: { name: "Exodus", abbr: "Ex", query: "Exodus" },
   lev: { name: "Leviticus", abbr: "Lev", query: "Leviticus" },
@@ -201,20 +341,19 @@ export function recobroOrigin(locale: Locale = "es") {
   return locale === "en" ? RECOVERY_ORIGIN : RECOBRO_ORIGIN;
 }
 
-export function recobroSource(locale: Locale = "es") {
-  return locale === "en" ? SOURCE_RECOBRO_EN : SOURCE_RECOBRO;
+export function recobroSource(
+  locale: Locale = "es",
+  translation = defaultBibleTranslation(locale),
+) {
+  return BIBLE_TRANSLATIONS[translation].name;
 }
 
 export function recobroCopyright(locale: Locale = "es") {
   return locale === "en" ? RECOBRO_COPYRIGHT_EN : RECOBRO_COPYRIGHT;
 }
 
-export function recobroChapterUrl(
-  book: BibleBook,
-  chapter: number,
-  locale: Locale = "es",
-) {
-  return `${recobroOrigin(locale)}/${book.num}_${book.file}_${chapter}.htm`;
+export function recobroChapterUrl(book: BibleBook, chapter: number, locale: Locale = "es") {
+  return "https://api.bible";
 }
 
 export function recobroVerseId(
@@ -302,8 +441,7 @@ export function findBook(query: string) {
       item.aliases.some((alias) => alias.startsWith(needle)) ||
       Boolean(
         en &&
-          (normalizeQuery(en.name).startsWith(needle) ||
-            normalizeQuery(en.query).startsWith(needle)),
+        (normalizeQuery(en.name).startsWith(needle) || normalizeQuery(en.query).startsWith(needle)),
       )
     );
   });
@@ -322,9 +460,9 @@ export function filterBooks(query: string) {
       item.aliases.some((alias) => alias.includes(needle)) ||
       Boolean(
         en &&
-          (normalizeQuery(en.name).includes(needle) ||
-            normalizeQuery(en.abbr).includes(needle) ||
-            normalizeQuery(en.query).includes(needle)),
+        (normalizeQuery(en.name).includes(needle) ||
+          normalizeQuery(en.abbr).includes(needle) ||
+          normalizeQuery(en.query).includes(needle)),
       )
     );
   });

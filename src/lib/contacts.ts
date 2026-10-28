@@ -71,9 +71,12 @@ export const submitContact = createServerFn({ method: "POST" })
       salt: process.env.BETTER_AUTH_SECRET || "preacher-form",
     });
     if (!allowed) throw new Error("too_many");
+    const { getSessionUser } = await import("@/lib/auth/verify.server");
+    const owner = await getSessionUser();
+    const ownerId = owner?.email?.toLowerCase() === row.email ? owner.id : null;
     const inserted = await sql<{ id: number }>`
-      insert into contacts (name, email, phone, address, locale)
-      values (${row.name}, ${row.email}, ${row.phone}, ${row.address}, ${row.locale})
+      insert into contacts (name, email, phone, address, locale, user_id)
+      values (${row.name}, ${row.email}, ${row.phone}, ${row.address}, ${row.locale}, ${ownerId})
       on conflict do nothing
       returning id
     `;

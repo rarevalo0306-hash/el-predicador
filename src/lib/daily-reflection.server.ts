@@ -84,7 +84,7 @@ export async function reflectionFor(
   if ((cooldown.get(key) ?? 0) > now()) return fallbackFor(sql, verseId, locale);
 
   const verse = await deps.verseText().catch(() => ({ ref: "", text: "" }));
-  if (!verse.text.trim()) {
+  if (!verse.ref.trim()) {
     cooldown.set(key, now() + COOLDOWN_MS);
     return fallbackFor(sql, verseId, locale);
   }

@@ -21,6 +21,7 @@ export type ExpandDeps = {
   textOf: (passage: Passage, locale: Locale) => Promise<VerseText | null>;
   /** At most this many are added in one step. */
   limit?: number;
+  persistText?: boolean;
   /** How long the words may take to arrive, all passages together. */
   textBudgetMs?: number;
 };
@@ -112,7 +113,7 @@ export async function expandTheme(
       ["es", es],
       ["en", en],
     ] as const) {
-      if (!text?.text.trim()) continue;
+      if (deps.persistText === false || !text?.text.trim()) continue;
       await sql`insert into verse_texts (verse_id, locale, ref, text, source, updated_at)
         values (${passage.id}, ${locale}, ${text.ref}, ${text.text}, ${text.source ?? null}, now())
         on conflict (verse_id, locale) do nothing`;

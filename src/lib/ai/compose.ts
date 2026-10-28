@@ -28,7 +28,15 @@ const TASK = {
 
 export function composePrompt(locale: Locale) {
   const voice = VOICE[locale];
-  return [voice.who, TASK[locale], voice.tone, voice.forbidden].join("\n\n");
+  return [
+    voice.who,
+    TASK[locale],
+    locale === "es"
+      ? "Si solo recibes referencias sin texto, no escribas citas bíblicas literales: explica la idea y menciona la referencia para que se lea en la Biblia."
+      : "If only references without verse text are supplied, do not write literal Scripture quotations: explain the idea and cite the reference for reading in the Bible.",
+    voice.tone,
+    voice.forbidden,
+  ].join("\n\n");
 }
 
 /** The case and the person, laid out for the model. */
@@ -54,6 +62,8 @@ export async function streamComposed(
   config: Config = process.env,
   request: typeof fetch = fetch,
 ): Promise<AsyncGenerator<string>> {
+  if (input.verses.some((verse) => verse.text.trim()))
+    throw new Error("La licencia de LBLA no permite adjuntar su texto; usa referencias.");
   if (!config.DEEPSEEK_API_KEY) throw new Error("deepseek_not_configured");
   const response = await request(
     `${config.DEEPSEEK_BASE_URL || "https://api.deepseek.com"}/chat/completions`,
@@ -65,6 +75,7 @@ export async function streamComposed(
       },
       body: JSON.stringify({
         model: config.DEEPSEEK_MODEL || "deepseek-flash",
+        thinking: { type: "disabled" },
         temperature: 0.8,
         max_tokens: 600,
         stream: true,

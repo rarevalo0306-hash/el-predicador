@@ -12,12 +12,18 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as SupportRouteImport } from './routes/support'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ApiAskRouteImport } from './routes/api/ask'
 import { Route as ApiAuthStatusRouteImport } from './routes/api/auth-status'
 import { Route as ApiComposeRouteImport } from './routes/api/compose'
+import { Route as ApiDailyPhotoRouteImport } from './routes/api/daily-photo'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiCronDailyPhotoRouteImport } from './routes/api/cron/daily-photo'
 import { Route as ApiCronMessagesRouteImport } from './routes/api/cron/messages'
+import { Route as ApiNativeAuthCompleteRouteImport } from './routes/api/native-auth/complete'
+import { Route as ApiNativeAuthExchangeRouteImport } from './routes/api/native-auth/exchange'
+import { Route as ApiNativeAuthStartRouteImport } from './routes/api/native-auth/start'
 import { Route as ApiTwilioStatusRouteImport } from './routes/api/twilio/status'
 
 const IndexRoute = IndexRouteImport.update({
@@ -33,6 +39,11 @@ const LoginRoute = LoginRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -55,14 +66,39 @@ const ApiComposeRoute = ApiComposeRouteImport.update({
   path: '/api/compose',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDailyPhotoRoute = ApiDailyPhotoRouteImport.update({
+  id: '/api/daily-photo',
+  path: '/api/daily-photo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCronDailyPhotoRoute = ApiCronDailyPhotoRouteImport.update({
+  id: '/api/cron/daily-photo',
+  path: '/api/cron/daily-photo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCronMessagesRoute = ApiCronMessagesRouteImport.update({
   id: '/api/cron/messages',
   path: '/api/cron/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiNativeAuthCompleteRoute = ApiNativeAuthCompleteRouteImport.update({
+  id: '/api/native-auth/complete',
+  path: '/api/native-auth/complete',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiNativeAuthExchangeRoute = ApiNativeAuthExchangeRouteImport.update({
+  id: '/api/native-auth/exchange',
+  path: '/api/native-auth/exchange',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiNativeAuthStartRoute = ApiNativeAuthStartRouteImport.update({
+  id: '/api/native-auth/start',
+  path: '/api/native-auth/start',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiTwilioStatusRoute = ApiTwilioStatusRouteImport.update({
@@ -75,24 +111,36 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/api/ask': typeof ApiAskRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
   '/api/compose': typeof ApiComposeRoute
+  '/api/daily-photo': typeof ApiDailyPhotoRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/daily-photo': typeof ApiCronDailyPhotoRoute
   '/api/cron/messages': typeof ApiCronMessagesRoute
+  '/api/native-auth/complete': typeof ApiNativeAuthCompleteRoute
+  '/api/native-auth/exchange': typeof ApiNativeAuthExchangeRoute
+  '/api/native-auth/start': typeof ApiNativeAuthStartRoute
   '/api/twilio/status': typeof ApiTwilioStatusRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/api/ask': typeof ApiAskRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
   '/api/compose': typeof ApiComposeRoute
+  '/api/daily-photo': typeof ApiDailyPhotoRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/daily-photo': typeof ApiCronDailyPhotoRoute
   '/api/cron/messages': typeof ApiCronMessagesRoute
+  '/api/native-auth/complete': typeof ApiNativeAuthCompleteRoute
+  '/api/native-auth/exchange': typeof ApiNativeAuthExchangeRoute
+  '/api/native-auth/start': typeof ApiNativeAuthStartRoute
   '/api/twilio/status': typeof ApiTwilioStatusRoute
 }
 export interface FileRoutesById {
@@ -100,12 +148,18 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/api/ask': typeof ApiAskRoute
   '/api/auth-status': typeof ApiAuthStatusRoute
   '/api/compose': typeof ApiComposeRoute
+  '/api/daily-photo': typeof ApiDailyPhotoRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/daily-photo': typeof ApiCronDailyPhotoRoute
   '/api/cron/messages': typeof ApiCronMessagesRoute
+  '/api/native-auth/complete': typeof ApiNativeAuthCompleteRoute
+  '/api/native-auth/exchange': typeof ApiNativeAuthExchangeRoute
+  '/api/native-auth/start': typeof ApiNativeAuthStartRoute
   '/api/twilio/status': typeof ApiTwilioStatusRoute
 }
 export interface FileRouteTypes {
@@ -114,36 +168,54 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/privacy'
+    | '/support'
     | '/terms'
     | '/api/ask'
     | '/api/auth-status'
     | '/api/compose'
+    | '/api/daily-photo'
     | '/api/auth/$'
+    | '/api/cron/daily-photo'
     | '/api/cron/messages'
+    | '/api/native-auth/complete'
+    | '/api/native-auth/exchange'
+    | '/api/native-auth/start'
     | '/api/twilio/status'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
     | '/privacy'
+    | '/support'
     | '/terms'
     | '/api/ask'
     | '/api/auth-status'
     | '/api/compose'
+    | '/api/daily-photo'
     | '/api/auth/$'
+    | '/api/cron/daily-photo'
     | '/api/cron/messages'
+    | '/api/native-auth/complete'
+    | '/api/native-auth/exchange'
+    | '/api/native-auth/start'
     | '/api/twilio/status'
   id:
     | '__root__'
     | '/'
     | '/login'
     | '/privacy'
+    | '/support'
     | '/terms'
     | '/api/ask'
     | '/api/auth-status'
     | '/api/compose'
+    | '/api/daily-photo'
     | '/api/auth/$'
+    | '/api/cron/daily-photo'
     | '/api/cron/messages'
+    | '/api/native-auth/complete'
+    | '/api/native-auth/exchange'
+    | '/api/native-auth/start'
     | '/api/twilio/status'
   fileRoutesById: FileRoutesById
 }
@@ -151,12 +223,18 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
+  SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
   ApiAskRoute: typeof ApiAskRoute
   ApiAuthStatusRoute: typeof ApiAuthStatusRoute
   ApiComposeRoute: typeof ApiComposeRoute
+  ApiDailyPhotoRoute: typeof ApiDailyPhotoRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiCronDailyPhotoRoute: typeof ApiCronDailyPhotoRoute
   ApiCronMessagesRoute: typeof ApiCronMessagesRoute
+  ApiNativeAuthCompleteRoute: typeof ApiNativeAuthCompleteRoute
+  ApiNativeAuthExchangeRoute: typeof ApiNativeAuthExchangeRoute
+  ApiNativeAuthStartRoute: typeof ApiNativeAuthStartRoute
   ApiTwilioStatusRoute: typeof ApiTwilioStatusRoute
 }
 
@@ -181,6 +259,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -211,6 +296,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiComposeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/daily-photo': {
+      id: '/api/daily-photo'
+      path: '/api/daily-photo'
+      fullPath: '/api/daily-photo'
+      preLoaderRoute: typeof ApiDailyPhotoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -218,11 +310,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cron/daily-photo': {
+      id: '/api/cron/daily-photo'
+      path: '/api/cron/daily-photo'
+      fullPath: '/api/cron/daily-photo'
+      preLoaderRoute: typeof ApiCronDailyPhotoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/cron/messages': {
       id: '/api/cron/messages'
       path: '/api/cron/messages'
       fullPath: '/api/cron/messages'
       preLoaderRoute: typeof ApiCronMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/native-auth/complete': {
+      id: '/api/native-auth/complete'
+      path: '/api/native-auth/complete'
+      fullPath: '/api/native-auth/complete'
+      preLoaderRoute: typeof ApiNativeAuthCompleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/native-auth/exchange': {
+      id: '/api/native-auth/exchange'
+      path: '/api/native-auth/exchange'
+      fullPath: '/api/native-auth/exchange'
+      preLoaderRoute: typeof ApiNativeAuthExchangeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/native-auth/start': {
+      id: '/api/native-auth/start'
+      path: '/api/native-auth/start'
+      fullPath: '/api/native-auth/start'
+      preLoaderRoute: typeof ApiNativeAuthStartRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/twilio/status': {
@@ -239,12 +359,18 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
+  SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
   ApiAskRoute: ApiAskRoute,
   ApiAuthStatusRoute: ApiAuthStatusRoute,
   ApiComposeRoute: ApiComposeRoute,
+  ApiDailyPhotoRoute: ApiDailyPhotoRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiCronDailyPhotoRoute: ApiCronDailyPhotoRoute,
   ApiCronMessagesRoute: ApiCronMessagesRoute,
+  ApiNativeAuthCompleteRoute: ApiNativeAuthCompleteRoute,
+  ApiNativeAuthExchangeRoute: ApiNativeAuthExchangeRoute,
+  ApiNativeAuthStartRoute: ApiNativeAuthStartRoute,
   ApiTwilioStatusRoute: ApiTwilioStatusRoute,
 }
 export const routeTree = rootRouteImport
