@@ -57,6 +57,13 @@ test("The provider call sends the key in a header and asks for one vertical JPEG
   const body = JSON.parse(String(init.body));
   assert.equal(body.response_format.aspect_ratio, "3:4");
   await assert.rejects(generateDailyImage("p", {}), /DAILY_PHOTO_NOT_CONFIGURED/);
+  await generateDailyImage("p", { GOOGLE_GENERATIVE_AI_API_KEY: "other-name" }, (async (
+    _url: string,
+    init: RequestInit,
+  ) => {
+    assert.equal((init.headers as Record<string, string>)["x-goog-api-key"], "other-name");
+    return Response.json({ output_image: { data: PNG, mime_type: "image/jpeg" } });
+  }) as unknown as typeof fetch);
   await assert.rejects(
     generateDailyImage(
       "p",

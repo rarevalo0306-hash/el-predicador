@@ -56,12 +56,17 @@ export function imageFromResponse(body: unknown): GeneratedImage | null {
   return null;
 }
 
+/** Google's key under either common name. */
+function geminiKey(env: NodeJS.ProcessEnv | Record<string, string | undefined>) {
+  return env.GEMINI_API_KEY?.trim() || env.GOOGLE_GENERATIVE_AI_API_KEY?.trim() || "";
+}
+
 export async function generateDailyImage(
   prompt: string,
   env = process.env,
   send: typeof fetch = fetch,
 ): Promise<GeneratedImage> {
-  const key = env.GEMINI_API_KEY?.trim();
+  const key = geminiKey(env);
   if (!key) throw new Error("DAILY_PHOTO_NOT_CONFIGURED");
   const model = env.DAILY_PHOTO_MODEL?.trim() || "gemini-nano-banana-2.1";
   const response = await send("https://generativelanguage.googleapis.com/v1beta/interactions", {
@@ -86,7 +91,7 @@ export async function generateDailyImage(
 }
 
 export function dailyPhotoEnabled(env = process.env) {
-  return env.DAILY_PHOTO_ENABLED === "true" && Boolean(env.GEMINI_API_KEY?.trim());
+  return env.DAILY_PHOTO_ENABLED === "true" && Boolean(geminiKey(env));
 }
 
 /** Day keys to prepare: today and tomorrow in UTC cover every user's local day. */
