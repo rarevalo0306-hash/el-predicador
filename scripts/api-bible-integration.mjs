@@ -87,6 +87,7 @@ try {
   }
   const spanish = formatVerseMessage({ id: "jhn-3-16", ref: "Juan 3:16", text: "Restricted fixture.", source: BIBLE_TRANSLATIONS.lbla.name, copyright: "Official notice", themes: [], book: "Juan" });
   assert.ok(!spanish.includes("Restricted fixture."));
+  assert.ok(spanish.includes("https://www.thepreacher.app/?leer=Juan+3:16"), "LBLA message links to the passage");
   const book = bookById("jhn");
   const results = await Promise.all(Array.from({ length: 20 }, () => loadApiBibleChapter(book, 3)));
   assert.equal(calls, 1, "20 simultaneous requests must make one upstream call");
