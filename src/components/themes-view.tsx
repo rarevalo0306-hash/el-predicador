@@ -8,6 +8,7 @@ import { useI18n } from "@/components/language-switch";
 import { prefetchVerses } from "@/lib/recobro";
 import { answerTopic } from "@/lib/topic-reply";
 import { useAppStore, type SendDraft } from "@/lib/store";
+import { THEME_PHOTOS } from "@/lib/theme-photos";
 import { THEMES, localizedTheme, versesForTheme, type ThemeId, type Verse } from "@/lib/verses";
 
 type ThemesViewProps = {
@@ -29,24 +30,7 @@ export function ThemesView({
   const copy = designCopy(locale);
   const [showAll, setShowAll] = useState(false);
   const featured = ["paz", "fortaleza", "esperanza", "familia"] as const;
-  const photos: Record<ThemeId, string> = {
-    paz: "peace",
-    fortaleza: "strength",
-    esperanza: "hope",
-    familia: "family",
-    jovenes: "youth",
-    matrimonios: "marriage",
-    amistad: "friendship",
-    oracion: "prayer",
-    amor: "love",
-    fe: "faith",
-    gratitud: "gratitude",
-    bendicion: "blessing",
-    consuelo: "comfort",
-    sabiduria: "wisdom",
-    perdon: "forgiveness",
-    evangelio: "gospel",
-  };
+  const photos = THEME_PHOTOS;
   // Re-read the themes when the verses DeepSeek added arrive.
   const extrasVersion = useAppStore((s) => s.themeExtrasVersion);
   const reply = query.trim() ? answerTopic(query, locale) : null;
@@ -185,7 +169,10 @@ export function ThemesView({
             <ChevronRight aria-hidden className="size-5" />
           </button>
           {showAll ? (
-            <section aria-label={copy.allThemes} className="grid grid-cols-1 @min-[16rem]:grid-cols-2 gap-3">
+            <section
+              aria-label={copy.allThemes}
+              className="grid grid-cols-1 @min-[16rem]:grid-cols-2 gap-3"
+            >
               {THEMES.filter((theme) => !featured.some((id) => id === theme.id)).map((theme) => {
                 const item = localizedTheme(theme.id, locale);
                 return (
@@ -195,7 +182,13 @@ export function ThemesView({
                     className="theme-feature"
                     onClick={() => onThemeChange(theme.id)}
                   >
-                    <img src={`/images/${photos[theme.id]}.jpg`} alt="" loading="lazy" width="1086" height="1448" />
+                    <img
+                      src={`/images/${photos[theme.id]}.jpg`}
+                      alt=""
+                      loading="lazy"
+                      width="1086"
+                      height="1448"
+                    />
                     <span className="theme-feature-copy">
                       <strong>{item.name}</strong>
                       <span>{item.line}</span>

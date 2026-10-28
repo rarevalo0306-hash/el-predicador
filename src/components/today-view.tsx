@@ -17,6 +17,7 @@ import { createRemembered } from "@/lib/remembered";
 import {
   catalogSpan,
   DAILY_THEMES,
+  getDailyPick,
   getDailyVerse,
   todayKey,
   versesForTheme,
@@ -26,6 +27,7 @@ import {
 import { bookById, BOOK_EN } from "@/lib/bible";
 import type { VerseLink } from "@/lib/verse-links";
 import { cn } from "@/lib/utils";
+import { themePhotoUrl } from "@/lib/theme-photos";
 
 // A day without its word yet is asked for again after a few minutes.
 const reflections = createRemembered<DailyReflection | null>({
@@ -142,6 +144,12 @@ export function TodayView({ mood, onMoodChange, onSend, onRead, onExplore }: Tod
   }, []);
 
   const daily = getDailyVerse(dailyOffset);
+  // Today's own picture for the day's verse; a mood or another verse shows its theme's photo.
+  const photo = mood
+    ? themePhotoUrl(mood)
+    : dailyOffset
+      ? themePhotoUrl(getDailyPick(dailyOffset).theme)
+      : `/api/daily-photo?day=${todayKey()}`;
   const moodVerses = mood ? versesForTheme(mood) : [];
   const verse =
     mood && moodVerses.length > 0 ? moodVerses[dailyOffset % moodVerses.length]! : daily;
@@ -176,7 +184,6 @@ export function TodayView({ mood, onMoodChange, onSend, onRead, onExplore }: Tod
   const span = catalogSpan(verse);
   const readingBook = readingPlace ? bookById(readingPlace.bookId) : null;
 
-
   return (
     <div className="today-screen flex flex-col gap-7">
       <header>
@@ -187,13 +194,38 @@ export function TodayView({ mood, onMoodChange, onSend, onRead, onExplore }: Tod
           {locale === "en" ? "Your word for today" : "Tu palabra de hoy"}
         </h1>
       </header>
-      <section className="daily-post" aria-label={locale === "en" ? "Daily reading" : "Lectura del día"}>
-        <img className="daily-post-photo" src="/images/coast.jpg" alt={locale === "en" ? "Sunlight over a peaceful coast" : "Luz del sol sobre una costa tranquila"} fetchPriority="high" width="1086" height="1448" />
+      <section
+        className="daily-post"
+        aria-label={locale === "en" ? "Daily reading" : "Lectura del día"}
+      >
+        <img
+          className="daily-post-photo"
+          src={photo}
+          alt={locale === "en" ? "Landscape for today's reading" : "Paisaje para la lectura de hoy"}
+          fetchPriority="high"
+          width="1086"
+          height="1448"
+        />
         <VerseCard
           verse={verse}
           variant="post"
-          onReadChapter={span ? () => onRead({ bookId: span.book.id, chapter: span.chapter, from: span.from, to: span.to }) : undefined}
-          onSend={(shown) => onSend(shown, reflection && shown.id === reflection.verseId ? { note: reflection.text } : undefined)}
+          onReadChapter={
+            span
+              ? () =>
+                  onRead({
+                    bookId: span.book.id,
+                    chapter: span.chapter,
+                    from: span.from,
+                    to: span.to,
+                  })
+              : undefined
+          }
+          onSend={(shown) =>
+            onSend(
+              shown,
+              reflection && shown.id === reflection.verseId ? { note: reflection.text } : undefined,
+            )
+          }
         />
       </section>
       {readingPlace && readingBook ? (
