@@ -160,7 +160,7 @@ export function AskDrawer({
   async function send(typed = question) {
     const raw = typed.trim();
     if (!raw || busy || asking.current) return;
-    if (!requestAIConsent(locale, "ask")) return;
+    if (!requestAIConsent(locale, "ask", userId)) return;
     const controller = new AbortController();
     asking.current = controller;
     askedAt.current = Date.now();

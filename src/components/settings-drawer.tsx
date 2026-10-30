@@ -1,3 +1,5 @@
+import { revokeAIConsent } from "@/lib/ai-consent";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
@@ -53,6 +55,7 @@ export function SettingsDrawer({
   onCloseAutoFocus,
 }: SettingsDrawerProps) {
   const { locale, t } = useI18n();
+  const { user } = useCurrentUserState();
   const displayName = useAppStore((s) => s.displayName);
   const setDisplayName = useAppStore((s) => s.setDisplayName);
   const notify = useAppStore((s) => s.notify);
@@ -366,6 +369,36 @@ export function SettingsDrawer({
             <p className="text-sm font-medium">{t("contactTitle")}</p>
             <ContactForm compact />
           </div>
+          {user ? (
+            <section className="rounded-lg border border-border bg-card p-4">
+              <h3 className="text-sm font-medium">
+                {locale === "es" ? "Privacidad de IA" : "AI privacy"}
+              </h3>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {locale === "es"
+                  ? "El permiso para DeepSeek se recuerda por cuenta en este dispositivo. Puedes retirarlo; se solicitará de nuevo antes del próximo envío."
+                  : "Permission for DeepSeek is remembered per account on this device. Withdraw it to require permission again before the next request."}
+              </p>
+              <Button
+                variant="outline"
+                className="mt-3"
+                onClick={() => {
+                  const ok = revokeAIConsent(user.id);
+                  toast(
+                    ok
+                      ? locale === "es"
+                        ? "Permiso retirado en este dispositivo."
+                        : "Permission withdrawn on this device."
+                      : locale === "es"
+                        ? "No se pudo retirar el permiso. Inténtalo de nuevo."
+                        : "Could not withdraw permission. Please try again.",
+                  );
+                }}
+              >
+                {locale === "es" ? "Retirar permiso de IA" : "Withdraw AI permission"}
+              </Button>
+            </section>
+          ) : null}
           <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             <Link to="/privacy" className="underline underline-offset-4 hover:text-foreground">
               {t("privacyLink")}
