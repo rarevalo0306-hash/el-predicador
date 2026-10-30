@@ -578,7 +578,7 @@ function CaseComposer({
 
   async function write() {
     if (writing.current) return;
-    if (!requestAIConsent(locale, "compose")) return;
+    if (!requestAIConsent(locale, "compose", user?.id)) return;
     const controller = new AbortController();
     writing.current = controller;
     writingSince.current = Date.now();
