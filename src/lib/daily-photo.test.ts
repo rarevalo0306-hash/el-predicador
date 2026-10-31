@@ -54,8 +54,10 @@ test("The provider call sends the key in a header and asks for one vertical JPEG
   const { url, init } = sent as { url: string; init: RequestInit };
   assert.ok(!url.includes("test-key"));
   assert.equal((init.headers as Record<string, string>)["x-goog-api-key"], "test-key");
+  assert.match(url, /\/v1beta\/models\/gemini-3\.1-flash-lite-image:generateContent$/);
   const body = JSON.parse(String(init.body));
-  assert.equal(body.response_format.aspect_ratio, "3:4");
+  assert.deepEqual(body.contents, [{ parts: [{ text: "prompt" }] }]);
+  assert.equal(body.generationConfig.imageConfig.aspectRatio, "3:4");
   await assert.rejects(generateDailyImage("p", {}), /DAILY_PHOTO_NOT_CONFIGURED/);
   await generateDailyImage("p", { GOOGLE_GENERATIVE_AI_API_KEY: "other-name" }, (async (
     _url: string,
@@ -71,6 +73,37 @@ test("The provider call sends the key in a header and asks for one vertical JPEG
       (async () => new Response("", { status: 429 })) as typeof fetch,
     ),
     /DAILY_PHOTO_PROVIDER_429/,
+  );
+  // A rejected option set is retried once without them; Google's reason is kept.
+  const bodies: Record<string, unknown>[] = [];
+  const retried = await generateDailyImage("p", { GEMINI_API_KEY: "k" }, (async (
+    _url: string,
+    init: RequestInit,
+  ) => {
+    bodies.push(JSON.parse(String(init.body)));
+    return bodies.length === 1
+      ? Response.json(
+          { error: { status: "INVALID_ARGUMENT", message: "bad imageConfig" } },
+          { status: 400 },
+        )
+      : Response.json({
+          candidates: [
+            { content: { parts: [{ inlineData: { data: PNG, mimeType: "image/png" } }] } },
+          ],
+        });
+  }) as unknown as typeof fetch);
+  assert.equal(retried.mime, "image/png");
+  assert.deepEqual(
+    (bodies[1]!.generationConfig as { responseModalities: string[] }).responseModalities,
+    ["TEXT", "IMAGE"],
+  );
+  await assert.rejects(
+    generateDailyImage("p", { GEMINI_API_KEY: "k" }, (async () =>
+      Response.json(
+        { error: { status: "NOT_FOUND", message: "model not found" } },
+        { status: 404 },
+      )) as unknown as typeof fetch),
+    /DAILY_PHOTO_PROVIDER_404 NOT_FOUND: model not found/,
   );
 });
 

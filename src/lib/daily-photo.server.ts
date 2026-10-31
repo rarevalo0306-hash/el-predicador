@@ -61,6 +61,18 @@ function geminiKey(env: NodeJS.ProcessEnv | Record<string, string | undefined>) 
   return env.GEMINI_API_KEY?.trim() || env.GOOGLE_GENERATIVE_AI_API_KEY?.trim() || "";
 }
 
+const DEFAULT_MODEL = "gemini-3.1-flash-lite-image";
+
+/** Google's own explanation of a rejected request; never includes the key. */
+async function providerReason(response: Response) {
+  try {
+    const body = (await response.json()) as { error?: { message?: string; status?: string } };
+    return [body.error?.status, body.error?.message].filter(Boolean).join(": ").slice(0, 300);
+  } catch {
+    return "";
+  }
+}
+
 export async function generateDailyImage(
   prompt: string,
   env = process.env,
@@ -68,23 +80,30 @@ export async function generateDailyImage(
 ): Promise<GeneratedImage> {
   const key = geminiKey(env);
   if (!key) throw new Error("DAILY_PHOTO_NOT_CONFIGURED");
-  const model = env.DAILY_PHOTO_MODEL?.trim() || "gemini-nano-banana-2.1";
-  const response = await send("https://generativelanguage.googleapis.com/v1beta/interactions", {
-    method: "POST",
-    headers: { "content-type": "application/json", "x-goog-api-key": key },
-    body: JSON.stringify({
-      model,
-      input: [{ type: "text", text: prompt }],
-      response_format: {
-        type: "image",
-        mime_type: "image/jpeg",
-        aspect_ratio: env.DAILY_PHOTO_ASPECT?.trim() || "3:4",
-        image_size: "1K",
-      },
-    }),
-    signal: AbortSignal.timeout(60_000),
+  const model = env.DAILY_PHOTO_MODEL?.trim() || DEFAULT_MODEL;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  const request = (generationConfig: Record<string, unknown>) =>
+    send(url, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": key },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig }),
+      signal: AbortSignal.timeout(60_000),
+    });
+  let response = await request({
+    responseModalities: ["IMAGE"],
+    imageConfig: { aspectRatio: env.DAILY_PHOTO_ASPECT?.trim() || "3:4", imageSize: "1K" },
   });
-  if (!response.ok) throw new Error(`DAILY_PHOTO_PROVIDER_${response.status}`);
+  // Some models refuse image-only output or the size options: retry once plainly.
+  if (response.status === 400) {
+    console.warn("[daily-photo] provider rejected options, retrying", {
+      reason: await providerReason(response),
+    });
+    response = await request({ responseModalities: ["TEXT", "IMAGE"] });
+  }
+  if (!response.ok) {
+    const reason = await providerReason(response);
+    throw new Error(`DAILY_PHOTO_PROVIDER_${response.status}${reason ? ` ${reason}` : ""}`);
+  }
   const image = imageFromResponse(await response.json());
   if (!image) throw new Error("DAILY_PHOTO_NO_IMAGE");
   return image;
