@@ -428,6 +428,27 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                 <p className="text-xs text-muted-foreground">{t("recipientsHint")}</p>
                 {recipients.length ? (
                   <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setSelectedIds(
+                          recipients.every((row) => selectedIds.includes(row.id))
+                            ? []
+                            : recipients.map((row) => row.id),
+                        )
+                      }
+                      aria-pressed={recipients.every((row) => selectedIds.includes(row.id))}
+                    >
+                      {recipients.every((row) => selectedIds.includes(row.id))
+                        ? locale === "es"
+                          ? "Quitar selección"
+                          : "Clear selection"
+                        : locale === "es"
+                          ? "Seleccionar todos mis contactos"
+                          : "Select all my contacts"}
+                    </Button>
                     {recipients.map((row) => {
                       const on = selectedIds.includes(row.id);
                       return (
