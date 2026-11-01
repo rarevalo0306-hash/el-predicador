@@ -1,4 +1,4 @@
-import { readPosition, savePosition } from "@/lib/visit-preferences";
+import { arrivedWithDestination, readPosition, savePosition } from "@/lib/visit-preferences";
 import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -110,12 +110,17 @@ function PreacherApp({ userId, sessionReady }: { userId?: string; sessionReady: 
   const [askPassage, setAskPassage] = useState<AskPassage | null>(null);
   const [welcome, setWelcome] = useState(false);
   const restoredFor = useRef<string | null>(null);
+  // Read before the URL effects below drop the marks from the address.
+  const linkedArrival = useRef(
+    typeof window !== "undefined" && arrivedWithDestination(window.location.search),
+  );
   useEffect(() => {
     if (!sessionReady) return;
     const account = userId ?? "guest";
     if (restoredFor.current === account) return;
     restoredFor.current = account;
     const saved = readPosition(account);
+    if (linkedArrival.current) return;
     if (saved) {
       setTab(saved.tab as Tab);
       setAskOpen(saved.askOpen);

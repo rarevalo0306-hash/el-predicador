@@ -1,3 +1,4 @@
+import { saveAskDraft, takeAskDraft } from "@/lib/visit-preferences";
 import { requestAIConsent } from "@/lib/ai-consent";
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Send, Square, Trash2, X } from "lucide-react";
@@ -104,34 +105,11 @@ export function AskDrawer({
   useEffect(() => {
     if (userId === undefined || draftAccount.current === userId) return;
     draftAccount.current = userId;
-    try {
-      const saved = JSON.parse(
-        sessionStorage.getItem(`preacher-ask-draft:${userId || "guest"}`) ?? "null",
-      );
-      setQuestion(
-        saved &&
-          typeof saved.text === "string" &&
-          Date.now() >= saved.at &&
-          Date.now() - saved.at <= 60_000
-          ? saved.text
-          : "",
-      );
-    } catch {
-      setQuestion("");
-    }
+    setQuestion(takeAskDraft(userId || "guest"));
   }, [userId]);
   useEffect(() => {
     if (userId === undefined) return;
-    const remember = () => {
-      try {
-        sessionStorage.setItem(
-          `preacher-ask-draft:${userId || "guest"}`,
-          JSON.stringify({ at: Date.now(), text: question }),
-        );
-      } catch {
-        /* private mode */
-      }
-    };
+    const remember = () => saveAskDraft(userId || "guest", question);
     const hidden = () => {
       if (document.visibilityState === "hidden") remember();
     };

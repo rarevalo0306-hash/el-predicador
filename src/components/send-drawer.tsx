@@ -95,7 +95,11 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
 
   useEffect(() => {
     if (!open) return;
-    setMessageLocale(draft?.messageLocale ?? readChoice(MESSAGE_LANGUAGE_KEY) ?? locale);
+    // Texts that exist in one language only keep the previous behaviour.
+    const changeable = !verse || canChangeMessageLanguage(verse);
+    setMessageLocale(
+      draft?.messageLocale ?? (changeable ? readChoice(MESSAGE_LANGUAGE_KEY) : undefined) ?? locale,
+    );
     setEnglishTranslation(verse?.source === "King James Version (KJV)" ? "kjv" : "bsb");
     setScheduling(false);
     setNote(draft?.note ?? "");
@@ -351,7 +355,7 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
               <MessageLanguageSelect
                 value={messageLocale}
                 onChange={changeMessageLocale}
-                disabled={Boolean(queue)}
+                disabled={Boolean(queue) || Boolean(verse && !canChangeMessageLanguage(verse))}
                 hint={
                   verse && !canChangeMessageLanguage(verse)
                     ? messageLanguageCopy(locale).unavailable
@@ -646,20 +650,19 @@ export function SendDrawer({ verse, open, draft, onOpenChange }: SendDrawerProps
                 <ChannelButton
                   icon={<Facebook />}
                   label="Facebook"
-                  hint={
-                    locale === "es"
-                      ? "Copiar texto y abrir Facebook"
-                      : "Copy text and open Facebook"
-                  }
+                  hint={locale === "es" ? "Copia y abre Facebook" : "Copy, then open"}
                   onClick={async () => {
+                    // Copy and open within the same tap: Safari blocks a window
+                    // opened after an await. The app confirms the external link.
+                    const copying = copyText(message);
+                    window.open("https://www.facebook.com/", "_blank", "noopener,noreferrer");
                     try {
-                      await copyText(message);
+                      await copying;
                       toast(
                         locale === "es"
                           ? "Texto copiado. Pégalo en una publicación de Facebook."
                           : "Text copied. Paste it into a Facebook post.",
                       );
-                      window.open("https://www.facebook.com/", "_blank", "noopener,noreferrer");
                     } catch {
                       toast(
                         locale === "es"
