@@ -1,3 +1,4 @@
+import { readChoice } from "./visit-preferences";
 import { referenceOnly, referenceMemory } from "@/lib/bible-policy";
 import { create } from "zustand";
 import { normalizePhone, restorePhone } from "@/lib/phone";
@@ -358,7 +359,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     set({ locale });
   },
   hydrateFromCloud: (payload) => {
-    const locale = payload.locale ?? get().locale;
+    const locale = readChoice("preacher-locale") ?? payload.locale ?? get().locale;
     persistLocale(locale);
     const scale =
       payload.fontScale === 0 ||

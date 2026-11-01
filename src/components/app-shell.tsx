@@ -1,3 +1,4 @@
+import { readPosition, savePosition } from "@/lib/visit-preferences";
 import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -108,6 +109,32 @@ function PreacherApp({ userId, sessionReady }: { userId?: string; sessionReady: 
   const [jump, setJump] = useState<BibleJump | null>(null);
   const [askPassage, setAskPassage] = useState<AskPassage | null>(null);
   const [welcome, setWelcome] = useState(false);
+  const restoredFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!sessionReady) return;
+    const account = userId ?? "guest";
+    if (restoredFor.current === account) return;
+    restoredFor.current = account;
+    const saved = readPosition(account);
+    if (saved) {
+      setTab(saved.tab as Tab);
+      setAskOpen(saved.askOpen);
+    }
+  }, [sessionReady, userId]);
+  useEffect(() => {
+    if (!sessionReady) return;
+    const remember = () =>
+      savePosition({ at: Date.now(), tab, askOpen, userId: userId ?? "guest" });
+    const hidden = () => {
+      if (document.visibilityState === "hidden") remember();
+    };
+    document.addEventListener("visibilitychange", hidden);
+    window.addEventListener("pagehide", remember);
+    return () => {
+      document.removeEventListener("visibilitychange", hidden);
+      window.removeEventListener("pagehide", remember);
+    };
+  }, [sessionReady, userId, tab, askOpen]);
 
   // Google brings a brand-new account back with ?bienvenido=1: offer to
   // share the app, then drop the mark so a reload does not ask again.

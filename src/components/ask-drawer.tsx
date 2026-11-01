@@ -100,6 +100,49 @@ export function AskDrawer({
   const [verseLink, setVerseLink] = useState<VerseLink | null>(null);
   const [turns, setTurns] = useState<AskTurn[]>([]);
   const [question, setQuestion] = useState("");
+  const draftAccount = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (userId === undefined || draftAccount.current === userId) return;
+    draftAccount.current = userId;
+    try {
+      const saved = JSON.parse(
+        sessionStorage.getItem(`preacher-ask-draft:${userId || "guest"}`) ?? "null",
+      );
+      setQuestion(
+        saved &&
+          typeof saved.text === "string" &&
+          Date.now() >= saved.at &&
+          Date.now() - saved.at <= 60_000
+          ? saved.text
+          : "",
+      );
+    } catch {
+      setQuestion("");
+    }
+  }, [userId]);
+  useEffect(() => {
+    if (userId === undefined) return;
+    const remember = () => {
+      try {
+        sessionStorage.setItem(
+          `preacher-ask-draft:${userId || "guest"}`,
+          JSON.stringify({ at: Date.now(), text: question }),
+        );
+      } catch {
+        /* private mode */
+      }
+    };
+    const hidden = () => {
+      if (document.visibilityState === "hidden") remember();
+    };
+    document.addEventListener("visibilitychange", hidden);
+    window.addEventListener("pagehide", remember);
+    return () => {
+      document.removeEventListener("visibilitychange", hidden);
+      window.removeEventListener("pagehide", remember);
+    };
+  }, [userId, question]);
+
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<"quota" | "unavailable" | "error" | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
