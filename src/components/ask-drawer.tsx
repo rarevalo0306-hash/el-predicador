@@ -1,3 +1,4 @@
+import { saveAskDraft, takeAskDraft } from "@/lib/visit-preferences";
 import { requestAIConsent } from "@/lib/ai-consent";
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Send, Square, Trash2, X } from "lucide-react";
@@ -100,6 +101,26 @@ export function AskDrawer({
   const [verseLink, setVerseLink] = useState<VerseLink | null>(null);
   const [turns, setTurns] = useState<AskTurn[]>([]);
   const [question, setQuestion] = useState("");
+  const draftAccount = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (userId === undefined || draftAccount.current === userId) return;
+    draftAccount.current = userId;
+    setQuestion(takeAskDraft(userId || "guest"));
+  }, [userId]);
+  useEffect(() => {
+    if (userId === undefined) return;
+    const remember = () => saveAskDraft(userId || "guest", question);
+    const hidden = () => {
+      if (document.visibilityState === "hidden") remember();
+    };
+    document.addEventListener("visibilitychange", hidden);
+    window.addEventListener("pagehide", remember);
+    return () => {
+      document.removeEventListener("visibilitychange", hidden);
+      window.removeEventListener("pagehide", remember);
+    };
+  }, [userId, question]);
+
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<"quota" | "unavailable" | "error" | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
