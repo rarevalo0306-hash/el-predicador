@@ -19,6 +19,7 @@ import { REGISTRATION_SHEET_URL } from "@/lib/sheet";
 import { TextSkeleton } from "@/components/text-skeleton";
 import { onTabListKeyDown } from "@/lib/tab-keys";
 import { AdminThemesPane } from "@/components/admin-themes-pane";
+import { localizedTheme } from "@/lib/verses";
 
 type Pane = "registrations" | "accounts" | "notes" | "themes";
 
@@ -322,8 +323,24 @@ export function AdminView() {
                 download(
                   "the-preacher-cuentas.csv",
                   csvOf(
-                    ["fecha", "nombre", "email", "personas", "programaciones"],
-                    data.accounts.map((a) => [a.createdAt, a.name, a.email, a.people, a.schedules]),
+                    [
+                      "fecha",
+                      "nombre",
+                      "email",
+                      "personas",
+                      "programaciones",
+                      "me gusta",
+                      "tema favorito",
+                    ],
+                    data.accounts.map((a) => [
+                      a.createdAt,
+                      a.name,
+                      a.email,
+                      a.people,
+                      a.schedules,
+                      a.likes,
+                      a.topTheme ? localizedTheme(a.topTheme, locale).name : "",
+                    ]),
                   ),
                 )
               }
@@ -331,6 +348,20 @@ export function AdminView() {
               {t("peopleCsv")}
             </Button>
           )}
+          {data.likedThemes.length ? (
+            <section className="rounded-xl border border-border bg-card p-4 shadow-paper">
+              <h3 className="font-medium">{t("adminLikesTitle")}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{t("adminLikesHint")}</p>
+              <ol className="mt-3 space-y-1.5">
+                {data.likedThemes.slice(0, 6).map((row) => (
+                  <li key={row.theme} className="flex items-center justify-between gap-3 text-sm">
+                    <span>{localizedTheme(row.theme, locale).name}</span>
+                    <span className="font-semibold tabular-nums">{row.count}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ) : null}
           {data.accounts.map((row) => (
             <article
               key={row.id}
@@ -350,6 +381,15 @@ export function AdminView() {
               <p className="text-sm">
                 {t("adminPeopleCount", { n: row.people })} ·{" "}
                 {t("adminSchedulesCount", { n: row.schedules })}
+                {row.likes ? (
+                  <>
+                    {" "}
+                    · {t("adminLikesCount", { n: row.likes })}
+                    {row.topTheme
+                      ? ` · ${t("adminLikesTop", { theme: localizedTheme(row.topTheme, locale).name })}`
+                      : ""}
+                  </>
+                ) : null}
               </p>
               <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
                 {row.role ? (

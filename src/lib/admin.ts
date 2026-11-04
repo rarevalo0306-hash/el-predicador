@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import type { Contact } from "@/lib/contacts";
+import type { ThemeCount } from "@/lib/likes";
+import type { ThemeId } from "@/lib/verses";
 
 export type AdminAccount = {
   id: string;
@@ -11,6 +13,9 @@ export type AdminAccount = {
   people: number;
   /** Message schedules they own. */
   schedules: number;
+  /** "Me gusta" they gave the verse of the day, and the theme they liked most. */
+  likes: number;
+  topTheme: ThemeId | null;
   /** "owner" from the deployment's settings, "manager" named in the app. */
   role: "owner" | "manager" | null;
 };
@@ -18,6 +23,8 @@ export type AdminAccount = {
 export type AdminOverview = {
   registrations: Contact[];
   accounts: AdminAccount[];
+  /** Every account's "Me gusta" per theme, most liked first. */
+  likedThemes: ThemeCount[];
   /** Whether the viewer is the owner (the AI lines are theirs only). */
   owner: boolean;
   /**
@@ -81,9 +88,11 @@ export const getAdminOverview = createServerFn({ method: "GET" })
     // failing the whole query.
     const states = await sql<{ user_id: string; payload: string }>`
       select user_id, payload from preacher_state`;
+    const parsed = states.map((row) => ({ id: row.user_id, payload: parsePayload(row.payload) }));
     const peopleByUser = new Map(
-      states.map((row) => [row.user_id, parsePayload(row.payload)?.recipients.length ?? 0]),
+      parsed.map((row) => [row.id, row.payload?.recipients.length ?? 0]),
     );
+    const likesByUser = new Map(parsed.map((row) => [row.id, row.payload?.likes ?? []]));
     const schedulesByUser = new Map(
       (
         await sql<{ user_id: string; count: number }>`
@@ -98,6 +107,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       users,
       peopleByUser,
       schedulesByUser,
+      likesByUser,
       roleOf: (id) =>
         isAdminUser(id, process.env) ? "owner" : managers.has(id) ? "manager" : null,
     });

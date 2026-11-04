@@ -3,6 +3,7 @@ import { restorePhone } from "./phone.ts";
 import { isLocale } from "./i18n.ts";
 import { isThemeId, normalizeChurch } from "./church.ts";
 import { recipientThemes } from "./recipient-themes.ts";
+import { parseLikes } from "./likes.ts";
 import type { CloudPayload, Recipient } from "./store.ts";
 
 /**
@@ -76,6 +77,7 @@ export function parsePayload(raw: string | null | undefined): CloudPayload | nul
         : [],
       fontScale,
       locale: isLocale(value.locale) ? value.locale : undefined,
+      likes: parseLikes(value.likes),
     };
   } catch {
     return null;

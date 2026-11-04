@@ -7,6 +7,7 @@ import { persistLocale, type Locale } from "@/lib/i18n";
 import { todayKey, type ThemeId, type Verse } from "@/lib/verses";
 import { EMPTY_CHURCH, isThemeId, normalizeChurch, type ChurchInfo } from "@/lib/church";
 import { recipientThemes } from "@/lib/recipient-themes";
+import { parseLikes, toggleLike, type VerseLike } from "@/lib/likes";
 import type { MessageChannel } from "@/lib/message-schedule";
 
 export type SentItem = {
@@ -100,6 +101,8 @@ export type CloudPayload = {
   /** Reader text size: 0 small … 3 largest. */
   fontScale: 0 | 1 | 2 | 3;
   locale?: Locale;
+  /** "Me gusta" on the verse of the day, newest first. */
+  likes: VerseLike[];
 };
 
 /** Contacts kept per account; the oldest fall off once it is reached. */
@@ -122,6 +125,7 @@ export const EMPTY_CLOUD: CloudPayload = {
   bookmarks: [],
   highlights: [],
   fontScale: 1,
+  likes: [],
 };
 
 function placeKey(place: Pick<ReadingPlace, "bookId" | "chapter" | "verse">) {
@@ -141,6 +145,7 @@ type AppState = CloudPayload & {
   themeExtrasVersion: number;
   bumpThemeExtras: () => void;
   toggleFavorite: (id: string, verse?: Verse) => void;
+  toggleLike: (like: VerseLike) => void;
   setFavoriteKind: (id: string, kind: MessageKind) => void;
   rememberVerse: (verse: Verse) => void;
   saveMessage: (item: Omit<SavedMessage, "id" | "at"> & { id?: string }) => SavedMessage | null;
@@ -184,6 +189,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     set((state) => ({
       verseMemory: { ...state.verseMemory, [verse.id]: referenceOnly(verse) },
     })),
+  toggleLike: (like) => set((state) => ({ likes: toggleLike(state.likes, like) })),
   toggleFavorite: (id, verse) =>
     set((state) => {
       const saved = state.favorites.includes(id);
@@ -381,6 +387,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
         : [],
       church: normalizeChurch(payload.church),
       highlights: Array.isArray(payload.highlights) ? payload.highlights : [],
+      likes: parseLikes(payload.likes),
       fontScale: scale,
       locale,
     });
@@ -405,6 +412,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       highlights: state.highlights,
       fontScale: state.fontScale,
       locale: state.locale,
+      likes: state.likes,
     };
   },
 }));
