@@ -46,7 +46,8 @@ const en: LegalText = {
             for them (WhatsApp or SMS).
           </li>
           <li>
-            <strong>Your reading.</strong> Saved verses, favorites, bookmarks, highlights, and the
+            <strong>Your reading.</strong> Saved verses, favorites, the daily verses you liked (and
+            their theme), bookmarks, highlights, and the
             record of messages you have sent.
           </li>
           <li>
@@ -252,7 +253,8 @@ const es: LegalText = {
             elegiste para cada una (WhatsApp o SMS).
           </li>
           <li>
-            <strong>Tu lectura.</strong> Versículos guardados, favoritos, marcadores, subrayados y
+            <strong>Tu lectura.</strong> Versículos guardados, favoritos, los versículos del día que
+            marcaste con «Me gusta» (y su tema), marcadores, subrayados y
             el registro de los mensajes que has enviado.
           </li>
           <li>

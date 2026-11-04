@@ -35,6 +35,7 @@ export function isEmptyCloud(payload: CloudPayload | null | undefined): boolean 
     !payload.recipients?.length &&
     !payload.bookmarks?.length &&
     !payload.highlights?.length &&
+    !payload.likes?.length &&
     !payload.sent?.length &&
     !payload.displayName?.trim() &&
     isEmptyChurch(payload.church)

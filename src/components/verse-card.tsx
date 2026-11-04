@@ -15,9 +15,17 @@ type VerseCardProps = {
   variant?: "hero" | "list" | "post";
   onReadChapter?: () => void;
   onSend: (verse: Verse) => void;
+  /** The "Me gusta" heart on the verse of the day. */
+  like?: { liked: boolean; onToggle: () => void };
 };
 
-export function VerseCard({ verse, variant = "list", onSend, onReadChapter }: VerseCardProps) {
+export function VerseCard({
+  verse,
+  variant = "list",
+  onSend,
+  onReadChapter,
+  like,
+}: VerseCardProps) {
   const { locale, t } = useI18n();
   const meta = localizeVerse(verse, locale);
   const { verse: shown, loading, error, retry } = useHydratedVerse(verse, locale);
@@ -45,10 +53,31 @@ export function VerseCard({ verse, variant = "list", onSend, onReadChapter }: Ve
             {shown.text}
           </blockquote>
         )}
-        <p className="mt-6 font-sans text-sm font-medium tracking-[0.14em] text-primary uppercase">
-          {shown?.ref ?? meta.ref}
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">{source}</p>
+        <div className="mt-6 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-sans text-sm font-medium tracking-[0.14em] text-primary uppercase">
+              {shown?.ref ?? meta.ref}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">{source}</p>
+          </div>
+          {like ? (
+            <button
+              type="button"
+              className={cn(
+                "verse-like -mt-2 -mr-2 inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-semibold transition-colors",
+                like.liked ? "text-primary" : "text-muted-foreground hover:text-foreground",
+              )}
+              aria-pressed={like.liked}
+              onClick={like.onToggle}
+            >
+              <Heart
+                aria-hidden
+                className={cn("size-6 transition-transform", like.liked && "fill-primary scale-110")}
+              />
+              {locale === "en" ? "Like" : "Me gusta"}
+            </button>
+          ) : null}
+        </div>
         <BibleCopyright
           notice={shown?.copyright}
           fumsToken={shown?.fumsToken}

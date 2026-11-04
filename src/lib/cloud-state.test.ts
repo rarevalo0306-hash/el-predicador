@@ -25,6 +25,7 @@ const EMPTY: CloudPayload = {
   bookmarks: [],
   highlights: [],
   fontScale: 1,
+  likes: [],
 };
 
 test("an untouched visit is empty, and so is a payload that is not there", () => {
@@ -57,6 +58,10 @@ test("every collection the owner fills counts as work", () => {
     false,
   );
   assert.equal(isEmptyCloud({ ...EMPTY, highlights: ["jn-3-16"] }), false);
+  assert.equal(
+    isEmptyCloud({ ...EMPTY, likes: [{ id: "jn-3-16", theme: "amor", day: "2026-11-04" }] }),
+    false,
+  );
   assert.equal(isEmptyCloud({ ...EMPTY, sent: [{ verseId: "v1", at: 1 }] }), false);
   assert.equal(isEmptyCloud({ ...EMPTY, displayName: "Ricardo" }), false);
 });

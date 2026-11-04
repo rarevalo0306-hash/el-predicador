@@ -72,4 +72,31 @@ test("a manager's Admin tab carries shortened names and nothing else personal", 
   assert.equal(owner.masked, false);
   assert.equal(owner.registrations[0].phone, "+12015550101");
   assert.equal(owner.accounts[0].email, "pedro@example.com");
+  assert.equal(owner.accounts[0].likes, 0);
+  assert.equal(owner.accounts[0].topTheme, null);
+  assert.deepEqual(owner.likedThemes, []);
+
+  const day = "2026-11-04";
+  const liked = shapeOverview({
+    ...input,
+    owner: false,
+    likesByUser: new Map([
+      [
+        "u1",
+        [
+          { id: "a", theme: "fe" as const, day },
+          { id: "b", theme: "paz" as const, day },
+          { id: "c", theme: "paz" as const, day },
+        ],
+      ],
+      // Rows without an account are not counted.
+      ["gone", [{ id: "d", theme: "amor" as const, day }]],
+    ]),
+  });
+  assert.equal(liked.accounts[0].likes, 3);
+  assert.equal(liked.accounts[0].topTheme, "paz");
+  assert.deepEqual(liked.likedThemes, [
+    { theme: "paz", count: 2 },
+    { theme: "fe", count: 1 },
+  ]);
 });

@@ -68,6 +68,8 @@ export function TodayView({ mood, onMoodChange, onSend, onRead, onExplore }: Tod
   // Re-read the themes when the verses DeepSeek added arrive.
   useAppStore((s) => s.themeExtrasVersion);
   const bumpOffset = useAppStore((s) => s.bumpOffset);
+  const likes = useAppStore((s) => s.likes);
+  const toggleLike = useAppStore((s) => s.toggleLike);
   const [showContact, setShowContact] = useState(false);
   const [asked, setAsked] = useState(true);
   const [reflection, setReflection] = useState<DailyReflection | null>(
@@ -153,6 +155,10 @@ export function TodayView({ mood, onMoodChange, onSend, onRead, onExplore }: Tod
   const moodVerses = mood ? versesForTheme(mood) : [];
   const verse =
     mood && moodVerses.length > 0 ? moodVerses[dailyOffset % moodVerses.length]! : daily;
+  // The theme the verse was shown under, so a "Me gusta" says what spoke to them.
+  const shownTheme: ThemeId =
+    mood && moodVerses.length > 0 ? mood : getDailyPick(dailyOffset).theme;
+  const liked = likes.some((item) => item.id === verse.id);
 
   useEffect(() => {
     prefetchVerses(mood ? versesForTheme(mood) : [getDailyVerse(dailyOffset)], locale);
@@ -209,6 +215,10 @@ export function TodayView({ mood, onMoodChange, onSend, onRead, onExplore }: Tod
         <VerseCard
           verse={verse}
           variant="post"
+          like={{
+            liked,
+            onToggle: () => toggleLike({ id: verse.id, theme: shownTheme, day: todayKey() }),
+          }}
           onReadChapter={
             span
               ? () =>
