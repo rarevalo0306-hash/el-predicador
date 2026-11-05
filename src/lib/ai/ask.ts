@@ -21,12 +21,16 @@ const TASK = {
   en: `You answer questions about the Bible, the faith and the Christian life inside an app. Answer in English, briefly (about 80 to 140 words) unless more detail is asked for, with light formatting that reads well on a phone: short paragraphs, bold (**like this**) for the key idea, a dash list when there are steps or points, and each quoted verse on its own line as a quotation (> "text" followed by the reference in bold). No long headings, no tables, no links. Ground what you say in Scripture and cite one to three verses with their reference. If asked about a doctrinal controversy or about the terms you are forbidden to use, you may name them only to answer with the Bible texts, humbly, without labels and without attacking anyone; do not box yourself into any doctrine. If the question is not about the Bible, the faith or the Christian life, say kindly in one line that you are here for questions about the Word. Never invent quotations or verses; when unsure of a reference, give the idea without the citation.`,
 };
 
-export function askPrompt(locale: Locale) {
+/** `taste` is the line the app wrote from the person's "Me gusta" (see taste.ts). */
+export function askPrompt(locale: Locale, taste = "") {
   const voice = VOICE[locale];
-  const language = locale === "en"
-    ? "Every part of this answer, including Scripture references and quotations, must be in English, even when earlier conversation turns are Spanish."
-    : "Toda la respuesta, incluidas referencias y citas bíblicas, debe estar en español aunque haya mensajes anteriores en inglés.";
-  return [voice.who, TASK[locale], voice.tone, voice.forbidden, language].join("\n\n");
+  const language =
+    locale === "en"
+      ? "Every part of this answer, including Scripture references and quotations, must be in English, even when earlier conversation turns are Spanish."
+      : "Toda la respuesta, incluidas referencias y citas bíblicas, debe estar en español aunque haya mensajes anteriores en inglés.";
+  return [voice.who, TASK[locale], voice.tone, voice.forbidden, taste.trim(), language]
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 /** The last few turns, each cut to a sane size, so a long chat stays cheap. */
@@ -123,7 +127,7 @@ export async function* sseText(body: ReadableStream<Uint8Array>): AsyncGenerator
  * streams; only the words come later.
  */
 export async function streamAnswer(
-  input: { question: string; history: AskTurn[]; locale: Locale },
+  input: { question: string; history: AskTurn[]; locale: Locale; taste?: string },
   config: Config = process.env,
   request: typeof fetch = fetch,
 ): Promise<AsyncGenerator<string>> {
@@ -144,7 +148,7 @@ export async function streamAnswer(
         max_tokens: 700,
         stream: true,
         messages: [
-          { role: "system", content: askPrompt(input.locale) },
+          { role: "system", content: askPrompt(input.locale, input.taste) },
           ...trimHistory(input.history),
           { role: "user", content: question },
         ],
@@ -158,7 +162,7 @@ export async function streamAnswer(
 }
 
 export async function answerQuestion(
-  input: { question: string; history: AskTurn[]; locale: Locale },
+  input: { question: string; history: AskTurn[]; locale: Locale; taste?: string },
   config: Config = process.env,
   request: typeof fetch = fetch,
 ): Promise<string> {
@@ -178,7 +182,7 @@ export async function answerQuestion(
         temperature: 0.7,
         max_tokens: 700,
         messages: [
-          { role: "system", content: askPrompt(input.locale) },
+          { role: "system", content: askPrompt(input.locale, input.taste) },
           ...trimHistory(input.history),
           { role: "user", content: question },
         ],

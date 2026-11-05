@@ -198,3 +198,20 @@ test("a streamed answer asks with stream on and fails before streaming when the 
     /deepseek_402/,
   );
 });
+
+test("the taste line the app wrote goes into the instructions, and nothing when empty", async () => {
+  let system = "";
+  const taste = "Sobre esta persona: le gusta sobre todo Paz.";
+  const gen = await streamAnswer(
+    { question: "¿Cómo tener paz?", history: [], locale: "es", taste },
+    config,
+    async (_url, init) => {
+      system = JSON.parse(String(init!.body)).messages[0].content;
+      return new Response(sse(["[DONE]"]), { headers: { "Content-Type": "text/event-stream" } });
+    },
+  );
+  for await (const _ of gen) void _;
+  assert.ok(system.includes(taste));
+  assert.equal(askPrompt("es", ""), askPrompt("es"));
+  assert.ok(!askPrompt("es").includes("Sobre esta persona"));
+});
