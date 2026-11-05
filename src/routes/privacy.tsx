@@ -121,7 +121,7 @@ const en: LegalText = {
               <strong>API.Bible</strong> supplies LBLA, BSB and KJV. It receives Bible references requested by
               the backend and licensing usage reports from the web reader, including anonymous
               device/session identifiers and network information. We do not send it your account ID,
-              email or contacts. With your consent, AI questions, conversation history, Bible references and personal drafting details are sent to DeepSeek. Bible text is not automatically attached.
+              email or contacts. With your consent, AI questions, conversation history, Bible references and personal drafting details are sent to DeepSeek. When you ask a question, it also receives the names of the themes you like most (for example "Peace"), which the app works out from your "Like" taps; it does not receive the verses or dates themselves. Bible text is not automatically attached.
             </li>
             <li>
               <strong>Google and Apple</strong> authenticate you if you choose their login. They
@@ -333,7 +333,7 @@ const es: LegalText = {
               <strong>API.Bible</strong> proporciona LBLA, BSB y KJV. Recibe las referencias consultadas por el
               servidor y los informes de uso del lector web para la licencia, con identificadores
               anónimos de dispositivo/sesión e información de red. No le enviamos tu identificador
-              de cuenta, correo ni contactos. Con tu consentimiento, enviamos a DeepSeek preguntas, historial, referencias bíblicas y detalles para redactar. No adjuntamos automáticamente texto bíblico.
+              de cuenta, correo ni contactos. Con tu consentimiento, enviamos a DeepSeek preguntas, historial, referencias bíblicas y detalles para redactar. Cuando preguntas, también recibe los nombres de los temas que más te gustan (por ejemplo «Paz»), que la app calcula a partir de tus «Me gusta»; no recibe los versículos ni las fechas. No adjuntamos automáticamente texto bíblico.
             </li>
             <li>
               <strong>Google y Apple</strong> te autentican si eliges ese acceso. Proporcionan un

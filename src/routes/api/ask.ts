@@ -28,6 +28,7 @@ export const Route = createFileRoute("/api/ask")({
 
         const { consumeAskQuota, failureCode, releaseAskQuota, streamAnswer } =
           await import("@/lib/ai/ask");
+        const { tasteFor } = await import("@/lib/taste.server");
         const { deepseekConfigured } = await import("@/lib/ai/deepseek.server");
         if (!deepseekConfigured()) return fail(503, "ask_unavailable");
         const { getSql } = await import("@/lib/db");
@@ -37,9 +38,12 @@ export const Route = createFileRoute("/api/ask")({
         const quota = await consumeAskQuota(sql, userId, limit);
         if (!quota.allowed) return fail(429, "ask_quota");
 
+        // What the app learned from their "Me gusta", worked out in its own code.
+        const taste = await tasteFor(sql, userId, locale).catch(() => "");
+
         let words: AsyncGenerator<string>;
         try {
-          words = await streamAnswer({ question, history, locale });
+          words = await streamAnswer({ question, history, locale, taste });
         } catch (error) {
           const code = failureCode(error);
           console.error(
