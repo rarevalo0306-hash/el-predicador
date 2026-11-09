@@ -3,7 +3,7 @@ import { type BibleTranslation } from "@/lib/bible";
 import { bibleErrorCopy } from "@/lib/bible-error-copy";
 import { designCopy } from "@/lib/design-copy";
 import { BibleCopyright } from "@/components/bible-copyright";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   Bookmark,
@@ -47,6 +47,7 @@ import { combineVerses, formatVerseRange } from "@/lib/reader-prefs";
 import { copyText, formatVerseMessage } from "@/lib/share";
 import { TextSkeleton } from "@/components/text-skeleton";
 import { onTabListKeyDown } from "@/lib/tab-keys";
+import { swipeTurn } from "@/lib/swipe";
 
 /** A place to open as soon as the Bible shows, e.g. a verse tapped in a chat. */
 export type BibleJump = { bookId: string; chapter: number; verse?: number; at: number };
@@ -649,6 +650,41 @@ function ChapterReader({
     node?.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [lastPicked, data]);
 
+  // A sideways swipe turns the chapter, like the arrows at the top.
+  const touchStart = useRef<{ x: number; y: number; at: number } | null>(null);
+
+  function turnChapter(next: number) {
+    if (next < 1 || next > book.chapters) return;
+    onChapter(next);
+    window.scrollTo({ top: 0 });
+  }
+
+  function onTouchStart(event: React.TouchEvent) {
+    const touch = event.touches[0];
+    touchStart.current =
+      event.touches.length === 1 && touch
+        ? { x: touch.clientX, y: touch.clientY, at: Date.now() }
+        : null;
+  }
+
+  function onTouchEnd(event: React.TouchEvent) {
+    const start = touchStart.current;
+    touchStart.current = null;
+    const touch = event.changedTouches[0];
+    if (!start || !touch) return;
+    // Selecting text is not turning a page.
+    if (window.getSelection()?.toString()) return;
+    const turn = swipeTurn({
+      dx: touch.clientX - start.x,
+      dy: touch.clientY - start.y,
+      ms: Date.now() - start.at,
+      startX: start.x,
+      width: window.innerWidth,
+    });
+    if (turn === "next") turnChapter(chapter + 1);
+    else if (turn === "prev") turnChapter(chapter - 1);
+  }
+
   function togglePick(n: number) {
     setPicked((prev) => {
       const next = prev.includes(n) ? prev.filter((item) => item !== n) : [...prev, n];
@@ -681,7 +717,14 @@ function ChapterReader({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div
+      className="flex flex-col gap-4"
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={() => {
+        touchStart.current = null;
+      }}
+    >
       <div className="flex items-center justify-between gap-2">
         <button
           type="button"
